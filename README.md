@@ -4,11 +4,11 @@ Ferramenta que automatiza o download de arquivos do [Cadastro Ambiental Rural (S
 
 ## Badges
 
-[![Open In Collab](.github/colab-badge.svg)](https://colab.research.google.com/github/urbanogilson/SICAR/blob/main/examples/colab.ipynb)
+[![Open In Collab](.github/colab-badge.svg)](https://colab.research.google.com/github/Malnati/SICAR-for-pipeline/blob/main/examples/colab.ipynb)
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Docker Pulls](https://img.shields.io/docker/pulls/urbanogilson/sicar)](https://hub.docker.com/r/urbanogilson/sicar)
-[![Coverage Status](https://coveralls.io/repos/github/urbanogilson/SICAR/badge.svg?branch=main)](https://coveralls.io/github/urbanogilson/SICAR?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/Malnati/SICAR-for-pipeline/badge.svg?branch=main)](https://coveralls.io/github/Malnati/SICAR-for-pipeline?branch=main)
 [![interrogate](.github/interrogate_badge.svg)](https://interrogate.readthedocs.io/)
 
 # ✨ Objetivo
@@ -32,6 +32,12 @@ Permitir o download programático dos dados públicos do SICAR. O projeto inclui
 - [📦 Resultados e arquivos de saída](#-resultados-e-arquivos-de-saída)
 - [📊 Data dictionary](#data-dictionary)
 - [📝 Licença](#license)
+
+```bash
+pip install git+https://github.com/Malnati/SICAR-for-pipeline
+```
+
+Prerequisite:
 
 ---
 
@@ -83,6 +89,9 @@ services:
     volumes:
       - .:/sicar
     command: python examples/docker.py
+
+```bash
+pip install 'SICAR[paddle] @  git+https://github.com/Malnati/SICAR-for-pipeline'
 ```
 
 Execute:
@@ -93,7 +102,7 @@ docker compose up --build
 
 ## 3️⃣ Execução via Google Colab (Notebook Interativo)
 
-[![Open In Collab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/urbanogilson/SICAR/blob/main/examples/colab.ipynb)
+[![Open In Collab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Malnati/SICAR-for-pipeline/blob/main/examples/colab.ipynb)
 
 O notebook permite baixar os shapefiles diretamente no navegador sem instalar nada.
 
@@ -157,6 +166,27 @@ data.zip
 | nom_tema      | Name of the theme that makes up the registration (Permanent Preservation Area, Path, Remnant of Native Vegetation, Restricted Use Area, Administrative Easement, Legal Reserve, Hydrography, Wetlands, Consolidated Rural Area, Areas with Altitude Higher than 1800 meters, Areas with Slopes Higher than 45 degrees, Hilltops, Plateau Edges, Fallow Areas, Mangroves and Restinga). |
 
 ---
+
+## Acknowledgements
+
+- [Sicar - Sistema Nacional de Cadastro Ambiental Rural](https://www.car.gov.br/)
+- [Sicar - Base de Downloads](https://consultapublica.car.gov.br/publico/estados/downloads)
+
+## Roadmap
+
+- [ ] Upload to pypi registry
+
+## Contributing
+
+The development environment with all necessary packages is available using [Visual Studio Code Dev Containers](https://code.visualstudio.com/docs/remote/containers).
+
+[![Open in Remote - Containers](https://img.shields.io/static/v1?label=Remote%20-%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/Malnati/SICAR-for-pipeline)
+
+Contributions are always welcome!
+
+## Feedback
+
+If you have any feedback, please reach me at ricardomalnati@gmail.com
 
 # License
 
