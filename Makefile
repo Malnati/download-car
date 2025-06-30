@@ -21,7 +21,7 @@ DOCKER_CONFIG=$(DOCKER_CONFIG) docker run -it --rm -v $(PWD):/sicar $(IMAGE):lat
 # Remove local image
 clean:
 @echo "🗑️  Removendo imagem $(IMAGE):latest..."
--docker rmi $(IMAGE):latest
+docker rmi $(IMAGE):latest
 
 # Execute Python unit tests
 unit-test:
