@@ -223,9 +223,7 @@ class Sicar(Url):
             {"idEstado": state.value, "tipoBase": polygon.value, "ReCaptcha": captcha}
         )
 
-        path = Path(os.path.join(folder, f"{state.value}_{polygon.value}")).with_suffix(
-            ".zip"
-        )
+        path = (Path(folder) / f"{state.value}_{polygon.value}").with_suffix(".zip")
 
         downloaded_size = path.stat().st_size if path.exists() else 0
 
