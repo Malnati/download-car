@@ -294,6 +294,7 @@ class Sicar(Url):
         debug: bool = False,
         chunk_size: int = 1024,
         timeout: int = 30,
+        max_retries: int = 5,
     ) -> Path | bool:
         """
         Download the polygon or other output format for the specified state.
@@ -306,6 +307,7 @@ class Sicar(Url):
             debug (bool, optional): Whether to print debug information. Defaults to False.
             chunk_size (int, optional): The size of each chunk to download. Defaults to 1024.
             timeout (int, optional): Timeout in seconds for each download attempt. Defaults to 30.
+            max_retries (int, optional): The number of download attempts allowed for each file. Defaults to 5.
 
         Returns:
             Path | bool: The path to the downloaded data if successful, or False if download fails.
@@ -349,6 +351,7 @@ class Sicar(Url):
                         folder=folder,
                         chunk_size=chunk_size,
                         timeout=timeout,
+                        max_retries=max_retries,
                     )
                 elif debug:
                     print(
@@ -374,6 +377,7 @@ class Sicar(Url):
         debug: bool = False,
         chunk_size: int = 1024,
         timeout: int = 30,
+        max_retries: int = 5,
     ):
         """
         Download polygon for the entire country.
@@ -385,6 +389,7 @@ class Sicar(Url):
             debug (bool, optional): Whether to enable debug mode with additional print statements. Defaults to False.
             chunk_size (int, optional): The size of each chunk to download. Defaults to 1024.
             timeout (int, optional): Timeout in seconds for each download attempt. Defaults to 30.
+            max_retries (int, optional): The number of download attempts allowed for each file. Defaults to 5.
 
         Returns:
             Dict: A dictionary containing the results of the download operation.
@@ -404,6 +409,7 @@ class Sicar(Url):
                 debug=debug,
                 chunk_size=chunk_size,
                 timeout=timeout,
+                max_retries=max_retries,
             )
 
     def get_release_dates(self) -> Dict:
