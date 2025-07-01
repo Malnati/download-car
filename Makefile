@@ -1,3 +1,4 @@
+# Makefile
 # Variables
 DOCKER_CONFIG ?= /tmp/docker-config-noauth
 IMAGE ?= sicar

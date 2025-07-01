@@ -1,7 +1,7 @@
+# examples/download_state.py
 """Example script to download data from SICAR using environment variables."""
 
 import os
-
 from SICAR import Sicar, Polygon, State
 from SICAR.drivers import Paddle, Tesseract
 
