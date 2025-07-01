@@ -1,8 +1,12 @@
 # Dockerfile.api
 
 FROM sicar-base:latest
-WORKDIR /sicar
-COPY app.py /sicar/
+
+WORKDIR /donwload-car
+
+COPY app.py /donwload-car/
+
 RUN pip install fastapi uvicorn httpx Pillow tqdm
+
 ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 
