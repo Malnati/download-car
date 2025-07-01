@@ -240,7 +240,7 @@ class Sicar(Url):
                 timeout=timeout,
             )
         except httpx.TimeoutException:
-            print("Timeout occurred. Retrying download...")
+            logger.warning("Timeout occurred. Retrying download...")
             return self._download_polygon(
                 state=state,
                 polygon=polygon,
