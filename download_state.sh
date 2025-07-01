@@ -1,5 +1,5 @@
 #!/bin/bash
-# arquivo: download_state.sh
+# download_state.sh
 
 set -e
 
