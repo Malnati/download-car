@@ -12,12 +12,12 @@ build:
 # Run container with optional command
 run:
 	@echo "🚀 Executando container $(IMAGE):latest..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker run -it --rm -v $(PWD):/sicar $(IMAGE):latest $(CMD)
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker run -it --rm -v $(PWD):/download-car $(IMAGE):latest $(CMD)
 
 # Open shell inside container
 shell:
 	@echo "🔗 Entrando no container $(IMAGE)..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker run -it --rm -v $(PWD):/sicar $(IMAGE):latest bash
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker run -it --rm -v $(PWD):/download-car $(IMAGE):latest bash
 
 # Remove local image
 clean:

@@ -105,7 +105,7 @@ services:
   sicar:
     build: .
     volumes:
-      - .:/sicar
+      - .:/download-car
     command: python examples/docker.py
 ```
 
