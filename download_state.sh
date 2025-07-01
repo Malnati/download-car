@@ -56,9 +56,13 @@ while [[ "$#" -gt 0 ]]; do
       TRIES="$2"
       shift 2
       ;;
+    --timeout)
+      TIMEOUT="$2"
+      shift 2
+      ;;
     *)
       echo "Erro: Parâmetro desconhecido $1"
-      echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug>"
+      echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout>"
       exit 1
       ;;
   esac
@@ -67,13 +71,13 @@ done
 # Verifica se os parâmetros obrigatórios foram passados
 if [ -z "$STATE" ] || [ -z "$POLYGON" ] || [ -z "$FOLDER" ]; then
   echo "Erro: Parâmetros obrigatórios faltando."
-  echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug>"
+  echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout>"
   exit 1
 fi
 
 # \U1F4D1 Exemplo de parâmetros passados para o script
-echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com tries=$TRIES e debug=$DEBUG..."
+echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com tries=$TRIES, debug=$DEBUG e timeout=$TIMEOUT..."
 
 # \u25B6️ Executa o script download_state.py com os parâmetros fornecidos
-python examples/download_state.py --state "$STATE" --polygon "$POLYGON" --folder "$FOLDER" --tries "$TRIES" --debug "$DEBUG"
+python examples/download_state.py --state "$STATE" --polygon "$POLYGON" --folder "$FOLDER" --tries "$TRIES" --debug "$DEBUG" --timeout "$TIMEOUT"
 
