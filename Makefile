@@ -1,7 +1,9 @@
 # Makefile
+
 # Variables
 DOCKER_CONFIG ?= /tmp/docker-config-noauth
 IMAGE ?= download-car
+
 API_IMAGE ?= download-car-api
 DOCKERFILE ?= Dockerfile
 API_DOCKERFILE ?= Dockerfile.api
