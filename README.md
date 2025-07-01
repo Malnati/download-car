@@ -108,7 +108,7 @@ O notebook permite baixar os shapefiles diretamente no navegador sem instalar na
 
 ## 4️⃣ Execução via API
 
-Uma API pública de demonstração está disponível em [gilsonurbano.com/sicar-api](https://gilsonurbano.com/sicar-api/). O endpoint `/download` aceita requisições `POST` contendo o estado e o tipo de polígono desejado.
+Uma API pública de demonstração está disponível em [GitHub.com/Malnati/sicar-api](https://GitHub.com/Malnati/sicar-api/). O endpoint `/download` aceita requisições `POST` contendo o estado e o tipo de polígono desejado.
 
 ### Campos esperados (multipart/form)
 
@@ -120,7 +120,7 @@ Uma API pública de demonstração está disponível em [gilsonurbano.com/sicar-
 ### Exemplo via curl
 
 ```bash
-curl -X POST https://gilsonurbano.com/sicar-api/download \
+curl -X POST https://GitHub.com/Malnati/sicar-api/download \
   -F "state=SP" \
   -F "polygon=APPS" \
   --output SP_APPS.zip
