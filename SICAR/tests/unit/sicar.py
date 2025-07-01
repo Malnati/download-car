@@ -169,6 +169,7 @@ class SicarTestCase(unittest.TestCase):
             "GET",
             r"https://consultapublica.car.gov.br/publico/estados/downloadBase?idEstado=MG&tipoBase=APPS&ReCaptcha=abc123",
             headers={"Range": "bytes=0-"},
+            timeout=DEFAULT_TIMEOUT,
         )
         mock_open.assert_called_once_with(
             PosixPath(f"{folder}/{state.value}_{polygon.value}.zip"), "ab"
@@ -245,6 +246,7 @@ class SicarTestCase(unittest.TestCase):
             captcha="ABCDE",
             folder=folder,
             chunk_size=chunk_size,
+            timeout=30,
         )
 
         self.assertIsInstance(result, Path)
@@ -372,6 +374,7 @@ class SicarTestCase(unittest.TestCase):
                     tries=tries,
                     debug=debug,
                     chunk_size=chunk_size,
+                    timeout=30,
                 )
             )
 
