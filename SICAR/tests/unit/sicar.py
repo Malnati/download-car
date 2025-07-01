@@ -10,6 +10,7 @@ import sys
 import ssl
 
 from SICAR import Sicar
+from SICAR.sicar import DEFAULT_TIMEOUT
 from SICAR.state import State
 from SICAR.polygon import Polygon
 from SICAR.drivers import Captcha

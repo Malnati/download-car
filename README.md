@@ -86,7 +86,7 @@ ambiente e a execução do exemplo `download_state.py`. Basta informar os
 parâmetros desejados:
 
 ```bash
-./download_state.sh --state DF --polygon APPS --folder data/DF --debug True
+./download_state.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True
 ```
 
 O script irá garantir que a versão correta do Python esteja disponível via

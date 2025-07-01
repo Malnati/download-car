@@ -39,6 +39,8 @@ from SICAR.exceptions import (
     FailedToGetReleaseDateException,
 )
 
+DEFAULT_TIMEOUT = 30
+
 
 class Sicar(Url):
     """

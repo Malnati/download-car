@@ -4,7 +4,7 @@
 set -e
 
 # \U1F9E0 Uso:
-# ./download_state.sh --state DF --polygon APPS --folder data/DF --debug True
+# ./download_state.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True
 
 # \U1F9EA Verifica pyenv
 if ! command -v pyenv &> /dev/null; then
@@ -52,9 +52,13 @@ while [[ "$#" -gt 0 ]]; do
       DEBUG="$2"
       shift 2
       ;;
+    --tries)
+      TRIES="$2"
+      shift 2
+      ;;
     *)
       echo "Erro: Parâmetro desconhecido $1"
-      echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --debug <debug>"
+      echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug>"
       exit 1
       ;;
   esac
@@ -63,13 +67,13 @@ done
 # Verifica se os parâmetros obrigatórios foram passados
 if [ -z "$STATE" ] || [ -z "$POLYGON" ] || [ -z "$FOLDER" ]; then
   echo "Erro: Parâmetros obrigatórios faltando."
-  echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --debug <debug>"
+  echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug>"
   exit 1
 fi
 
 # \U1F4D1 Exemplo de parâmetros passados para o script
-echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com debug=$DEBUG..."
+echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com tries=$TRIES e debug=$DEBUG..."
 
 # \u25B6️ Executa o script download_state.py com os parâmetros fornecidos
-python examples/download_state.py --state "$STATE" --polygon "$POLYGON" --folder "$FOLDER" --debug "$DEBUG"
+python examples/download_state.py --state "$STATE" --polygon "$POLYGON" --folder "$FOLDER" --tries "$TRIES" --debug "$DEBUG"
 
