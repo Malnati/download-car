@@ -21,11 +21,8 @@ class TestSicarBase(unittest.TestCase):
     def test_download_resume(self, mock_download):
         state = State.RR
         polygon = Polygon.AREA_FALL
-        folder = "temp"
-        path = Path(folder) / f"{state.value}_{polygon.value}.zip"
-
-        if path.exists():
-            os.remove(path)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / f"{state.value}_{polygon.value}.zip"
 
         def mock_download_side_effect(*args, **kwargs):
             if not path.exists():
