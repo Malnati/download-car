@@ -34,10 +34,31 @@ pip install --upgrade pip
 pip install SICAR httpx Pillow tqdm
 
 # \u1F6E0 Define variáveis de ambiente para passar os parâmetros para o script Python
-export STATE="$1"
-export POLYGON="$2"
-export FOLDER="$3"
-export DEBUG="$4"
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --state)
+      STATE="$2"
+      shift 2
+      ;;
+    --polygon)
+      POLYGON="$2"
+      shift 2
+      ;;
+    --folder)
+      FOLDER="$2"
+      shift 2
+      ;;
+    --debug)
+      DEBUG="$2"
+      shift 2
+      ;;
+    *)
+      echo "Erro: Parâmetro desconhecido $1"
+      echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --debug <debug>"
+      exit 1
+      ;;
+  esac
+done
 
 # Verifica se os parâmetros obrigatórios foram passados
 if [ -z "$STATE" ] || [ -z "$POLYGON" ] || [ -z "$FOLDER" ]; then
