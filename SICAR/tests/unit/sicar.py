@@ -169,7 +169,7 @@ class SicarTestCase(unittest.TestCase):
             "GET",
             r"https://consultapublica.car.gov.br/publico/estados/downloadBase?idEstado=MG&tipoBase=APPS&ReCaptcha=abc123",
             headers={"Range": "bytes=0-"},
-            timeout=30,
+            timeout=DEFAULT_TIMEOUT,
         )
         mock_open.assert_called_once_with(
             PosixPath(f"{folder}/{state.value}_{polygon.value}.zip"), "ab"
