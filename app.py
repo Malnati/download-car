@@ -45,7 +45,7 @@ def extract_and_find_shp(upload_file: UploadFile, temp_dir: str) -> str:
 async def download_state_endpoint(
     state: str = Form(...),
     polygon: str = Form(...),
-    folder: str = Form("temp"),
+    folder: str = Form(None),
     tries: int = Form(25),
     debug: bool = Form(False),
     timeout: int = Form(30),
