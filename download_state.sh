@@ -31,7 +31,7 @@ source $VENV_DIR/bin/activate
 
 # \u1F680 Instala dependências
 pip install --upgrade pip
-pip install 'git+https://github.com/Malnati/download-car#egg=SICAR[paddle]'
+pip install --editable .[paddle]
 
 # \u1F6E0 Define variáveis de ambiente para passar os parâmetros para o script Python
 while [[ "$#" -gt 0 ]]; do
@@ -56,9 +56,17 @@ while [[ "$#" -gt 0 ]]; do
       TRIES="$2"
       shift 2
       ;;
+    --timeout)
+      TIMEOUT="$2"
+      shift 2
+      ;;
+    --max_retries)
+      MAX_RETRIES="$2"
+      shift 2
+      ;;
     *)
       echo "Erro: Parâmetro desconhecido $1"
-      echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug>"
+      echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout> --max_retries <max_retries>"
       exit 1
       ;;
   esac
@@ -67,13 +75,18 @@ done
 # Verifica se os parâmetros obrigatórios foram passados
 if [ -z "$STATE" ] || [ -z "$POLYGON" ] || [ -z "$FOLDER" ]; then
   echo "Erro: Parâmetros obrigatórios faltando."
-  echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug>"
+  echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout> --max_retries <max_retries>"
   exit 1
 fi
 
+TRIES="${TRIES:-25}"
+TIMEOUT="${TIMEOUT:-30}"
+MAX_RETRIES="${MAX_RETRIES:-5}"
+DEBUG="${DEBUG:-False}"
+
 # \U1F4D1 Exemplo de parâmetros passados para o script
-echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com tries=$TRIES e debug=$DEBUG..."
+echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com tries=$TRIES, debug=$DEBUG, timeout=$TIMEOUT e max_retries=$MAX_RETRIES..."
 
 # \u25B6️ Executa o script download_state.py com os parâmetros fornecidos
-python examples/download_state.py --state "$STATE" --polygon "$POLYGON" --folder "$FOLDER" --tries "$TRIES" --debug "$DEBUG"
+python examples/download_state.py --state "$STATE" --polygon "$POLYGON" --folder "$FOLDER" --tries "$TRIES" --debug "$DEBUG" --timeout "$TIMEOUT" --max_retries "$MAX_RETRIES"
 
