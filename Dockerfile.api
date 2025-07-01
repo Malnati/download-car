@@ -1,0 +1,12 @@
+# Dockerfile.api
+
+FROM download-car-base:latest
+
+WORKDIR /download-car
+
+COPY app.py /download-car/
+
+RUN pip install fastapi uvicorn httpx Pillow tqdm
+
+ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+

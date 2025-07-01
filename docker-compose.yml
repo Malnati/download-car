@@ -1,0 +1,18 @@
+# docker-compose.yml
+version: '3.8'
+services:
+  download-car:
+    build:
+      context: .
+      dockerfile: Dockerfile.download-car
+    volumes:
+      - .:/download-car
+    entrypoint: ./entrypoint.download.sh
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    volumes:
+      - .:/download-car
+    ports:
+      - "8000:8000"
