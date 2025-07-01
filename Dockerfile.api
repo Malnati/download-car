@@ -1,25 +1,12 @@
 # Dockerfile.api
-ARG VARIANT="3.10"
-FROM python:${VARIANT}
 
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install tesseract-ocr python3-opencv
+FROM sicar-base:latest
 
-RUN pip install --upgrade pip
+WORKDIR /donwload-car
 
-# Install FastAPI and related dependencies
+COPY app.py /donwload-car/
+
 RUN pip install fastapi uvicorn httpx Pillow tqdm
 
-WORKDIR /download-car
+ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 
-# Copy the entire project to the container
-COPY . /download-car/
-
-# Install the local SICAR package
-RUN pip install -e .
-
-# Expose the port that the FastAPI app runs on
-EXPOSE 8000
-
-# Run the FastAPI application
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
