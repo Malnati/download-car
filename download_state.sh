@@ -72,3 +72,4 @@ echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FO
 
 # \u25B6️ Executa o script download_state.py com os parâmetros fornecidos
 python examples/download_state.py --state "$STATE" --polygon "$POLYGON" --folder "$FOLDER" --debug "$DEBUG"
+
