@@ -241,14 +241,23 @@ class Sicar(Url):
             )
         except httpx.TimeoutException:
             logger.warning("Timeout occurred. Retrying download...")
-            return self._download_polygon(
-                state=state,
-                polygon=polygon,
-                captcha=captcha,
-                folder=folder,
-                chunk_size=chunk_size,
-                timeout=timeout,
-            )
+            retries = 0
+            max_retries = 5  # Set a limit for retries
+            while retries < max_retries:
+                try:
+                    response_ctx = self._session.stream(
+                        "GET",
+                        f"{self._DOWNLOAD_BASE}?{query}",
+                        headers=headers,
+                        timeout=timeout,
+                    )
+                    break  # Exit loop if successful
+                except httpx.TimeoutException:
+                    retries += 1
+                    print(f"Retry {retries}/{max_retries} after timeout...")
+                    time.sleep(2 ** retries)  # Exponential backoff
+            else:
+                raise FailedToDownloadPolygonException("Max retries exceeded.")
 
         with response_ctx as response:
             try:
