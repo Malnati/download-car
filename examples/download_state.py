@@ -1,20 +1,24 @@
+"""Example script to download data from SICAR using environment variables."""
+
+import os
+
 from SICAR import Sicar, Polygon, State
 from SICAR.drivers import Paddle, Tesseract
 
-# Create Sicar instance
+# Read parameters from environment variables with reasonable defaults
+state = State[os.getenv("STATE", "DF")]
+polygon = Polygon[os.getenv("POLYGON", "APPS")]
+folder = os.getenv("FOLDER", "data/DF")
+debug = os.getenv("DEBUG", "False").lower() == "true"
+
+# Create Sicar instance (default driver is Tesseract)
 car = Sicar(driver=Tesseract)
 # car = Sicar(driver=Paddle)
 
-# Download APPS polygons for the Roraima state
-car.download_state(
-    state=State.DF, polygon=Polygon.APPS, folder="data/DF", debug=True
-)
+# Download polygons for the chosen state
+car.download_state(state=state, polygon=polygon, folder=folder, debug=debug)
 
-# Download APPS polygons for all states in Brazil
-# car.download_country(polygon=Polygon.APPS, folder="/Brazil")
-
-# Get release date for all states
+# Get release date for all states and print the one for the chosen state
 release_dates = car.get_release_dates()
-# get a single state value
-print(f"Release date for DF is: {release_dates.get(State.DF)}")
+print(f"Release date for {state.name} is: {release_dates.get(state)}")
 
