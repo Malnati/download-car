@@ -30,6 +30,7 @@ Permitir o download programático dos dados públicos do SICAR. O projeto inclui
   - [5️⃣ Execução via API](#5️⃣-execução-via-api)
     - [Campos esperados (multipart/form)](#campos-esperados-multipartform)
     - [Exemplo via curl](#exemplo-via-curl)
+    - [Rodando localmente com FastAPI](#rodando-localmente-com-fastapi)
   - [6️⃣ Importação como módulo Python](#6️⃣-importação-como-módulo-python)
 - [📦 Resultados e arquivos de saída](#-resultados-e-arquivos-de-saída)
 - [📊 Data dictionary](#data-dictionary)
@@ -143,6 +144,24 @@ curl -X POST https://GitHub.com/Malnati/sicar-api/download \
   -F "polygon=APPS" \
   --output SP_APPS.zip
 ```
+
+### Rodando localmente com FastAPI
+
+Execute o script `api.sh` para iniciar um servidor FastAPI local:
+
+```bash
+./api.sh
+```
+
+O script cria um ambiente virtual via `pyenv`, instala as dependências
+necessárias e disponibiliza o serviço em `http://localhost:8000`.
+
+Rotas disponíveis:
+
+- `POST /download_state` &ndash; recebe `state` e `polygon` (além dos
+  parâmetros opcionais) e retorna um arquivo ZIP com o shapefile do estado.
+- `POST /download_country` &ndash; recebe apenas `polygon` e retorna um ZIP
+  contendo os arquivos de todos os estados.
 
 ## 6️⃣ Importação como módulo Python
 
