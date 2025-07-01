@@ -1,12 +1,12 @@
 # examples/download_state.py
-"""Example script to download data from SICAR using environment variables."""
+"""Example script to download data from download-car using environment variables."""
 
 import os
 import argparse
-from SICAR import Sicar, Polygon, State
-from SICAR.drivers import Paddle, Tesseract
+from download_car import DownloadCar, Polygon, State
+from download_car.drivers import Paddle, Tesseract
 
-parser = argparse.ArgumentParser(description="Download SICAR state polygon.")
+parser = argparse.ArgumentParser(description="Download download-car state polygon.")
 parser.add_argument("--state", type=str, default=os.getenv("STATE", "DF"))
 parser.add_argument("--polygon", type=str, default=os.getenv("POLYGON", "APPS"))
 parser.add_argument("--folder", type=str, default=os.getenv("FOLDER", "data/DF"))
@@ -26,9 +26,9 @@ chunk_size = 1024
 timeout = args.timeout
 max_retries = args.max_retries
 
-# Create Sicar instance (default driver is Tesseract)
-car = Sicar(driver=Tesseract)
-# car = Sicar(driver=Paddle)
+# Create DownloadCar instance (default driver is Tesseract)
+car = DownloadCar(driver=Tesseract)
+# car = DownloadCar(driver=Paddle)
 
 # Download polygons for the chosen state
 car.download_state(
