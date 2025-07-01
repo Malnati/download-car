@@ -1,0 +1,4 @@
+# Dockerfile.download-car
+FROM sicar-base:latest
+WORKDIR /sicar
+ENTRYPOINT ["./entrypoint.download.sh"]
