@@ -197,9 +197,10 @@ class Sicar(Url):
         captcha: str,
         folder: str,
         chunk_size: int = 1024,
+        timeout: int = 30,
     ) -> Path:
         """
-        Download polygon for the specified state.
+        Download polygon for the specified state with timeout and resume support.
 
         Parameters:
             state (State | str): The state for which to download the files. It can be either a `State` enum value or a string representing the state's abbreviation.
@@ -207,6 +208,7 @@ class Sicar(Url):
             captcha (str): The captcha value for verification.
             folder (str): The folder path where the polygon will be saved.
             chunk_size (int, optional): The size of each chunk to download. Defaults to 1024.
+            timeout (int, optional): Timeout in seconds for each download attempt. Defaults to 30.
 
         Returns:
             Path: The path to the downloaded polygon.
@@ -230,9 +232,25 @@ class Sicar(Url):
 
         headers = {"Range": f"bytes={downloaded_size}-"}
 
-        with self._session.stream(
-            "GET", f"{self._DOWNLOAD_BASE}?{query}", headers=headers
-        ) as response:
+        try:
+            response_ctx = self._session.stream(
+                "GET",
+                f"{self._DOWNLOAD_BASE}?{query}",
+                headers=headers,
+                timeout=timeout,
+            )
+        except httpx.TimeoutException:
+            print("Timeout occurred. Retrying download...")
+            return self._download_polygon(
+                state=state,
+                polygon=polygon,
+                captcha=captcha,
+                folder=folder,
+                chunk_size=chunk_size,
+                timeout=timeout,
+            )
+
+        with response_ctx as response:
             try:
                 if response.status_code not in [
                     httpx.codes.OK,
@@ -256,9 +274,20 @@ class Sicar(Url):
                     desc=f"Downloading polygon '{polygon.value}' for state '{state.value}'",
                     initial=downloaded_size,
                 ) as progress_bar:
-                    for chunk in response.iter_bytes(chunk_size):
-                        fd.write(chunk)
-                        progress_bar.update(len(chunk))
+                    try:
+                        for chunk in response.iter_bytes(chunk_size):
+                            fd.write(chunk)
+                            progress_bar.update(len(chunk))
+                    except httpx.TimeoutException:
+                        print("Timeout occurred during download. Retrying...")
+                        return self._download_polygon(
+                            state=state,
+                            polygon=polygon,
+                            captcha=captcha,
+                            folder=folder,
+                            chunk_size=chunk_size,
+                            timeout=timeout,
+                        )
         return path
 
     def download_state(
@@ -269,6 +298,7 @@ class Sicar(Url):
         tries: int = 25,
         debug: bool = False,
         chunk_size: int = 1024,
+        timeout: int = 30,
     ) -> Path | bool:
         """
         Download the polygon or other output format for the specified state.
@@ -280,6 +310,7 @@ class Sicar(Url):
             tries (int, optional): The number of attempts to download the data. Defaults to 25.
             debug (bool, optional): Whether to print debug information. Defaults to False.
             chunk_size (int, optional): The size of each chunk to download. Defaults to 1024.
+            timeout (int, optional): Timeout in seconds for each download attempt. Defaults to 30.
 
         Returns:
             Path | bool: The path to the downloaded data if successful, or False if download fails.
@@ -322,6 +353,7 @@ class Sicar(Url):
                         captcha=captcha,
                         folder=folder,
                         chunk_size=chunk_size,
+                        timeout=timeout,
                     )
                 elif debug:
                     print(
@@ -346,6 +378,7 @@ class Sicar(Url):
         tries: int = 25,
         debug: bool = False,
         chunk_size: int = 1024,
+        timeout: int = 30,
     ):
         """
         Download polygon for the entire country.
@@ -356,6 +389,7 @@ class Sicar(Url):
             tries (int, optional): The number of download attempts allowed per state. Defaults to 25.
             debug (bool, optional): Whether to enable debug mode with additional print statements. Defaults to False.
             chunk_size (int, optional): The size of each chunk to download. Defaults to 1024.
+            timeout (int, optional): Timeout in seconds for each download attempt. Defaults to 30.
 
         Returns:
             Dict: A dictionary containing the results of the download operation.
@@ -374,6 +408,7 @@ class Sicar(Url):
                 tries=tries,
                 debug=debug,
                 chunk_size=chunk_size,
+                timeout=timeout,
             )
 
     def get_release_dates(self) -> Dict:
