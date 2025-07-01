@@ -47,8 +47,8 @@ Prerequisite:
 
 A classe central deste pacote é `Sicar`, que disponibiliza três métodos principais:
 
-- `download_state(state, polygon, folder="temp", tries=25, debug=False, chunk_size=1024)`
-- `download_country(polygon, folder="brazil", tries=25, debug=False, chunk_size=1024)`
+- `download_state(state, polygon, folder="temp", tries=25, debug=False, chunk_size=1024, timeout=30)`
+- `download_country(polygon, folder="brazil", tries=25, debug=False, chunk_size=1024, timeout=30)`
 - `get_release_dates()`
 
 ---
@@ -63,6 +63,7 @@ A classe central deste pacote é `Sicar`, que disponibiliza três métodos princ
 | `tries`    | int          | ❌          | `25`   | Número máximo de tentativas em caso de falha.                                      | `tries=10`                          |
 | `debug`    | bool         | ❌          | `False`| Exibe mensagens extras de depuração.                                              | `debug=True`                        |
 | `chunk_size`| int         | ❌          | `1024` | Tamanho do bloco para escrita do arquivo (em bytes).                               | `chunk_size=2048`                   |
+| `timeout`   | int         | ❌          | `30`   | Tempo máximo em segundos para cada tentativa de download.                         | `timeout=60`                   |
 
 Esses parâmetros se aplicam principalmente ao método `download_state`. O método `download_country` utiliza a mesma assinatura (exceto pelo parâmetro `state`).
 
