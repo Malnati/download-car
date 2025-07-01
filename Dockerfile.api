@@ -1,10 +1,10 @@
 # Dockerfile.api
 
-FROM sicar-base:latest
+FROM download-car-base:latest
 
-WORKDIR /donwload-car
+WORKDIR /download-car
 
-COPY app.py /donwload-car/
+COPY app.py /download-car/
 
 RUN pip install fastapi uvicorn httpx Pillow tqdm
 
