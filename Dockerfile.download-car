@@ -1,5 +1,5 @@
 # Dockerfile.download-car
 FROM donwload-car-base:latest
-WORKDIR /donwload-car
+WORKDIR /download-car-car
 COPY . .
-ENTRYPOINT ["./entrypoint.donwload-car.sh"]
+ENTRYPOINT ["./entrypoint.download-car.sh"]
