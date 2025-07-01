@@ -60,9 +60,13 @@ while [[ "$#" -gt 0 ]]; do
       TIMEOUT="$2"
       shift 2
       ;;
+    --max_retries)
+      MAX_RETRIES="$2"
+      shift 2
+      ;;
     *)
       echo "Erro: Parâmetro desconhecido $1"
-      echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout>"
+      echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout> --max_retries <max_retries>"
       exit 1
       ;;
   esac
@@ -71,13 +75,13 @@ done
 # Verifica se os parâmetros obrigatórios foram passados
 if [ -z "$STATE" ] || [ -z "$POLYGON" ] || [ -z "$FOLDER" ]; then
   echo "Erro: Parâmetros obrigatórios faltando."
-  echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout>"
+  echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout> --max_retries <max_retries>"
   exit 1
 fi
 
 # \U1F4D1 Exemplo de parâmetros passados para o script
-echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com tries=$TRIES, debug=$DEBUG e timeout=$TIMEOUT..."
+echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com tries=$TRIES, debug=$DEBUG, timeout=$TIMEOUT e max_retries=$MAX_RETRIES..."
 
 # \u25B6️ Executa o script download_state.py com os parâmetros fornecidos
-python examples/download_state.py --state "$STATE" --polygon "$POLYGON" --folder "$FOLDER" --tries "$TRIES" --debug "$DEBUG" --timeout "$TIMEOUT"
+python examples/download_state.py --state "$STATE" --polygon "$POLYGON" --folder "$FOLDER" --tries "$TRIES" --debug "$DEBUG" --timeout "$TIMEOUT" --max_retries "$MAX_RETRIES"
 
