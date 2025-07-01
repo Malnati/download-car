@@ -10,13 +10,16 @@ state = State[os.getenv("STATE", "DF")]
 polygon = Polygon[os.getenv("POLYGON", "APPS")]
 folder = os.getenv("FOLDER", "data/DF")
 debug = os.getenv("DEBUG", "False").lower() == "true"
+tries = int(os.getenv("TRIES", "25"))
 
 # Create Sicar instance (default driver is Tesseract)
 car = Sicar(driver=Tesseract)
 # car = Sicar(driver=Paddle)
 
 # Download polygons for the chosen state
-car.download_state(state=state, polygon=polygon, folder=folder, debug=debug)
+car.download_state(
+    state=state, polygon=polygon, folder=folder, tries=tries, debug=debug
+)
 
 # Get release date for all states and print the one for the chosen state
 release_dates = car.get_release_dates()
