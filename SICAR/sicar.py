@@ -197,7 +197,7 @@ class Sicar(Url):
         captcha: str,
         folder: str,
         chunk_size: int = 1024,
-        timeout: int = 30,
+        timeout: int = DEFAULT_TIMEOUT,
     ) -> Path:
         """
         Download polygon for the specified state with timeout and resume support.
