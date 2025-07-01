@@ -3,10 +3,9 @@
 
 set -e
 
+STATE=${STATE:-DF}
 FOLDER=${FOLDER:-data/$STATE}
 mkdir -p "$FOLDER"
-
-STATE=${STATE:-DF}
 POLYGON=${POLYGON:-APPS}
 TRIES=${TRIES:-25}
 DEBUG=${DEBUG:-False}
