@@ -19,19 +19,10 @@ if ! pyenv versions --bare | grep -q "^$PYTHON_VERSION$"; then
   pyenv install $PYTHON_VERSION
 fi
 
-# \U1F4E6 Cria venv se não existir
-VENV_DIR=".venv-download"
-if [[ ! -d "$VENV_DIR" ]]; then
-  echo -e "\u23f3 Criando venv Python em $VENV_DIR..."
-  PYENV_VERSION=$PYTHON_VERSION pyenv exec python -m venv $VENV_DIR
-fi
-
-# \u26A1 Ativa venv
-source $VENV_DIR/bin/activate
-
-# \u1F680 Instala dependências
-pip install --upgrade pip
-pip install --editable .[paddle]
+# \u1F680 Instala dependências via pyenv
+pyenv install -s "$PYTHON_VERSION"
+PYENV_VERSION="$PYTHON_VERSION" pyenv exec pip install --upgrade pip
+PYENV_VERSION="$PYTHON_VERSION" pyenv exec pip install --editable .[paddle]
 
 # \u1F6E0 Define variáveis de ambiente para passar os parâmetros para o script Python
 while [[ "$#" -gt 0 ]]; do
@@ -88,5 +79,12 @@ DEBUG="${DEBUG:-False}"
 echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com tries=$TRIES, debug=$DEBUG, timeout=$TIMEOUT e max_retries=$MAX_RETRIES..."
 
 # \u25B6️ Executa o script download_state.py com os parâmetros fornecidos
-python examples/download_state.py --state "$STATE" --polygon "$POLYGON" --folder "$FOLDER" --tries "$TRIES" --debug "$DEBUG" --timeout "$TIMEOUT" --max_retries "$MAX_RETRIES"
+PYENV_VERSION="$PYTHON_VERSION" pyenv exec python examples/download_state.py \
+  --state "$STATE" \
+  --polygon "$POLYGON" \
+  --folder "$FOLDER" \
+  --tries "$TRIES" \
+  --debug "$DEBUG" \
+  --timeout "$TIMEOUT" \
+  --max_retries "$MAX_RETRIES"
 
