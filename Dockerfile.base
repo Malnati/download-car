@@ -30,7 +30,14 @@ WORKDIR /download-car
 
 RUN pip install download-car
 
-# Download PaddleOCR models
-RUN echo 'from paddleocr import PaddleOCR\nPaddleOCR(lang="en")' | python
+# Optionally download PaddleOCR models during build.
+# This may crash on CPUs without AVX support, so it is disabled by default.
+ARG PRELOAD_MODELS=0
+RUN if [ "$PRELOAD_MODELS" = "1" ]; then \
+        python - <<'EOF'
+from paddleocr import PaddleOCR
+PaddleOCR(lang="en")
+EOF
+    ; fi
 
 ENTRYPOINT ["python"]

@@ -121,6 +121,16 @@ Primeiro, construa a imagem base:
 make build
 ```
 
+Se desejar baixar os modelos do PaddleOCR durante a construção,
+habilite a variável `PRELOAD_MODELS`:
+
+```bash
+PRELOAD_MODELS=1 make build
+```
+
+Alguns processadores não possuem suporte a AVX, o que pode causar falha
+na instalação desses modelos. Deixe a opção desabilitada nesses casos.
+
 Em seguida, suba os serviços:
 
 ```bash
