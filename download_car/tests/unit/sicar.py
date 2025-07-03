@@ -188,7 +188,7 @@ class SicarTestCase(unittest.TestCase):
 
             sicar = DownloadCar(driver=self.mocked_captcha)
 
-            with self.assertRaises(FailedToDownloadPolygonException):
+            with self.assertRaises(UrlNotOkException):
                 sicar._download_polygon(
                     state=State.MG,
                     polygon=Polygon.APPS,
@@ -248,6 +248,7 @@ class SicarTestCase(unittest.TestCase):
             folder=folder,
             chunk_size=chunk_size,
             timeout=30,
+            max_retries=5,
         )
 
         self.assertIsInstance(result, Path)
@@ -376,6 +377,7 @@ class SicarTestCase(unittest.TestCase):
                     debug=debug,
                     chunk_size=chunk_size,
                     timeout=30,
+                    max_retries=5,
                 )
             )
 
