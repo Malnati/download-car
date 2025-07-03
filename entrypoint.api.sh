@@ -9,6 +9,6 @@ ${PYTHON} -m venv $VENV
 source $VENV/bin/activate
 
 pip install --upgrade pip
-pip install fastapi uvicorn httpx Pillow tqdm
+pip install fastapi uvicorn httpx Pillow tqdm python-multipart
 
 exec uvicorn app:app --host 0.0.0.0 --port 8000
