@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         uuid-dev wget && \
     rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/pyenv/pyenv.git ${PYENV_ROOT} && \
+RUN git clone --depth 1 https://github.com/pyenv/pyenv.git ${PYENV_ROOT} && \
     pyenv install ${PYTHON_VERSION} && \
     pyenv global ${PYTHON_VERSION}
     
