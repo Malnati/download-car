@@ -97,23 +97,48 @@ ambiente apropriadas.
 
 ## 3️⃣ Execução via Docker Compose
 
-O repositório já possui um `docker-compose.yml` configurado com dois serviços:
+O repositório já possui um `docker-compose.yml` configurado com três serviços:
 
 ```yaml
 version: "3.8"
 services:
-  download-car:
-    build: .
+  download-car-download:
+    build:
+      context: .
+      dockerfile: Dockerfile.download-car
     volumes:
       - .:/download-car
-    command: python examples/docker.py
+    entrypoint: ./entrypoint.download.sh
+  download-car-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    volumes:
+      - .:/download-car
+    ports:
+      - "8000:8000"
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - download-car-api
+      - download-car-download
 ```
 
-* **download** – roda o script `entrypoint.download.sh` para baixar os arquivos
+* **download-car-download** – roda o script `entrypoint.download.sh` para baixar os arquivos
   desejados. Defina as variáveis `STATE`, `POLYGON` e `FOLDER` conforme a
   necessidade.
-* **api** – executa o `uvicorn` servindo a aplicação FastAPI em
+* **download-car-api** – executa o `uvicorn` servindo a aplicação FastAPI em
   `http://localhost:8000`.
+* **nginx** – expõe a porta `80` e redireciona `/download` para o serviço de download,
+  encaminhando o restante para a API.
+
+Assim, requisições para `http://localhost/download` são atendidas pelo
+container `download-car-download`, enquanto os demais caminhos passam para
+`download-car-api`.
 
 Primeiro, construa a imagem base:
 
@@ -137,8 +162,8 @@ Em seguida, suba os serviços:
 docker compose up
 ```
 
-Os logs do container de download indicarão o progresso do script, enquanto o
-serviço da API ficará disponível na porta `8000` para testes locais.
+Os logs do container de download indicarão o progresso do script, enquanto a
+API poderá ser acessada em `http://localhost` via Nginx (porta `80`).
 
 ## 4️⃣ Execução via Google Colab (Notebook Interativo)
 
