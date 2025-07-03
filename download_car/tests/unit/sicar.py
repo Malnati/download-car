@@ -363,7 +363,7 @@ class SicarTestCase(unittest.TestCase):
             "State2": Path("/path/to/456.zip"),
         }
 
-        sicar.download_country(polygon, folder, tries, debug, chunk_size)
+        result = sicar.download_country(polygon, folder, tries, debug, chunk_size)
 
         expected_calls = {"path": [], "download_state": []}
         for state in State:
@@ -383,6 +383,9 @@ class SicarTestCase(unittest.TestCase):
 
         mock_mkdir.assert_has_calls(expected_calls["path"])
         mock_download_state.assert_has_calls(expected_calls["download_state"])
+
+        expected_result = {str(state): mock_download_state.return_value for state in State}
+        self.assertEqual(result, expected_result)
 
     def test_get_release_dates_success(self):
         html_content = (
