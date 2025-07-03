@@ -82,10 +82,6 @@ build-download:
 	@echo "🛠️  Building download image..."
 	docker build -t download-car-download:latest -f Dockerfile.download-car .
 
-build-api:
-	@echo "🛠️  Building api image..."
-	docker build -t download-car-api:latest -f Dockerfile.api .
-
 build: build-base build-download build-api
 
 up:
