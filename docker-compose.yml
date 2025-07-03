@@ -1,14 +1,15 @@
 # docker-compose.yml
 version: '3.8'
 services:
-  download-car:
+  download-car-download:
     build:
       context: .
       dockerfile: Dockerfile.download-car
     volumes:
       - .:/download-car
     entrypoint: ./entrypoint.download.sh
-  api:
+
+  download-car-api:
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -16,3 +17,13 @@ services:
       - .:/download-car
     ports:
       - "8000:8000"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - download-car-api
+      - download-car-download
