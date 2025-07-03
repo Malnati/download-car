@@ -7,7 +7,7 @@ API_DOCKERFILE ?= Dockerfile.api
 
 api-up:
 	@echo "🚀  Executando container API $(API_IMAGE):latest..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up api
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up api -d
 
 build:
 	@echo "🛠️  Buildando imagem $(IMAGE):latest via $(DOCKERFILE)..."
@@ -52,7 +52,7 @@ download:
 
 download-up:
 	@echo "🚀  Iniciando serviço download-car..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up download-car
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up download-car -d
 
 git-update:
 	@echo "🔄  Atualizando repositório Git..."
@@ -97,4 +97,4 @@ unit-test:
 
 up:
 	@echo "🔼  Iniciando todos os serviços..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up -d
