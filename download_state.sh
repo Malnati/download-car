@@ -20,7 +20,6 @@ if ! pyenv versions --bare | grep -q "^$PYTHON_VERSION$"; then
 fi
 
 # \u1F680 Instala dependências via pyenv
-pyenv install -s "$PYTHON_VERSION"
 PYENV_VERSION="$PYTHON_VERSION" pyenv exec pip install --upgrade pip
 PYENV_VERSION="$PYTHON_VERSION" pyenv exec pip install --editable .[paddle]
 
