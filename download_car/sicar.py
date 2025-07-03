@@ -412,6 +412,8 @@ class DownloadCar(Url):
                 max_retries=max_retries,
             )
 
+        return result
+
     def get_release_dates(self) -> Dict:
         """
         Get release date for each state in download-car system.
