@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import unittest
 from unittest.mock import patch
+import tempfile
 
 from download_car import DownloadCar, State, Polygon
 
