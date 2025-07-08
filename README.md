@@ -11,10 +11,17 @@ Ferramenta que automatiza o download de arquivos do [Cadastro Ambiental Rural (S
 [![Docker Pulls](https://img.shields.io/docker/pulls/malnati/download-car)](https://hub.docker.com/r/malnati/download-car)
 [![Coverage Status](https://coveralls.io/repos/github/Malnati/download-car/badge.svg?branch=main)](https://coveralls.io/github/Malnati/download-car?branch=main)
 [![interrogate](.github/interrogate_badge.svg)](https://interrogate.readthedocs.io/)
+[![translate](https://img.shields.io/badge/Translate-Google-blue.svg)](https://translate.google.com/translate?hl=en&sl=pt&tl=en&u=https://github.com/Malnati/download-car/blob/main/README.md)
 
 # ✨ Objetivo
 
 Permitir o download programático dos dados públicos do SICAR. O projeto inclui drivers para reconhecimento de captcha via **Tesseract** (padrão) ou **PaddleOCR**.
+
+> :globe_with_meridians: **Looking for this README in English?**
+>
+> Use [Google Translate version](https://translate.google.com/translate?hl=en&sl=pt&tl=en&u=https://github.com/Malnati/download-car/blob/main/README.md) (auto-generated).
+>
+> This project automates downloads of SICAR shapefiles (Brazilian Rural Environmental Registry), with CLI, Python, Docker, API and Jupyter/Colab support. See below for parameter examples, references and data sources.
 
 ---
 
@@ -51,6 +58,18 @@ A classe central deste pacote é `DownloadCar`, que disponibiliza três métodos
 - `download_state(state, polygon, folder="temp", tries=25, debug=False, chunk_size=1024, timeout=30)`
 - `download_country(polygon, folder="brazil", tries=25, debug=False, chunk_size=1024, timeout=30)`
 - `get_release_dates()`
+
+---
+
+# 📊 Fontes de Dados
+
+| Fonte                         | Descrição                                   | Link |
+|-------------------------------|---------------------------------------------|------|
+| Cadastro Ambiental Rural (CAR)| Limites de imóveis rurais                   | [SICAR](https://www.car.gov.br/publico/municipios/downloads) |
+| Mapbiomas                     | Uso e cobertura da terra, qualidade da pastagem, etc. | [Mapbiomas](https://mapbiomas.org/colecoes-mapbiomas-1?cama_set_language=pt-BR) |
+| Limites Territoriais           | País, estados, municípios (IBGE)            | [IBGE Malhas](https://www.ibge.gov.br/geociencias/organizacao-do-territorio/malhas-territoriais/15774-malhas.html) |
+| Terras Indígenas              | Limites oficiais FUNAI                      | [FUNAI](https://www.gov.br/funai/pt-br/atuacao/terras-indigenas/geoprocessamento-e-mapas) |
+| Unidades de Conservação       | Polígonos e tipos do MMA                    | [MMA](http://mapas.mma.gov.br/i3geo/datadownload.htm) |
 
 ---
 
@@ -270,6 +289,17 @@ Contributions are always welcome!
 ## Feedback
 
 If you have any feedback, please reach me at ricardomalnati@gmail.com
+
+# ❓ FAQ
+
+**Como faço para baixar todos os estados automaticamente?**
+- Use um loop shell com o script, ou modifique os exemplos para percorrer todos os códigos de estado.
+
+**Como saber se o download terminou corretamente?**
+- O script gera logs e arquivos zip por estado. Verifique os diretórios de saída.
+
+**Posso contribuir?**
+- Sim! Veja a seção "Contributing". Issues e pull requests são bem-vindos.
 
 # License
 
