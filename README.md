@@ -186,7 +186,7 @@ API poderá ser acessada em `http://localhost` via Nginx (porta `80`).
 
 ## 4️⃣ Execução via Google Colab (Notebook Interativo)
 
-[![Open In Collab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Malnati/download-car/blob/main/examples/colab.ipynb)
+[![Open In Collab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Malnati/download-car/blob/main/colab.ipynb)
 
 O notebook permite baixar os shapefiles diretamente no navegador sem instalar nada.
 
