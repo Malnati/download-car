@@ -24,7 +24,7 @@ python -m http.server 8080
 
 ### ✨ Design Moderno com Tema Bootstrap Popular
 - **Bootstrap Icons 1.11.3**: Biblioteca de ícones mais popular e gratuita
-- **Cores da EMBRAPA**: Verde institucional (#2E7D32, #4CAF50, #1B5E20)
+- **Cores do Sistema**: Verde institucional (#2E7D32, #4CAF50, #1B5E20)
 - **Bootstrap 5.4.0**: Framework CSS moderno e responsivo
 - **Google Fonts Inter**: Tipografia moderna para melhor legibilidade
 - **Gradientes modernos**: Efeitos visuais sofisticados
@@ -131,23 +131,23 @@ python -m http.server 8080
 - **Botões compactos**
 - **Scroll horizontal** na tabela
 
-## 🎯 Cores EMBRAPA
+## 🎯 Cores do Sistema
 
 ```css
 :root {
-    --embrapa-green: #2E7D32;        /* Verde principal */
-    --embrapa-light-green: #4CAF50;  /* Verde claro */
-    --embrapa-dark-green: #1B5E20;   /* Verde escuro */
-    --embrapa-yellow: #FFC107;       /* Amarelo */
-    --embrapa-orange: #FF9800;       /* Laranja */
-    --embrapa-red: #F44336;          /* Vermelho */
-    --embrapa-gray: #757575;         /* Cinza */
-    --embrapa-light-gray: #F5F5F5;   /* Cinza claro */
+    --system-green: #2E7D32;        /* Verde principal */
+    --system-light-green: #4CAF50;  /* Verde claro */
+    --system-dark-green: #1B5E20;   /* Verde escuro */
+    --system-yellow: #FFC107;       /* Amarelo */
+    --system-orange: #FF9800;       /* Laranja */
+    --system-red: #F44336;          /* Vermelho */
+    --system-gray: #757575;         /* Cinza */
+    --system-light-gray: #F5F5F5;   /* Cinza claro */
     
-    /* Gradientes EMBRAPA */
-    --embrapa-gradient: linear-gradient(135deg, var(--embrapa-green), var(--embrapa-light-green));
-    --embrapa-gradient-dark: linear-gradient(135deg, var(--embrapa-dark-green), var(--embrapa-green));
-    --embrapa-gradient-light: linear-gradient(135deg, var(--embrapa-light-green), #66BB6A);
+    /* Gradientes do Sistema */
+    --system-gradient: linear-gradient(135deg, var(--system-green), var(--system-light-green));
+    --system-gradient-dark: linear-gradient(135deg, var(--system-dark-green), var(--system-green));
+    --system-gradient-light: linear-gradient(135deg, var(--system-light-green), #66BB6A);
 }
 ```
 
@@ -171,7 +171,7 @@ python -m http.server 8080
 - **Navbar com gradiente**: Efeito visual sofisticado
 - **Botões com animações**: Efeitos hover e transições
 - **Formulários estilizados**: Campos com foco visual
-- **Scrollbar customizada**: Cores EMBRAPA
+- **Scrollbar customizada**: Cores do Sistema
 - **Footer institucional**: Identidade visual
 
 ### Animações

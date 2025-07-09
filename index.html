@@ -16,31 +16,31 @@
     
     <style>
         :root {
-            /* Cores EMBRAPA */
-            --embrapa-green: #2E7D32;
-            --embrapa-light-green: #4CAF50;
-            --embrapa-dark-green: #1B5E20;
-            --embrapa-yellow: #FFC107;
-            --embrapa-orange: #FF9800;
-            --embrapa-red: #F44336;
-            --embrapa-gray: #757575;
-            --embrapa-light-gray: #F5F5F5;
+            /* Cores do Sistema */
+            --system-green: #2E7D32;
+            --system-light-green: #4CAF50;
+            --system-dark-green: #1B5E20;
+            --system-yellow: #FFC107;
+            --system-orange: #FF9800;
+            --system-red: #F44336;
+            --system-gray: #757575;
+            --system-light-gray: #F5F5F5;
             
             /* Cores do tema Bootstrap moderno adaptadas */
-            --bs-primary: var(--embrapa-green);
+            --bs-primary: var(--system-green);
             --bs-primary-rgb: 46, 125, 50;
-            --bs-secondary: var(--embrapa-gray);
-            --bs-success: var(--embrapa-light-green);
-            --bs-info: var(--embrapa-light-green);
-            --bs-warning: var(--embrapa-orange);
-            --bs-danger: var(--embrapa-red);
-            --bs-light: var(--embrapa-light-gray);
-            --bs-dark: var(--embrapa-dark-green);
+            --bs-secondary: var(--system-gray);
+            --bs-success: var(--system-light-green);
+            --bs-info: var(--system-light-green);
+            --bs-warning: var(--system-orange);
+            --bs-danger: var(--system-red);
+            --bs-light: var(--system-light-gray);
+            --bs-dark: var(--system-dark-green);
             
-            /* Gradientes EMBRAPA */
-            --embrapa-gradient: linear-gradient(135deg, var(--embrapa-green), var(--embrapa-light-green));
-            --embrapa-gradient-dark: linear-gradient(135deg, var(--embrapa-dark-green), var(--embrapa-green));
-            --embrapa-gradient-light: linear-gradient(135deg, var(--embrapa-light-green), #66BB6A);
+            /* Gradientes do Sistema */
+            --system-gradient: linear-gradient(135deg, var(--system-green), var(--system-light-green));
+            --system-gradient-dark: linear-gradient(135deg, var(--system-dark-green), var(--system-green));
+            --system-gradient-light: linear-gradient(135deg, var(--system-light-green), #66BB6A);
         }
 
         body {
@@ -49,9 +49,9 @@
             min-height: 100vh;
         }
 
-        /* Navbar moderno com tema EMBRAPA */
+        /* Navbar moderno com tema do Sistema */
         .navbar {
-            background: var(--embrapa-gradient) !important;
+            background: var(--system-gradient) !important;
             box-shadow: 0 4px 20px rgba(46, 125, 50, 0.15);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -84,7 +84,7 @@
         }
 
         .card-header {
-            background: var(--embrapa-gradient);
+            background: var(--system-gradient);
             color: white;
             border-radius: 16px 16px 0 0 !important;
             font-weight: 600;
@@ -105,14 +105,15 @@
         }
 
         .table th {
-            background: linear-gradient(135deg, var(--embrapa-light-gray), #ffffff);
-            border-bottom: 3px solid var(--embrapa-green);
+            background: linear-gradient(135deg, var(--system-light-gray), #ffffff);
+            border-bottom: 3px solid var(--system-green);
             font-weight: 600;
-            color: var(--embrapa-dark-green);
+            color: var(--system-dark-green);
             padding: 1rem 0.75rem;
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            text-align: center;
         }
 
         .table td {
@@ -120,6 +121,13 @@
             border-color: #f1f3f4;
             padding: 1rem 0.75rem;
             transition: background-color 0.2s ease;
+            text-align: center;
+        }
+
+        /* Coluna Estado - alinhamento à esquerda */
+        .table th:first-child,
+        .table td:first-child {
+            text-align: left;
         }
 
         .table tbody tr:hover {
@@ -168,7 +176,7 @@
         }
 
         .btn-download {
-            background: var(--embrapa-gradient);
+            background: var(--system-gradient);
             color: white;
             font-weight: 600;
             padding: 0.5rem 1rem;
@@ -177,28 +185,28 @@
         }
 
         .btn-download:hover {
-            background: var(--embrapa-gradient-dark);
+            background: var(--system-gradient-dark);
             color: white;
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(46, 125, 50, 0.4);
         }
 
         .btn-download:disabled {
-            background: var(--embrapa-gray);
+            background: var(--system-gray);
             transform: none;
             box-shadow: none;
         }
 
         .btn-outline-primary {
-            border: 2px solid var(--embrapa-green);
-            color: var(--embrapa-green);
+            border: 2px solid var(--system-green);
+            color: var(--system-green);
             background: transparent;
         }
 
         .btn-outline-primary:hover {
-            background: var(--embrapa-green);
+            background: var(--system-green);
             color: white;
-            border-color: var(--embrapa-green);
+            border-color: var(--system-green);
         }
 
         /* Formulários modernos */
@@ -212,7 +220,7 @@
         }
 
         .form-control:focus {
-            border-color: var(--embrapa-green);
+            border-color: var(--system-green);
             box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.15);
             background: white;
         }
@@ -225,28 +233,28 @@
 
         .form-label {
             font-weight: 600;
-            color: var(--embrapa-dark-green);
+            color: var(--system-dark-green);
             margin-bottom: 0.5rem;
         }
 
         /* Status icons com Bootstrap Icons */
         .status-success {
-            color: var(--embrapa-green);
+            color: var(--system-green);
             font-size: 1.2rem;
         }
 
         .status-error {
-            color: var(--embrapa-red);
+            color: var(--system-red);
             font-size: 1.2rem;
         }
 
         .status-warning {
-            color: var(--embrapa-orange);
+            color: var(--system-orange);
             font-size: 1.2rem;
         }
 
         .status-pending {
-            color: var(--embrapa-gray);
+            color: var(--system-gray);
             font-size: 1.2rem;
         }
 
@@ -266,6 +274,7 @@
             border: none;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
             backdrop-filter: blur(10px);
+            margin-bottom: 0.5rem;
         }
 
         .toast-header {
@@ -275,6 +284,54 @@
 
         .toast-body {
             padding: 1rem;
+        }
+
+        /* Toast container para empilhamento */
+        .toast-container {
+            z-index: 9999;
+        }
+
+        /* Tooltip customizado para status */
+        .status-tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .status-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 300px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            border-radius: 8px;
+            padding: 12px;
+            position: absolute;
+            z-index: 10000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -150px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            word-wrap: break-word;
+        }
+
+        .status-tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        .status-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
         }
 
         /* Badges modernos */
@@ -338,12 +395,12 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--embrapa-green);
+            background: var(--system-green);
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--embrapa-dark-green);
+            background: var(--system-dark-green);
         }
 
         /* Estados dos estados */
@@ -360,9 +417,43 @@
             padding: 2rem 0;
         }
 
+        /* Configuração da API */
+        .api-config-section {
+            display: none;
+        }
+
+        .api-config-section.show {
+            display: block;
+        }
+
+        .api-config-toggle {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .api-config-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .api-config-toggle .bi-chevron-down,
+        .api-config-toggle .bi-chevron-up {
+            transition: transform 0.3s ease;
+        }
+
+        .api-config-toggle:hover .bi-chevron-down,
+        .api-config-toggle:hover .bi-chevron-up {
+            transform: scale(1.1);
+        }
+
+        /* Espaçamento entre containers */
+        .estados-container {
+            margin-top: 2rem;
+        }
+
         /* Footer sutil */
         .footer {
-            background: var(--embrapa-gradient);
+            background: var(--system-gradient);
             color: white;
             text-align: center;
             padding: 1rem 0;
@@ -375,14 +466,14 @@
     <!-- Navbar moderno -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="#">
+            <div class="navbar-brand">
                 <i class="bi bi-download me-2"></i>
                 Download CAR - Estados Brasileiros
-            </a>
+            </div>
             <div class="navbar-nav ms-auto">
                 <span class="navbar-text">
                     <i class="bi bi-gear me-1"></i>
-                    Sistema EMBRAPA
+                    Sistema de Download CAR
                 </span>
             </div>
         </div>
@@ -392,11 +483,12 @@
         <div class="container">
             <!-- Configuração da API -->
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header api-config-toggle" onclick="toggleApiConfig()">
                     <i class="bi bi-gear-fill me-2"></i>
                     Configuração da API
+                    <i class="bi bi-chevron-down ms-auto" id="configToggleIcon"></i>
                 </div>
-                <div class="card-body">
+                <div class="card-body api-config-section" id="apiConfigSection">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="apiUrl" class="form-label">
@@ -416,7 +508,7 @@
             </div>
 
             <!-- Tabela de Estados -->
-            <div class="card">
+            <div class="card estados-container">
                 <div class="card-header">
                     <i class="bi bi-table me-2"></i>
                     Estados Brasileiros - Download CAR
@@ -450,22 +542,14 @@
         <div class="container">
             <p class="mb-0">
                 <i class="bi bi-c-circle me-1"></i>
-                2024 EMBRAPA - Sistema de Download CAR
+                2024 Sistema de Download CAR - Licença MIT
             </p>
         </div>
     </footer>
 
     <!-- Toast para notificações -->
     <div class="toast-container position-fixed top-0 end-0 p-3">
-        <div id="notificationToast" class="toast" role="alert">
-            <div class="toast-header">
-                <i class="bi bi-info-circle me-2"></i>
-                <strong class="me-auto">Notificação</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body" id="toastMessage">
-            </div>
-        </div>
+        <!-- Toasts serão criados dinamicamente aqui -->
     </div>
 
     <!-- Bootstrap JS -->
@@ -519,6 +603,32 @@
             loadDownloadHistory();
         });
 
+        // Alternar exibição da configuração da API
+        function toggleApiConfig() {
+            const configSection = document.getElementById('apiConfigSection');
+            const toggleIcon = document.getElementById('configToggleIcon');
+            
+            if (configSection.classList.contains('show')) {
+                configSection.classList.remove('show');
+                toggleIcon.className = 'bi bi-chevron-down ms-auto';
+            } else {
+                configSection.classList.add('show');
+                toggleIcon.className = 'bi bi-chevron-up ms-auto';
+            }
+        }
+
+        // Função de teste para simular erros (apenas para demonstração)
+        function testErrorHandling() {
+            // Simular erro para teste
+            const testEstado = 'SP';
+            if (!downloadHistory[testEstado]) downloadHistory[testEstado] = {};
+            downloadHistory[testEstado].status = 'error';
+            downloadHistory[testEstado].errorMessage = 'Erro de teste: Timeout na conexão com o servidor. Verifique se a API está rodando na porta 8000.';
+            saveDownloadHistory();
+            renderEstadosTable();
+            showNotification('Erro de teste simulado para SP', 'error');
+        }
+
         // Renderizar tabela de estados
         function renderEstadosTable() {
             const tbody = document.getElementById('estadosTable');
@@ -553,7 +663,7 @@
                         </small>
                     </td>
                     <td>
-                        ${getStatusIcon(history.status)}
+                        ${getStatusIcon(history.status, history.errorMessage)}
                     </td>
                     <td>
                         <button class="btn btn-download btn-sm" onclick="downloadEstado('${estado.sigla}')" id="btn-${estado.sigla}">
@@ -587,13 +697,27 @@
             saveDownloadHistory();
         }
 
+        // Escapar HTML para segurança
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Obter ícone de status com Bootstrap Icons
-        function getStatusIcon(status) {
+        function getStatusIcon(status, errorMessage = null) {
             switch(status) {
                 case 'success':
                     return '<i class="bi bi-check-circle-fill status-success" title="Download realizado com sucesso"></i>';
                 case 'error':
-                    return '<i class="bi bi-x-circle-fill status-error" title="Erro no download"></i>';
+                    if (errorMessage) {
+                        return `<div class="status-tooltip">
+                                    <i class="bi bi-x-circle-fill status-error" title="Erro no download"></i>
+                                    <span class="tooltip-text">${escapeHtml(errorMessage)}</span>
+                                </div>`;
+                    } else {
+                        return '<i class="bi bi-x-circle-fill status-error" title="Erro no download"></i>';
+                    }
                 case 'pending':
                     return '<i class="bi bi-clock-fill status-warning" title="Download em andamento"></i>';
                 default:
@@ -697,13 +821,21 @@
 
                     // Atualizar histórico
                     downloadHistory[estado].status = 'success';
+                    downloadHistory[estado].errorMessage = null; // Limpar erro anterior
                     showNotification(`Download de ${estado} realizado com sucesso!`, 'success');
                 } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || 'Erro no download');
+                    let errorMessage = 'Erro no download';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorData.message || errorData.error || 'Erro no download';
+                    } catch (parseError) {
+                        errorMessage = `Erro HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
                 }
             } catch (error) {
                 downloadHistory[estado].status = 'error';
+                downloadHistory[estado].errorMessage = error.message;
                 showNotification(`Erro no download de ${estado}: ${error.message}`, 'error');
             } finally {
                 // Restaurar botão
@@ -718,17 +850,45 @@
 
         // Mostrar notificação
         function showNotification(message, type = 'info') {
-            const toast = document.getElementById('notificationToast');
-            const toastMessage = document.getElementById('toastMessage');
+            const toastContainer = document.querySelector('.toast-container');
             
-            toastMessage.textContent = message;
-            
-            // Atualizar classes do toast
+            // Criar novo toast
+            const toastId = 'toast-' + Date.now();
+            const toast = document.createElement('div');
             toast.className = `toast ${type === 'success' ? 'bg-success text-white' : type === 'error' ? 'bg-danger text-white' : 'bg-info text-white'}`;
+            toast.id = toastId;
+            toast.setAttribute('role', 'alert');
+            
+            // Determinar ícone baseado no tipo
+            let icon = 'bi-info-circle';
+            if (type === 'success') icon = 'bi-check-circle';
+            else if (type === 'error') icon = 'bi-exclamation-triangle';
+            
+            toast.innerHTML = `
+                <div class="toast-header">
+                    <i class="bi ${icon} me-2"></i>
+                    <strong class="me-auto">${type === 'success' ? 'Sucesso' : type === 'error' ? 'Erro' : 'Informação'}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            `;
+            
+            // Adicionar toast ao container
+            toastContainer.appendChild(toast);
             
             // Mostrar toast
-            const bsToast = new bootstrap.Toast(toast);
+            const bsToast = new bootstrap.Toast(toast, {
+                autohide: true,
+                delay: type === 'error' ? 8000 : 5000
+            });
             bsToast.show();
+            
+            // Remover toast do DOM após ser escondido
+            toast.addEventListener('hidden.bs.toast', function() {
+                toast.remove();
+            });
         }
     </script>
 </body>
