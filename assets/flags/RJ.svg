@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16" width="24" height="16">
   <rect width="24" height="16" fill="#ffffff"/>
   <rect x="0" y="0" width="24" height="8" fill="#0000ff"/>
-  <text x="12" y="10" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#002776">RJ</text>
+  <circle cx="12" cy="8" r="2" fill="#ffffff"/>
+  <polygon points="12,6 13,8 12,10 11,8" fill="#0000ff"/>
 </svg>

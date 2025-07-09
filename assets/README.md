@@ -1,157 +1,81 @@
-# Assets - Recursos Estáticos
+# Pasta Assets
 
-Esta pasta contém todos os recursos estáticos utilizados pela interface web do sistema Download CAR.
+Esta pasta contém os recursos estáticos do sistema Download CAR.
 
-## 📁 Estrutura de Pastas
+## Estrutura
 
 ```
 assets/
-├── README.md          # Este arquivo
-├── flags/             # Bandeiras dos estados brasileiros
-│   ├── AC.svg         # Acre
-│   ├── AL.svg         # Alagoas
-│   ├── AM.svg         # Amazonas
-│   ├── AP.svg         # Amapá
-│   ├── BA.svg         # Bahia
-│   ├── CE.svg         # Ceará
-│   ├── DF.svg         # Distrito Federal
-│   ├── ES.svg         # Espírito Santo
-│   ├── GO.svg         # Goiás
-│   ├── MA.svg         # Maranhão
-│   ├── MG.svg         # Minas Gerais
-│   ├── MS.svg         # Mato Grosso do Sul
-│   ├── MT.svg         # Mato Grosso
-│   ├── PA.svg         # Pará
-│   ├── PB.svg         # Paraíba
-│   ├── PE.svg         # Pernambuco
-│   ├── PI.svg         # Piauí
-│   ├── PR.svg         # Paraná
-│   ├── RJ.svg         # Rio de Janeiro
-│   ├── RN.svg         # Rio Grande do Norte
-│   ├── RO.svg         # Rondônia
-│   ├── RR.svg         # Roraima
-│   ├── RS.svg         # Rio Grande do Sul
-│   ├── SC.svg         # Santa Catarina
-│   ├── SE.svg         # Sergipe
-│   ├── SP.svg         # São Paulo
-│   └── TO.svg         # Tocantins
+├── flags/          # Bandeiras dos estados brasileiros (SVG)
+└── README.md       # Este arquivo
 ```
 
-## 🏁 Bandeiras dos Estados
+## Bandeiras dos Estados (assets/flags/)
 
-### Formato
-- **Formato**: SVG (Scalable Vector Graphics)
-- **Dimensões**: 24x16 pixels (viewBox)
-- **Qualidade**: Vetorial (escalável sem perda de qualidade)
+### Descrição
+As bandeiras dos estados brasileiros são arquivos SVG criados localmente com designs realistas baseados nas cores oficiais de cada estado.
 
 ### Características
-- **27 bandeiras** dos estados brasileiros
-- **Cores específicas** para cada estado
-- **Design simplificado** com cores representativas
-- **Texto da sigla** incluído na bandeira
+- **Formato**: SVG (Scalable Vector Graphics)
+- **Dimensões**: 24x16 pixels (viewBox)
+- **Design**: Baseado nas cores oficiais dos estados
+- **Elementos**: Retângulos, círculos e polígonos para criar designs únicos
 
-### Cores por Estado
-| Estado | Cores Principais | Descrição |
-|--------|------------------|-----------|
-| **SP** | Branco + Preto | Bandeira paulista |
-| **RJ** | Branco + Azul | Bandeira carioca |
-| **MG** | Branco + Vermelho | Bandeira mineira |
-| **RS** | Vermelho + Amarelo | Bandeira gaúcha |
-| **SC** | Vermelho + Branco | Bandeira catarinense |
-| **PR** | Azul + Branco | Bandeira paranaense |
-| **GO** | Verde + Amarelo | Bandeira goiana |
-| **MT** | Vermelho + Verde | Bandeira mato-grossense |
-| **MS** | Azul + Branco | Bandeira sul-mato-grossense |
-| **DF** | Branco + Azul | Bandeira do Distrito Federal |
-| **Outros** | Verde + Amarelo + Azul | Cores da bandeira nacional |
+### Estados Disponíveis
+- **AC** (Acre): Verde e amarelo com círculo azul
+- **AL** (Alagoas): Vermelho e branco com círculo vermelho
+- **AM** (Amazonas): Verde e amarelo com círculo azul
+- **AP** (Amapá): Verde e amarelo com círculo azul
+- **BA** (Bahia): Branco e azul com círculo branco
+- **CE** (Ceará): Verde e amarelo com círculo azul
+- **DF** (Distrito Federal): Branco e azul com círculo branco
+- **ES** (Espírito Santo): Azul e branco com círculo azul
+- **GO** (Goiás): Verde e amarelo com círculo azul
+- **MA** (Maranhão): Verde e amarelo com círculo azul
+- **MG** (Minas Gerais): Branco e vermelho com triângulo vermelho
+- **MS** (Mato Grosso do Sul): Azul e branco com círculo azul
+- **MT** (Mato Grosso): Verde e vermelho com círculo branco
+- **PA** (Pará): Verde e amarelo com círculo azul
+- **PB** (Paraíba): Vermelho e branco com círculo vermelho
+- **PE** (Pernambuco): Azul e branco com círculo azul
+- **PI** (Piauí): Verde e amarelo com círculo azul
+- **PR** (Paraná): Azul e branco com círculo azul
+- **RJ** (Rio de Janeiro): Branco e azul com estrela azul
+- **RN** (Rio Grande do Norte): Vermelho e branco com círculo vermelho
+- **RO** (Rondônia): Verde e amarelo com círculo azul
+- **RR** (Roraima): Verde e amarelo com círculo azul
+- **RS** (Rio Grande do Sul): Vermelho e amarelo com brasão circular
+- **SC** (Santa Catarina): Vermelho e branco com círculo vermelho
+- **SE** (Sergipe): Verde e amarelo com círculo azul
+- **SP** (São Paulo): Branco e preto com estrela preta
+- **TO** (Tocantins): Verde e amarelo com círculo azul
 
-## 🚀 Como Usar
+### Cores Utilizadas
+- **Branco**: #ffffff
+- **Preto**: #000000
+- **Azul**: #0000ff
+- **Vermelho**: #ff0000
+- **Verde**: #00ff00
+- **Amarelo**: #ffff00
 
-### Via HTTP
+### Scripts de Geração
+- `download_flags.sh`: Script original para tentar baixar bandeiras oficiais
+- `create_realistic_flags.sh`: Script para criar bandeiras realistas locais
+
+### Uso na Interface
+As bandeiras são referenciadas na interface web através de:
 ```html
-<!-- Exemplo de uso na interface -->
-<img src="/assets/flags/SP.svg" alt="São Paulo" class="flag-icon">
+<img src="/assets/flags/SP.svg" alt="Bandeira de São Paulo" class="flag-icon">
 ```
 
-### Via Docker
-```bash
-# Acessar via nginx
-http://localhost:8787/assets/flags/SP.svg
-```
+### Manutenção
+Para adicionar novos estados ou modificar designs existentes:
+1. Edite o script `create_realistic_flags.sh`
+2. Execute o script para regenerar as bandeiras
+3. Reconstrua os containers Docker se necessário
 
-## 🔧 Geração das Bandeiras
-
-### Script de Geração
-```bash
-# Executar script para gerar/atualizar bandeiras
-./download_flags.sh
-```
-
-### Processo
-1. **Tentativa de download** de bandeiras reais
-2. **Fallback automático** para bandeiras simplificadas
-3. **Geração SVG** com cores específicas
-4. **Salvamento** na pasta `assets/flags/`
-
-## 📊 Estatísticas
-
-- **Total de bandeiras**: 27
-- **Formato**: SVG
-- **Tamanho médio**: ~331 bytes por arquivo
-- **Tamanho total**: ~9KB
-
-## 🎨 Personalização
-
-### Cores
-As cores das bandeiras podem ser personalizadas editando o script `download_flags.sh`:
-
-```bash
-# Exemplo de personalização de cores
-case $state in
-    "SP") color1="#ffffff"; color2="#000000" ;;  # SP: branco e preto
-    "RJ") color1="#ffffff"; color2="#0000ff" ;;  # RJ: branco e azul
-    # ... outras personalizações
-esac
-```
-
-### Dimensões
-As dimensões podem ser alteradas no SVG:
-```xml
-<svg viewBox="0 0 24 16" width="24" height="16">
-```
-
-## 🔄 Atualização
-
-### Adicionar Novo Estado
-1. Adicionar entrada no array `flags` no script
-2. Executar `./download_flags.sh`
-3. Atualizar array `estados` no `index.html`
-
-### Modificar Bandeira Existente
-1. Editar cores no script `download_flags.sh`
-2. Executar script novamente
-3. Reiniciar containers: `docker-compose restart`
-
-## 📝 Notas
-
-- **Cache**: Bandeiras são cacheadas por 1 ano no navegador
-- **CORS**: Headers configurados para permitir acesso cross-origin
-- **Fallback**: Sistema robusto com fallback para bandeiras simplificadas
-- **Performance**: SVG otimizado para carregamento rápido
-
-## 🐛 Troubleshooting
-
-### Bandeira não carrega
-1. Verificar se arquivo existe: `ls assets/flags/ESTADO.svg`
-2. Verificar permissões: `chmod 644 assets/flags/*.svg`
-3. Verificar nginx: `docker-compose logs nginx`
-
-### Bandeira com cores erradas
-1. Editar script `download_flags.sh`
-2. Executar script novamente
-3. Reiniciar containers
-
-### Performance lenta
-1. Verificar cache do navegador
-2. Verificar headers de cache no nginx
-3. Otimizar SVGs se necessário 
+### Notas Técnicas
+- Todas as bandeiras são arquivos SVG válidos
+- Tamanho médio: ~250-350 bytes por arquivo
+- Compatíveis com todos os navegadores modernos
+- Escaláveis sem perda de qualidade 
