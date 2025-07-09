@@ -64,8 +64,23 @@ done
 
 # Verifica se os parâmetros obrigatórios foram passados
 if [ -z "$STATE" ] || [ -z "$POLYGON" ] || [ -z "$FOLDER" ]; then
-  echo "Erro: Parâmetros obrigatórios faltando."
-  echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout> --max_retries <max_retries>"
+  echo "❌ Erro: Parâmetros obrigatórios faltando."
+  echo ""
+  echo "📋 Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> [--tries <tries>] [--debug <debug>] [--timeout <timeout>] [--max_retries <max_retries>]"
+  echo ""
+  echo "💡 Exemplo de chamada correta:"
+  echo "   ./download_state.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True"
+  echo ""
+  echo "📝 Parâmetros obrigatórios:"
+  echo "   --state: Sigla do estado (ex: DF, SP, RJ)"
+  echo "   --polygon: Nome do polígono (ex: APPS, URBANO)"
+  echo "   --folder: Pasta de destino para os dados"
+  echo ""
+  echo "📝 Parâmetros opcionais:"
+  echo "   --tries: Número de tentativas (padrão: 25)"
+  echo "   --debug: Modo debug True/False (padrão: False)"
+  echo "   --timeout: Timeout em segundos (padrão: 30)"
+  echo "   --max_retries: Máximo de retry (padrão: 5)"
   exit 1
 fi
 
