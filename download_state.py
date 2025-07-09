@@ -27,8 +27,8 @@ timeout = args.timeout
 max_retries = args.max_retries
 
 # Create DownloadCar instance (default driver is Tesseract)
-car = DownloadCar(driver=Tesseract)
-# car = DownloadCar(driver=Paddle)
+car = DownloadCar(driver=Tesseract())
+# car = DownloadCar(driver=Paddle())
 
 # Download polygon for the selected state
 car.download_state(

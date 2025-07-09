@@ -218,7 +218,7 @@ async def download_state_endpoint(
     - Em caso de erro: JSON com mensagem de erro
     """
     try:
-        car = DownloadCar(driver=Tesseract)
+        car = DownloadCar(driver=Tesseract())
         
         # Mapear o valor do polígono para o enum correto
         polygon_mapping = {
@@ -339,7 +339,7 @@ async def download_country_endpoint(
     - Cada estado é baixado sequencialmente
     """
     try:
-        car = DownloadCar(driver=Tesseract)
+        car = DownloadCar(driver=Tesseract())
         
         # Mapear o valor do polígono para o enum correto
         polygon_mapping = {
