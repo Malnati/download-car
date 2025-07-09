@@ -507,6 +507,27 @@
             margin-top: 3rem;
             font-size: 0.9rem;
         }
+
+        /* Links de download */
+        .download-link {
+            color: var(--system-green) !important;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .download-link:hover {
+            color: var(--system-dark-green) !important;
+            text-decoration: underline;
+            transform: translateY(-1px);
+        }
+
+        .download-link:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -575,10 +596,9 @@
                                     <th><i class="bi bi-calendar-event me-1"></i>&nbsp;Última</th>
                                     <th><i class="bi bi-info-circle me-1"></i>&nbsp;Status</th>
                                     <th><i class="bi bi-shapes me-1"></i>&nbsp;Polígono</th>
-                                    <th><i class="bi bi-card-text me-1"></i>&nbsp;CAR</th>
-                                    <th><i class="bi bi-house me-1"></i>&nbsp;Propriedade</th>
+                                    <th><i class="bi bi-link-45deg me-1"></i>&nbsp;Download estado</th>
+                                    <th><i class="bi bi-house me-1"></i>&nbsp;Download propriedade</th>
                                     <th><i class="bi bi-play-circle me-1"></i>&nbsp;Ação</th>
-                                    <th><i class="bi bi-link-45deg me-1"></i>&nbsp;Link</th>
                                 </tr>
                             </thead>
                             <tbody id="estadosTable">
@@ -864,29 +884,13 @@
                         </select>
                     </td>
                     <td>
-                        <input type="text" class="form-control form-control-sm" 
-                               placeholder="Código CAR" 
-                               value="${history.car || ''}" 
-                               onchange="updateCar('${estado.sigla}', this.value)"
-                               ${history.status !== 'success' ? 'disabled' : ''}>
+                        ${getDownloadLink(estado.sigla, history)}
                     </td>
                     <td>
                         ${getPropertyLink(estado.sigla, history)}
                     </td>
                     <td>
-                        <button class="btn btn-download btn-sm" onclick="downloadEstado('${estado.sigla}')" id="btn-${estado.sigla}">
-                            <span class="btn-text">
-                                <i class="bi bi-cloud-download me-1"></i>
-                                Requisitar
-                            </span>
-                            <span class="loading">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                Processando...
-                            </span>
-                        </button>
-                    </td>
-                    <td>
-                        ${getDownloadLink(estado.sigla, history)}
+                        ${getActionButton(estado.sigla, history)}
                     </td>
                 `;
                 
@@ -932,10 +936,10 @@
         // Obter link de download
         function getDownloadLink(estado, history) {
             if (history.status === 'success' && history.fileReady) {
-                return `<button class="btn btn-success btn-sm" onclick="downloadFile('${estado}')">
-                            <i class="bi bi-download me-1"></i>
-                            Download
-                        </button>`;
+                return `<a href="#" class="download-link" onclick="downloadFile('${estado}'); return false;">
+                            <i class="bi bi-download"></i>
+                            Download ${estado}
+                        </a>`;
             } else if (history.status === 'success') {
                 return `<span class="text-muted small">Processado</span>`;
             } else {
@@ -945,16 +949,94 @@
 
         // Obter link de propriedade
         function getPropertyLink(estado, history) {
-            if (history.status === 'success' && history.car && history.car.trim() !== '') {
-                return `<button class="btn btn-info btn-sm" onclick="downloadProperty('${estado}', '${history.car}')">
-                            <i class="bi bi-house me-1"></i>
-                            Propriedade
-                        </button>`;
-            } else if (history.status === 'success') {
-                return `<span class="text-muted small">Informe CAR</span>`;
+            if (history.status === 'success') {
+                return `<div class="d-flex flex-column gap-1">
+                            <input type="text" class="form-control form-control-sm" 
+                                   placeholder="Código CAR" 
+                                   value="${history.car || ''}" 
+                                   onchange="updateCar('${estado}', this.value)">
+                            ${history.car && history.car.trim() !== '' ? 
+                                `<a href="#" class="download-link" onclick="downloadProperty('${estado}', '${history.car}'); return false;">
+                                    <i class="bi bi-house"></i>
+                                    Download Propriedade
+                                </a>` : 
+                                `<span class="text-muted small">Informe CAR</span>`
+                            }
+                        </div>`;
             } else {
                 return `<span class="text-muted small">N/A</span>`;
             }
+        }
+
+        // Obter botão de ação
+        function getActionButton(estado, history) {
+            // Se não há status (nenhum download realizado), mostrar botão "Requisitar"
+            if (!history.status || history.status === '') {
+                return `<button class="btn btn-download btn-sm" onclick="downloadEstado('${estado}')" id="btn-${estado}">
+                            <span class="btn-text">
+                                <i class="bi bi-cloud-download me-1"></i>
+                                Requisitar
+                            </span>
+                            <span class="loading">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                Processando...
+                            </span>
+                        </button>`;
+            }
+            
+            // Se o download foi bem-sucedido e o campo CAR está preenchido com pelo menos 1 caractere, mostrar "Procurar"
+            if (history.status === 'success' && history.car && history.car.trim().length > 0) {
+                return `<button class="btn btn-download btn-sm" onclick="downloadEstado('${estado}')" id="btn-${estado}">
+                            <span class="btn-text">
+                                <i class="bi bi-search me-1"></i>
+                                Procurar
+                            </span>
+                            <span class="loading">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                Processando...
+                            </span>
+                        </button>`;
+            }
+            
+            // Se o download foi bem-sucedido ou falhou, mostrar botão "Reiniciar"
+            if (history.status === 'success' || history.status === 'error') {
+                return `<button class="btn btn-download btn-sm" onclick="downloadEstado('${estado}')" id="btn-${estado}">
+                            <span class="btn-text">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Reiniciar
+                            </span>
+                            <span class="loading">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                Processando...
+                            </span>
+                        </button>`;
+            }
+            
+            // Se está em andamento, mostrar botão desabilitado
+            if (history.status === 'pending') {
+                return `<button class="btn btn-download btn-sm" disabled id="btn-${estado}">
+                            <span class="btn-text">
+                                <i class="bi bi-clock me-1"></i>
+                                Processando...
+                            </span>
+                            <span class="loading">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                Processando...
+                            </span>
+                        </button>`;
+            }
+            
+            // Fallback - mostrar botão "Requisitar"
+            return `<button class="btn btn-download btn-sm" onclick="downloadEstado('${estado}')" id="btn-${estado}">
+                        <span class="btn-text">
+                            <i class="bi bi-cloud-download me-1"></i>
+                            Requisitar
+                        </span>
+                        <span class="loading">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Processando...
+                        </span>
+                    </button>`;
         }
 
         // Obter ícone de status com Bootstrap Icons
