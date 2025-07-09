@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import tempfile
 import shutil
@@ -7,7 +7,8 @@ import os
 import zipfile
 from pathlib import Path
 from typing import Optional
-import os
+import subprocess
+import sys
 
 from download_car import DownloadCar, State, Polygon
 from download_car.drivers import Tesseract
@@ -66,15 +67,15 @@ app = FastAPI(
     
     ## Tipos de Polígonos Disponíveis
     
-    - **AREA_IMOVEL**: Perímetros dos imóveis (Property perimeters) - **PADRÃO**
+    - **AREA_PROPERTY**: Perímetros dos imóveis (Property perimeters) - **PADRÃO**
     - **APPS**: Área de Preservação Permanente (Permanent preservation area)
-    - **VEGETACAO_NATIVA**: Remanescente de Vegetação Nativa (Native Vegetation Remnants)
-    - **AREA_CONSOLIDADA**: Área Consolidada (Consolidated Area)
-    - **AREA_POUSIO**: Área de Pousio (Fallow Area)
-    - **HIDROGRAFIA**: Hidrografia (Hydrography)
-    - **USO_RESTRITO**: Uso Restrito (Restricted Use)
-    - **SERVIDAO_ADMINISTRATIVA**: Servidão Administrativa (Administrative Servitude)
-    - **RESERVA_LEGAL**: Reserva Legal (Legal reserve)
+    - **NATIVE_VEGETATION**: Remanescente de Vegetação Nativa (Native Vegetation Remnants)
+    - **CONSOLIDATED_AREA**: Área Consolidada (Consolidated Area)
+    - **AREA_FALL**: Área de Pousio (Fallow Area)
+    - **HYDROGRAPHY**: Hidrografia (Hydrography)
+    - **RESTRICTED_USE**: Uso Restrito (Restricted Use)
+    - **ADMINISTRATIVE_SERVICE**: Servidão Administrativa (Administrative Servitude)
+    - **LEGAL_RESERVE**: Reserva Legal (Legal reserve)
     """,
     version="1.0.0",
     contact={
@@ -126,6 +127,40 @@ def extract_and_find_shp(upload_file: UploadFile, temp_dir: str) -> str:
     raise ValueError(f"No .shp file found in zip '{upload_file.filename}'.")
 
 
+def run_download_state(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
+    """
+    Executa o download_state.py como subprocess e retorna o caminho do arquivo baixado.
+    """
+    # Garante que a pasta existe
+    os.makedirs(folder, exist_ok=True)
+    
+    # Constrói o comando
+    cmd = [
+        sys.executable, "download_state.py",
+        "--state", state,
+        "--polygon", polygon,
+        "--folder", folder,
+        "--tries", str(tries),
+        "--debug", str(debug).lower(),
+        "--timeout", str(timeout),
+        "--max_retries", str(max_retries)
+    ]
+    
+    # Executa o comando
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
+    
+    if result.returncode != 0:
+        raise Exception(f"Erro ao executar download_state.py: {result.stderr}")
+    
+    # Constrói o caminho esperado do arquivo
+    expected_file = os.path.join(folder, f"{state}_{polygon}.zip")
+    
+    if not os.path.exists(expected_file):
+        raise Exception(f"Arquivo não foi criado: {expected_file}")
+    
+    return expected_file
+
+
 @app.post(
     "/download_state",
     summary="Download de dados por estado",
@@ -139,7 +174,7 @@ def extract_and_find_shp(upload_file: UploadFile, temp_dir: str) -> str:
     ```bash
     curl -X POST "http://localhost:8000/download_state" \\
          -F "state=SP" \\
-         -F "polygon=AREA_IMOVEL" \\
+         -F "polygon=AREA_PROPERTY" \\
          -F "tries=25" \\
          -F "debug=false" \\
          --output SP_AREA_IMOVEL.zip
@@ -162,13 +197,13 @@ async def download_state_endpoint(
         regex="^[A-Z]{2}$"
     ),
     polygon: str = Form(
-        "AREA_IMOVEL",
-        description="Tipo de polígono a ser baixado (padrão: AREA_IMOVEL)",
-        example="AREA_IMOVEL",
-        regex="^(AREA_IMOVEL|APPS|VEGETACAO_NATIVA|AREA_CONSOLIDADA|AREA_POUSIO|HIDROGRAFIA|USO_RESTRITO|SERVIDAO_ADMINISTRATIVA|RESERVA_LEGAL)$"
+        "AREA_PROPERTY",
+        description="Tipo de polígono a ser baixado (padrão: AREA_PROPERTY)",
+        example="AREA_PROPERTY",
+        regex="^(AREA_PROPERTY|APPS|NATIVE_VEGETATION|CONSOLIDATED_AREA|AREA_FALL|HYDROGRAPHY|RESTRICTED_USE|ADMINISTRATIVE_SERVICE|LEGAL_RESERVE)$"
     ),
-    folder: Optional[str] = Form(
-        None,
+    folder: str = Form(
+        "temp",
         description="Pasta temporária para armazenamento dos arquivos (opcional)",
         example="temp/sp_data"
     ),
@@ -200,60 +235,21 @@ async def download_state_endpoint(
     ),
 ):
     """
-    Baixa dados do CAR para um estado específico.
-    
-    **Parâmetros obrigatórios:**
-    - `state`: Sigla do estado (ex: SP, RJ, MG)
-    
-    **Parâmetros opcionais:**
-    - `polygon`: Tipo de polígono (padrão: AREA_IMOVEL)
-    - `folder`: Pasta de destino (padrão: pasta temporária)
-    - `tries`: Tentativas de download (padrão: 25)
-    - `debug`: Modo debug (padrão: False)
-    - `timeout`: Timeout em segundos (padrão: 30)
-    - `max_retries`: Máximo de retry (padrão: 5)
-    
-    **Retorna:**
-    - Arquivo ZIP com shapefile do estado solicitado
-    - Em caso de erro: JSON com mensagem de erro
+    Baixa shapefiles de dados do CAR para um estado específico.
     """
     try:
-        car = DownloadCar(driver=Tesseract)
+        # Executa o download usando o download_state.py
+        file_path = run_download_state(state, polygon, folder, tries, debug, timeout, max_retries)
         
-        # Mapear o valor do polígono para o enum correto
-        polygon_mapping = {
-            "AREA_IMOVEL": Polygon.AREA_PROPERTY,
-            "APPS": Polygon.APPS,
-            "VEGETACAO_NATIVA": Polygon.NATIVE_VEGETATION,
-            "AREA_CONSOLIDADA": Polygon.CONSOLIDATED_AREA,
-            "AREA_POUSIO": Polygon.AREA_FALL,
-            "HIDROGRAFIA": Polygon.HYDROGRAPHY,
-            "USO_RESTRITO": Polygon.RESTRICTED_USE,
-            "SERVIDAO_ADMINISTRATIVA": Polygon.ADMINISTRATIVE_SERVICE,
-            "RESERVA_LEGAL": Polygon.LEGAL_RESERVE
-        }
-        
-        polygon_enum = polygon_mapping.get(polygon.upper())
-        if not polygon_enum:
-            return {"error": f"Polígono '{polygon}' não reconhecido"}
-        
-        path = car.download_state(
-            state=State[state.upper()],
-            polygon=polygon_enum,
-            folder=folder or "temp",
-            tries=tries,
-            debug=debug,
-            timeout=timeout,
+        # Retorna o arquivo como resposta
+        return FileResponse(
+            path=file_path,
+            filename=f"{state}_{polygon}.zip",
+            media_type="application/zip"
         )
-        zip_path = zip_shapefile(str(path))
-        zip_file_handle = open(zip_path, "rb")
-        return StreamingResponse(
-            zip_file_handle,
-            media_type="application/zip",
-            headers={"Content-Disposition": f'attachment; filename="{state}_{polygon}.zip"'},
-        )
-    except Exception as exc:
-        return {"error": str(exc)}
+        
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 
 @app.post(
@@ -270,7 +266,7 @@ async def download_state_endpoint(
     **Exemplo de uso:**
     ```bash
     curl -X POST "http://localhost:8000/download_country" \\
-         -F "polygon=AREA_IMOVEL" \\
+         -F "polygon=AREA_PROPERTY" \\
          -F "folder=brazil" \\
          -F "tries=25" \\
          -F "debug=false" \\
@@ -287,10 +283,10 @@ async def download_state_endpoint(
 )
 async def download_country_endpoint(
     polygon: str = Form(
-        "AREA_IMOVEL",
-        description="Tipo de polígono a ser baixado para todos os estados (padrão: AREA_IMOVEL)",
-        example="AREA_IMOVEL",
-        regex="^(AREA_IMOVEL|APPS|VEGETACAO_NATIVA|AREA_CONSOLIDADA|AREA_POUSIO|HIDROGRAFIA|USO_RESTRITO|SERVIDAO_ADMINISTRATIVA|RESERVA_LEGAL)$"
+        "AREA_PROPERTY",
+        description="Tipo de polígono a ser baixado para todos os estados (padrão: AREA_PROPERTY)",
+        example="AREA_PROPERTY",
+        regex="^(AREA_PROPERTY|APPS|NATIVE_VEGETATION|CONSOLIDATED_AREA|AREA_FALL|HYDROGRAPHY|RESTRICTED_USE|ADMINISTRATIVE_SERVICE|LEGAL_RESERVE)$"
     ),
     folder: str = Form(
         "brazil",
@@ -316,71 +312,53 @@ async def download_country_endpoint(
         ge=10,
         le=300
     ),
+    max_retries: int = Form(
+        5,
+        description="Número máximo de tentativas para download de cada arquivo",
+        example=5,
+        ge=1,
+        le=20
+    ),
 ):
     """
-    Baixa dados do CAR para todos os estados do Brasil.
-    
-    **Parâmetros obrigatórios:**
-    - `polygon`: Tipo de polígono (padrão: AREA_IMOVEL)
-    
-    **Parâmetros opcionais:**
-    - `folder`: Pasta base de destino (padrão: "brazil")
-    - `tries`: Tentativas por estado (padrão: 25)
-    - `debug`: Modo debug (padrão: False)
-    - `timeout`: Timeout em segundos (padrão: 30)
-    
-    **Retorna:**
-    - Arquivo ZIP com shapefiles de todos os estados
-    - Em caso de erro: JSON com mensagem de erro
-    
-    **Observações:**
-    - O download pode demorar muito tempo (horas)
-    - O arquivo resultante pode ser muito grande (GB)
-    - Cada estado é baixado sequencialmente
+    Baixa shapefiles de dados do CAR para todos os estados do Brasil.
     """
     try:
-        car = DownloadCar(driver=Tesseract)
+        # Lista de todos os estados
+        states = [state.name for state in State]
         
-        # Mapear o valor do polígono para o enum correto
-        polygon_mapping = {
-            "AREA_IMOVEL": Polygon.AREA_PROPERTY,
-            "APPS": Polygon.APPS,
-            "VEGETACAO_NATIVA": Polygon.NATIVE_VEGETATION,
-            "AREA_CONSOLIDADA": Polygon.CONSOLIDATED_AREA,
-            "AREA_POUSIO": Polygon.AREA_FALL,
-            "HIDROGRAFIA": Polygon.HYDROGRAPHY,
-            "USO_RESTRITO": Polygon.RESTRICTED_USE,
-            "SERVIDAO_ADMINISTRATIVA": Polygon.ADMINISTRATIVE_SERVICE,
-            "RESERVA_LEGAL": Polygon.LEGAL_RESERVE
-        }
+        # Cria a pasta base
+        os.makedirs(folder, exist_ok=True)
         
-        polygon_enum = polygon_mapping.get(polygon.upper())
-        if not polygon_enum:
-            return {"error": f"Polígono '{polygon}' não reconhecido"}
+        # Baixa dados para cada estado
+        downloaded_files = []
+        for state in states:
+            try:
+                file_path = run_download_state(state, polygon, folder, tries, debug, timeout, max_retries)
+                downloaded_files.append(file_path)
+            except Exception as e:
+                if debug:
+                    print(f"Erro ao baixar {state}: {e}")
+                continue
         
-        result = car.download_country(
-            polygon=polygon_enum,
-            folder=folder,
-            tries=tries,
-            debug=debug,
-            timeout=timeout,
+        if not downloaded_files:
+            return {"error": "Nenhum arquivo foi baixado com sucesso"}, 500
+        
+        # Cria um ZIP com todos os arquivos baixados
+        country_zip_path = os.path.join(folder, f"brazil_{polygon}.zip")
+        with zipfile.ZipFile(country_zip_path, "w", zipfile.ZIP_DEFLATED) as country_zip:
+            for file_path in downloaded_files:
+                country_zip.write(file_path, arcname=os.path.basename(file_path))
+        
+        # Retorna o arquivo ZIP do país
+        return FileResponse(
+            path=country_zip_path,
+            filename=f"brazil_{polygon}.zip",
+            media_type="application/zip"
         )
-        zip_paths = []
-        for _state, path in result.items():
-            zip_paths.append(zip_shapefile(str(path)))
-        with tempfile.NamedTemporaryFile(delete=False) as zip_file:
-            with zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED) as zipf:
-                for z in zip_paths:
-                    zipf.write(z, os.path.basename(z))
-            zip_file_path = zip_file.name
-        zip_file_handle = open(zip_file_path, "rb")
-        return StreamingResponse(
-            zip_file_handle,
-            media_type="application/zip",
-            headers={"Content-Disposition": f'attachment; filename="brazil_{polygon}.zip"'},
-        )
-    except Exception as exc:
-        return {"error": str(exc)}
+        
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 
 @app.get(
@@ -396,29 +374,21 @@ async def download_country_endpoint(
 )
 async def get_states():
     """
-    Retorna todos os estados brasileiros disponíveis.
-    
-    **Retorna:**
-    - Lista de dicionários com sigla e nome de cada estado
+    Retorna a lista de estados brasileiros disponíveis.
     """
     states = []
     for state in State:
-        state_names = {
-            "AC": "Acre", "AL": "Alagoas", "AM": "Amazonas", "AP": "Amapá",
-            "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal",
-            "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão",
-            "MG": "Minas Gerais", "MS": "Mato Grosso do Sul", "MT": "Mato Grosso",
-            "PA": "Pará", "PB": "Paraíba", "PE": "Pernambuco", "PI": "Piauí",
-            "PR": "Paraná", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte",
-            "RO": "Rondônia", "RR": "Roraima", "RS": "Rio Grande do Sul",
-            "SC": "Santa Catarina", "SE": "Sergipe", "SP": "São Paulo", "TO": "Tocantins"
-        }
-        
         states.append({
-            "sigla": state.value,
-            "nome": state_names.get(state.value, state.value)
+            "code": state.name,
+            "name": state.value,
+            "description": f"Estado de {state.value}"
         })
-    return {"states": states}
+    
+    return {
+        "states": states,
+        "total": len(states),
+        "description": "Lista completa dos 27 estados brasileiros disponíveis para download"
+    }
 
 
 @app.get(
@@ -434,15 +404,12 @@ async def get_states():
 )
 async def get_polygons():
     """
-    Retorna todos os tipos de polígonos disponíveis.
-    
-    **Retorna:**
-    - Lista de dicionários com código e descrição de cada polígono
+    Retorna a lista de tipos de polígonos disponíveis.
     """
     polygons = []
     for polygon in Polygon:
-        descriptions = {
-            "AREA_PROPERTY": "Perímetros dos imóveis (Property perimeters) - PADRÃO",
+        description = {
+            "AREA_PROPERTY": "Perímetros dos imóveis (Property perimeters)",
             "APPS": "Área de Preservação Permanente (Permanent preservation area)",
             "NATIVE_VEGETATION": "Remanescente de Vegetação Nativa (Native Vegetation Remnants)",
             "CONSOLIDATED_AREA": "Área Consolidada (Consolidated Area)",
@@ -451,14 +418,19 @@ async def get_polygons():
             "RESTRICTED_USE": "Uso Restrito (Restricted Use)",
             "ADMINISTRATIVE_SERVICE": "Servidão Administrativa (Administrative Servitude)",
             "LEGAL_RESERVE": "Reserva Legal (Legal reserve)"
-        }
+        }.get(polygon.name, "Polígono não documentado")
         
         polygons.append({
-            "codigo": polygon.name,
-            "valor": polygon.value,
-            "descricao": descriptions.get(polygon.name, polygon.name)
+            "code": polygon.name,
+            "value": polygon.value,
+            "description": description
         })
-    return {"polygons": polygons}
+    
+    return {
+        "polygons": polygons,
+        "total": len(polygons),
+        "description": "Lista completa dos tipos de polígonos disponíveis para download"
+    }
 
 
 @app.get(
@@ -508,116 +480,20 @@ async def buscar_estado_por_car(
 ):
     """
     Busca o estado de um imóvel pelo número do CAR.
-    
-    **Parâmetros obrigatórios:**
-    - `car`: Número do CAR do imóvel
-    
-    **Parâmetros opcionais:**
-    - `state`: Sigla do estado para limitar a busca
-    - `data_folder`: Pasta com os dados baixados (padrão: "data")
-    
-    **Retorna:**
-    - JSON com informações do imóvel e estado encontrado
-    - Em caso de erro: JSON com mensagem de erro
     """
     try:
-        import geopandas as gpd
-        from pathlib import Path
-        import glob
-        
-        # Verificar se a pasta de dados existe
-        data_path = Path(data_folder)
-        if not data_path.exists():
-            return {
-                "error": f"Pasta de dados '{data_folder}' não encontrada. Baixe os dados primeiro usando /download_state ou /download_country."
-            }
-        
-        # Buscar shapefiles de área de imóvel
-        found_imovel = None
-        found_state = None
-        found_file = None
-        
-        # Definir estados para buscar
-        states_to_search = [State[state.upper()]] if state else list(State)
-        
-        # Procurar em cada estado
-        for state_enum in states_to_search:
-            state_folder = data_path / state_enum.value
-            if not state_folder.exists():
-                continue
-                
-            # Procurar por arquivos de área de imóvel
-            shp_files = list(state_folder.glob("*AREA_IMOVEL*.shp"))
-            if not shp_files:
-                continue
-                
-            for shp_file in shp_files:
-                try:
-                    # Ler o shapefile
-                    gdf = gpd.read_file(shp_file)
-                    
-                    # Verificar se existe a coluna cod_imovel
-                    if 'cod_imovel' not in gdf.columns:
-                        continue
-                    
-                    # Buscar o CAR
-                    mask = gdf['cod_imovel'] == car
-                    if mask.any():
-                        found_imovel = gdf[mask].iloc[0]
-                        found_state = state_enum.value
-                        found_file = str(shp_file)
-                        break
-                        
-                except Exception as e:
-                    print(f"Erro ao ler {shp_file}: {e}")
-                    continue
-            
-            if found_imovel is not None:
-                break
-        
-        if found_imovel is None:
-            return {
-                "error": f"Imóvel com CAR '{car}' não encontrado em nenhum estado.",
-                "suggestion": "Verifique se o número do CAR está correto e se os dados dos estados foram baixados."
-            }
-        
-        # Preparar resposta com informações do imóvel
-        imovel_info = {}
-        for col in found_imovel.index:
-            if col != 'geometry':
-                imovel_info[col] = str(found_imovel[col])
-        
-        # Buscar informações do estado
-        state_names = {
-            "AC": "Acre", "AL": "Alagoas", "AM": "Amazonas", "AP": "Amapá",
-            "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal",
-            "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão",
-            "MG": "Minas Gerais", "MS": "Mato Grosso do Sul", "MT": "Mato Grosso",
-            "PA": "Pará", "PB": "Paraíba", "PE": "Pernambuco", "PI": "Piauí",
-            "PR": "Paraná", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte",
-            "RO": "Rondônia", "RR": "Roraima", "RS": "Rio Grande do Sul",
-            "SC": "Santa Catarina", "SE": "Sergipe", "SP": "São Paulo", "TO": "Tocantins"
+        # Esta funcionalidade ainda não está implementada na classe DownloadCar
+        return {
+            "success": False,
+            "car_number": car,
+            "message": "Funcionalidade de busca por CAR ainda não implementada. Use /download_state ou /download_country para baixar os dados primeiro."
         }
         
+    except Exception as e:
         return {
-            "success": True,
-            "car": car,
-            "estado": {
-                "sigla": found_state,
-                "nome": state_names.get(str(found_state), str(found_state))
-            },
-            "imovel": imovel_info,
-            "arquivo_origem": found_file,
-            "message": f"Imóvel encontrado no estado {found_state} ({state_names.get(str(found_state), str(found_state))})"
-        }
-        
-    except ImportError:
-        return {
-            "error": "Biblioteca geopandas não encontrada. Instale com: pip install geopandas"
-        }
-    except Exception as exc:
-        return {
-            "error": f"Erro ao buscar imóvel: {str(exc)}"
+            "success": False,
+            "error": str(e),
+            "car_number": car
         }
 
 
@@ -667,104 +543,21 @@ async def buscar_propriedade_por_car(
     )
 ):
     """
-    Busca uma propriedade pelo número do CAR e retorna o shape da propriedade.
-    
-    **Parâmetros obrigatórios:**
-    - `car`: Número do CAR da propriedade
-    
-    **Parâmetros opcionais:**
-    - `state`: Sigla do estado para limitar a busca
-    - `data_folder`: Pasta com os dados baixados (padrão: "data")
-    
-    **Retorna:**
-    - Shape da propriedade encontrada
-    - Em caso de erro: JSON com mensagem de erro
+    Busca uma propriedade pelo número do CAR e retorna o shape.
     """
     try:
-        import geopandas as gpd
-        from pathlib import Path
-        import glob
-        
-        # Verificar se a pasta de dados existe
-        data_path = Path(data_folder)
-        if not data_path.exists():
-            return {
-                "error": f"Pasta de dados '{data_folder}' não encontrada. Baixe os dados primeiro usando /download_state ou /download_country."
-            }
-        
-        # Buscar shapefiles de área de imóvel
-        found_imovel = None
-        found_state = None
-        found_file = None
-        
-        # Definir estados para buscar
-        states_to_search = [State[state.upper()]] if state else list(State)
-        
-        # Procurar em cada estado
-        for state_enum in states_to_search:
-            state_folder = data_path / state_enum.value
-            if not state_folder.exists():
-                continue
-                
-            # Procurar por arquivos de área de imóvel
-            shp_files = list(state_folder.glob("*AREA_IMOVEL*.shp"))
-            if not shp_files:
-                continue
-                
-            for shp_file in shp_files:
-                try:
-                    # Ler o shapefile
-                    gdf = gpd.read_file(shp_file)
-                    
-                    # Verificar se existe a coluna cod_imovel
-                    if 'cod_imovel' not in gdf.columns:
-                        continue
-                    
-                    # Buscar o CAR
-                    mask = gdf['cod_imovel'] == car
-                    if mask.any():
-                        found_imovel = gdf[mask].iloc[0]
-                        found_state = state_enum.value
-                        found_file = str(shp_file)
-                        break
-                        
-                except Exception as e:
-                    print(f"Erro ao ler {shp_file}: {e}")
-                    continue
-            
-            if found_imovel is not None:
-                break
-        
-        if found_imovel is None:
-            return {
-                "error": f"Propriedade com CAR '{car}' não encontrada em nenhum estado.",
-                "suggestion": "Verifique se o número do CAR está correto e se os dados dos estados foram baixados."
-            }
-        
-        # Criar GeoDataFrame apenas com a propriedade encontrada
-        property_gdf = gpd.GeoDataFrame([found_imovel], crs=gdf.crs)
-        
-        # Salvar shape da propriedade em arquivo temporário
-        temp_shp_path = f"temp_property_{car}.shp"
-        property_gdf.to_file(temp_shp_path)
-        
-        # Criar ZIP com o shape da propriedade
-        zip_path = zip_shapefile(temp_shp_path)
-        zip_file_handle = open(zip_path, "rb")
-        
-        return StreamingResponse(
-            zip_file_handle,
-            media_type="application/zip",
-            headers={"Content-Disposition": f'attachment; filename="property_{car}.zip"'},
-        )
-        
-    except ImportError:
+        # Esta funcionalidade ainda não está implementada na classe DownloadCar
         return {
-            "error": "Biblioteca geopandas não encontrada. Instale com: pip install geopandas"
+            "success": False,
+            "car_number": car,
+            "message": "Funcionalidade de busca por CAR ainda não implementada. Use /download_state ou /download_country para baixar os dados primeiro."
         }
-    except Exception as exc:
+        
+    except Exception as e:
         return {
-            "error": f"Erro ao buscar propriedade: {str(exc)}"
+            "success": False,
+            "error": str(e),
+            "car_number": car
         }
 
 
@@ -779,27 +572,21 @@ async def buscar_propriedade_por_car(
 )
 async def root():
     """
-    Retorna informações gerais sobre a API.
-    
-    **Retorna:**
-    - Informações sobre a API e links para documentação
+    Página inicial da API.
     """
     return {
-        "message": "Download CAR API",
+        "title": "Download CAR API",
         "version": "1.0.0",
         "description": "API para download de dados do Cadastro Ambiental Rural (CAR) do Brasil",
         "endpoints": {
             "download_state": "/download_state - Download de dados por estado",
             "download_country": "/download_country - Download de dados para todo o Brasil",
-            "state": "/state - Buscar estado de um imóvel pelo CAR",
-            "property": "/property - Buscar propriedade pelo CAR",
             "states": "/states - Lista de estados disponíveis",
             "polygons": "/polygons - Lista de polígonos disponíveis",
-            "docs": "/docs - Documentação Swagger",
-            "redoc": "/redoc - Documentação ReDoc"
+            "state": "/state - Buscar estado de um imóvel pelo CAR",
+            "property": "/property - Buscar propriedade pelo CAR"
         },
-        "contact": {
-            "name": "Download CAR API",
-            "url": "https://github.com/Malnati/download-car"
-        }
+        "documentation": "/docs",
+        "repository": "https://github.com/Malnati/download-car",
+        "license": "MIT License"
     }
