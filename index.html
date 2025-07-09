@@ -292,6 +292,14 @@
         .toast-container {
             z-index: 9999;
             pointer-events: none;
+            position: fixed !important;
+            top: 1rem !important;
+            right: 1rem !important;
+            left: auto !important;
+            bottom: auto !important;
+            padding: 1rem !important;
+            max-height: calc(100vh - 2rem) !important;
+            overflow-y: auto !important;
         }
 
         .toast-container .toast {
@@ -591,7 +599,7 @@
     </footer>
 
     <!-- Toast para notificações -->
-    <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div class="toast-container">
         <!-- Toasts serão criados dinamicamente aqui -->
     </div>
 
