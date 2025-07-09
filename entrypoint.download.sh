@@ -3,7 +3,7 @@
 
 set -e
 
-PYTHON_VERSION="3.11.8"
+PYTHON_VERSION="3.11.9"
 
 if ! command -v pyenv &> /dev/null; then
   echo "pyenv não encontrado"

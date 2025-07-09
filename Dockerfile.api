@@ -6,6 +6,7 @@ WORKDIR /download-car
 
 COPY app.py /download-car/
 
+# Instalar dependências adicionais necessárias para a API
 RUN pip install fastapi uvicorn httpx Pillow tqdm python-multipart
 
 ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
