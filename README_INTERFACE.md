@@ -51,7 +51,8 @@ python -m http.server 8080
 
 ### URL da API
 - **Campo editável** no topo da página
-- **Valor padrão**: `http://localhost:8000` (local) ou `/api` (via nginx)
+- **Valor padrão**: `http://192.168.5.179:8000`
+- **Configuração**: Definida na variável de ambiente `API_ENDPOINT_URL`
 - **Botão "Testar Conexão"** para verificar conectividade
 
 ### Parâmetros por Estado

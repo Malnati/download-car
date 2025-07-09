@@ -18,7 +18,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - API_URL=http://localhost:8000
+      - API_URL=http://192.168.5.179:8000
 
   nginx:
     image: nginx:alpine
@@ -32,4 +32,4 @@ services:
       - download-car-api
       - download-car-download
     environment:
-      - DEFAULT_API_URL=http://localhost:8000
+      - DEFAULT_API_URL=http://192.168.5.179:8000

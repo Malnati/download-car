@@ -6,10 +6,10 @@
     <title>Download CAR - Estados Brasileiros</title>
     
     <!-- Bootstrap 5.4.0 CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.4.0/css/bootstrap.min.css" rel="stylesheet">
     
     <!-- Bootstrap Icons - Mais popular e gratuito -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
     
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -542,7 +542,7 @@
                                 <i class="bi bi-link-45deg me-1"></i>
                                 URL do Endpoint
                             </label>
-                            <input type="url" class="form-control" id="apiUrl" placeholder="http://localhost:8000">
+                            <input type="url" class="form-control" id="apiUrl" placeholder="http://192.168.5.179:8000">
                         </div>
                         <div class="col-md-6 d-flex align-items-end gap-2">
                             <button type="button" class="btn btn-outline-primary" onclick="testConnection()">
@@ -576,6 +576,7 @@
                                     <th><i class="bi bi-calendar-event me-1"></i>&nbsp;Última</th>
                                     <th><i class="bi bi-info-circle me-1"></i>&nbsp;Status</th>
                                     <th><i class="bi bi-play-circle me-1"></i>&nbsp;Ação</th>
+                                    <th><i class="bi bi-link-45deg me-1"></i>&nbsp;Link</th>
                                 </tr>
                             </thead>
                             <tbody id="estadosTable">
@@ -604,11 +605,11 @@
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.4.0/js/bootstrap.bundle.min.js"></script>
     
     <script>
         // Configuração inicial
-        const DEFAULT_API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '/api';
+        const DEFAULT_API_URL = 'http://192.168.5.179:8000';
         const DEFAULT_TIMEOUT = 30000; // 30 segundos
         const TIMEOUT_INCREMENT = 10000; // 10 segundos
         const MIN_TIMEOUT = 10000; // 10 segundos
@@ -656,6 +657,26 @@
             
             // Carregar histórico
             loadDownloadHistory();
+            
+            // Verificar se Bootstrap carregou
+            if (typeof bootstrap === 'undefined') {
+                console.warn('Bootstrap não carregou, usando fallback');
+                // Fallback para funcionalidades básicas
+                window.bootstrap = {
+                    Toast: function(element, options) {
+                        this.show = function() {
+                            element.style.display = 'block';
+                            element.style.opacity = '1';
+                        };
+                        this.hide = function() {
+                            element.style.opacity = '0';
+                            setTimeout(() => {
+                                element.style.display = 'none';
+                            }, 300);
+                        };
+                    }
+                };
+            }
         });
 
         // Alternar exibição da configuração da API
@@ -694,6 +715,47 @@
             setTimeout(() => {
                 showNotification('Teste de notificação de informação!', 'info');
             }, 2000);
+        }
+
+        // Download do arquivo
+        async function downloadFile(estado) {
+            const history = downloadHistory[estado];
+            if (!history || history.status !== 'success') {
+                showNotification('Nenhum arquivo disponível para download', 'error');
+                return;
+            }
+
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const formData = new FormData();
+                formData.append('state', estado);
+                formData.append('polygon', 'APPS');
+                formData.append('timeout', history.timeout || DEFAULT_TIMEOUT);
+                formData.append('max_retries', history.maxRetries || 5);
+                formData.append('debug', 'false');
+
+                const response = await fetch(`${apiUrl}/download_state`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${estado}_APPS.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showNotification(`Download de ${estado} realizado com sucesso!`, 'success');
+                } else {
+                    throw new Error('Erro ao baixar arquivo');
+                }
+            } catch (error) {
+                showNotification(`Erro ao baixar arquivo de ${estado}: ${error.message}`, 'error');
+            }
         }
 
         // Resetar timeout para valor padrão
@@ -751,14 +813,17 @@
                     <td>
                         <button class="btn btn-download btn-sm" onclick="downloadEstado('${estado.sigla}')" id="btn-${estado.sigla}">
                             <span class="btn-text">
-                                <i class="bi bi-download me-1"></i>
-                                Download
+                                <i class="bi bi-cloud-download me-1"></i>
+                                Requisitar
                             </span>
                             <span class="loading">
                                 <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                Baixando...
+                                Processando...
                             </span>
                         </button>
+                    </td>
+                    <td>
+                        ${getDownloadLink(estado.sigla, history)}
                     </td>
                 `;
                 
@@ -785,6 +850,20 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Obter link de download
+        function getDownloadLink(estado, history) {
+            if (history.status === 'success' && history.fileReady) {
+                return `<button class="btn btn-success btn-sm" onclick="downloadFile('${estado}')">
+                            <i class="bi bi-download me-1"></i>
+                            Download
+                        </button>`;
+            } else if (history.status === 'success') {
+                return `<span class="text-muted small">Processado</span>`;
+            } else {
+                return `<span class="text-muted small">N/A</span>`;
+            }
         }
 
         // Obter ícone de status com Bootstrap Icons
@@ -905,23 +984,26 @@
                 });
 
                 if (response.ok) {
-                    // Download do arquivo
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${estado}_APPS.zip`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-
-                    // Atualizar histórico
-                    downloadHistory[estado].status = 'success';
-                    downloadHistory[estado].errorMessage = null; // Limpar erro anterior
-                    // Resetar timeout para o valor padrão após sucesso
-                    downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
-                    showNotification(`Download de ${estado} realizado com sucesso!`, 'success');
+                    // Verificar se a resposta contém dados válidos
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/zip')) {
+                        // Arquivo processado com sucesso
+                        downloadHistory[estado].status = 'success';
+                        downloadHistory[estado].errorMessage = null; // Limpar erro anterior
+                        downloadHistory[estado].fileReady = true; // Marcar arquivo como pronto
+                        // Resetar timeout para o valor padrão após sucesso
+                        downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
+                        showNotification(`Arquivo de ${estado} processado com sucesso! Clique em Download para baixar.`, 'success');
+                    } else {
+                        // Verificar se é uma resposta de erro em JSON
+                        const text = await response.text();
+                        try {
+                            const errorData = JSON.parse(text);
+                            throw new Error(errorData.detail || errorData.message || 'Erro no processamento');
+                        } catch (parseError) {
+                            throw new Error('Resposta inválida do servidor');
+                        }
+                    }
                 } else {
                     let errorMessage = 'Erro no download';
                     try {
@@ -957,22 +1039,35 @@
                 return;
             }
             
+            // Definir classes e ícones por tipo
+            let toastClass = 'bg-info text-white';
+            let icon = 'bi-info-circle';
+            let title = 'Informação';
+            if (type === 'success') {
+                toastClass = 'bg-success text-white';
+                icon = 'bi-check-circle';
+                title = 'Sucesso';
+            } else if (type === 'error') {
+                toastClass = 'bg-danger text-white';
+                icon = 'bi-exclamation-triangle';
+                title = 'Erro';
+            } else if (type === 'warning' || type === 'alert') {
+                toastClass = 'bg-warning text-dark';
+                icon = 'bi-exclamation-circle';
+                title = 'Alerta';
+            }
+            
             // Criar novo toast
             const toastId = 'toast-' + Date.now();
             const toast = document.createElement('div');
-            toast.className = `toast ${type === 'success' ? 'bg-success text-white' : type === 'error' ? 'bg-danger text-white' : 'bg-info text-white'}`;
+            toast.className = `toast ${toastClass}`;
             toast.id = toastId;
             toast.setAttribute('role', 'alert');
-            
-            // Determinar ícone baseado no tipo
-            let icon = 'bi-info-circle';
-            if (type === 'success') icon = 'bi-check-circle';
-            else if (type === 'error') icon = 'bi-exclamation-triangle';
             
             toast.innerHTML = `
                 <div class="toast-header">
                     <i class="bi ${icon} me-2"></i>
-                    <strong class="me-auto">${type === 'success' ? 'Sucesso' : type === 'error' ? 'Erro' : 'Informação'}</strong>
+                    <strong class="me-auto">${title}</strong>
                     <button type="button" class="btn-close" onclick="this.closest('.toast').remove()"></button>
                 </div>
                 <div class="toast-body">
