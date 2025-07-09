@@ -426,13 +426,13 @@
                         <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th><i class="bi bi-flag me-1"></i>Estado</th>
-                                    <th><i class="bi bi-folder me-1"></i>Diretório</th>
-                                    <th><i class="bi bi-clock me-1"></i>Espera (s)</th>
-                                    <th><i class="bi bi-arrow-repeat me-1"></i>Tentativas</th>
-                                    <th><i class="bi bi-calendar-event me-1"></i>Última</th>
-                                    <th><i class="bi bi-info-circle me-1"></i>Status</th>
-                                    <th><i class="bi bi-play-circle me-1"></i>Ação</th>
+                                    <th><i class="bi bi-flag me-1"></i>&nbsp;Estado</th>
+                                    <th><i class="bi bi-folder me-1"></i>&nbsp;Diretório</th>
+                                    <th><i class="bi bi-clock me-1"></i>&nbsp;Espera (s)</th>
+                                    <th><i class="bi bi-arrow-repeat me-1"></i>&nbsp;Tentativas</th>
+                                    <th><i class="bi bi-calendar-event me-1"></i>&nbsp;Última</th>
+                                    <th><i class="bi bi-info-circle me-1"></i>&nbsp;Status</th>
+                                    <th><i class="bi bi-play-circle me-1"></i>&nbsp;Ação</th>
                                 </tr>
                             </thead>
                             <tbody id="estadosTable">
@@ -475,33 +475,33 @@
         // Configuração inicial
         const DEFAULT_API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '/api';
         const estados = [
-            { sigla: 'AC', nome: 'Acre', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Flag_of_Acre.svg/24px-Flag_of_Acre.svg.png' },
-            { sigla: 'AL', nome: 'Alagoas', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Flag_of_Alagoas.svg/24px-Flag_of_Alagoas.svg.png' },
-            { sigla: 'AM', nome: 'Amazonas', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Flag_of_Amazonas.svg/24px-Flag_of_Amazonas.svg.png' },
-            { sigla: 'AP', nome: 'Amapá', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Flag_of_Amap%C3%A1.svg/24px-Flag_of_Amap%C3%A1.svg.png' },
-            { sigla: 'BA', nome: 'Bahia', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Flag_of_Bahia.svg/24px-Flag_of_Bahia.svg.png' },
-            { sigla: 'CE', nome: 'Ceará', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Flag_of_Cear%C3%A1.svg/24px-Flag_of_Cear%C3%A1.svg.png' },
-            { sigla: 'DF', nome: 'Distrito Federal', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Flag_of_the_Federal_District.svg/24px-Flag_of_the_Federal_District.svg.png' },
-            { sigla: 'ES', nome: 'Espírito Santo', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Flag_of_Esp%C3%ADrito_Santo.svg/24px-Flag_of_Esp%C3%ADrito_Santo.svg.png' },
-            { sigla: 'GO', nome: 'Goiás', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Flag_of_Goi%C3%A1s.svg/24px-Flag_of_Goi%C3%A1s.svg.png' },
-            { sigla: 'MA', nome: 'Maranhão', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Flag_of_Maranh%C3%A3o.svg/24px-Flag_of_Maranh%C3%A3o.svg.png' },
-            { sigla: 'MG', nome: 'Minas Gerais', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Flag_of_Minas_Gerais.svg/24px-Flag_of_Minas_Gerais.svg.png' },
-            { sigla: 'MS', nome: 'Mato Grosso do Sul', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Flag_of_Mato_Grosso_do_Sul.svg/24px-Flag_of_Mato_Grosso_do_Sul.svg.png' },
-            { sigla: 'MT', nome: 'Mato Grosso', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Flag_of_Mato_Grosso.svg/24px-Flag_of_Mato_Grosso.svg.png' },
-            { sigla: 'PA', nome: 'Pará', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Flag_of_Par%C3%A1.svg/24px-Flag_of_Par%C3%A1.svg.png' },
-            { sigla: 'PB', nome: 'Paraíba', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Flag_of_Para%C3%ADba.svg/24px-Flag_of_Para%C3%ADba.svg.png' },
-            { sigla: 'PE', nome: 'Pernambuco', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Flag_of_Pernambuco.svg/24px-Flag_of_Pernambuco.svg.png' },
-            { sigla: 'PI', nome: 'Piauí', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Flag_of_Piau%C3%AD.svg/24px-Flag_of_Piau%C3%AD.svg.png' },
-            { sigla: 'PR', nome: 'Paraná', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Flag_of_Paran%C3%A1.svg/24px-Flag_of_Paran%C3%A1.svg.png' },
-            { sigla: 'RJ', nome: 'Rio de Janeiro', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Flag_of_Rio_de_Janeiro.svg/24px-Flag_of_Rio_de_Janeiro.svg.png' },
-            { sigla: 'RN', nome: 'Rio Grande do Norte', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Flag_of_Rio_Grande_do_Norte.svg/24px-Flag_of_Rio_Grande_do_Norte.svg.png' },
-            { sigla: 'RO', nome: 'Rondônia', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Flag_of_Rond%C3%B4nia.svg/24px-Flag_of_Rond%C3%B4nia.svg.png' },
-            { sigla: 'RR', nome: 'Roraima', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Flag_of_Roraima.svg/24px-Flag_of_Roraima.svg.png' },
-            { sigla: 'RS', nome: 'Rio Grande do Sul', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Flag_of_Rio_Grande_do_Sul.svg/24px-Flag_of_Rio_Grande_do_Sul.svg.png' },
-            { sigla: 'SC', nome: 'Santa Catarina', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Santa_Catarina.svg/24px-Flag_of_Santa_Catarina.svg.png' },
-            { sigla: 'SE', nome: 'Sergipe', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Flag_of_Sergipe.svg/24px-Flag_of_Sergipe.svg.png' },
-            { sigla: 'SP', nome: 'São Paulo', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Flag_of_S%C3%A3o_Paulo.svg/24px-Flag_of_S%C3%A3o_Paulo.svg.png' },
-            { sigla: 'TO', nome: 'Tocantins', flag: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Flag_of_Tocantins.svg/24px-Flag_of_Tocantins.svg.png' }
+            { sigla: 'AC', nome: 'Acre', flag: '/assets/flags/AC.svg' },
+            { sigla: 'AL', nome: 'Alagoas', flag: '/assets/flags/AL.svg' },
+            { sigla: 'AM', nome: 'Amazonas', flag: '/assets/flags/AM.svg' },
+            { sigla: 'AP', nome: 'Amapá', flag: '/assets/flags/AP.svg' },
+            { sigla: 'BA', nome: 'Bahia', flag: '/assets/flags/BA.svg' },
+            { sigla: 'CE', nome: 'Ceará', flag: '/assets/flags/CE.svg' },
+            { sigla: 'DF', nome: 'Distrito Federal', flag: '/assets/flags/DF.svg' },
+            { sigla: 'ES', nome: 'Espírito Santo', flag: '/assets/flags/ES.svg' },
+            { sigla: 'GO', nome: 'Goiás', flag: '/assets/flags/GO.svg' },
+            { sigla: 'MA', nome: 'Maranhão', flag: '/assets/flags/MA.svg' },
+            { sigla: 'MG', nome: 'Minas Gerais', flag: '/assets/flags/MG.svg' },
+            { sigla: 'MS', nome: 'Mato Grosso do Sul', flag: '/assets/flags/MS.svg' },
+            { sigla: 'MT', nome: 'Mato Grosso', flag: '/assets/flags/MT.svg' },
+            { sigla: 'PA', nome: 'Pará', flag: '/assets/flags/PA.svg' },
+            { sigla: 'PB', nome: 'Paraíba', flag: '/assets/flags/PB.svg' },
+            { sigla: 'PE', nome: 'Pernambuco', flag: '/assets/flags/PE.svg' },
+            { sigla: 'PI', nome: 'Piauí', flag: '/assets/flags/PI.svg' },
+            { sigla: 'PR', nome: 'Paraná', flag: '/assets/flags/PR.svg' },
+            { sigla: 'RJ', nome: 'Rio de Janeiro', flag: '/assets/flags/RJ.svg' },
+            { sigla: 'RN', nome: 'Rio Grande do Norte', flag: '/assets/flags/RN.svg' },
+            { sigla: 'RO', nome: 'Rondônia', flag: '/assets/flags/RO.svg' },
+            { sigla: 'RR', nome: 'Roraima', flag: '/assets/flags/RR.svg' },
+            { sigla: 'RS', nome: 'Rio Grande do Sul', flag: '/assets/flags/RS.svg' },
+            { sigla: 'SC', nome: 'Santa Catarina', flag: '/assets/flags/SC.svg' },
+            { sigla: 'SE', nome: 'Sergipe', flag: '/assets/flags/SE.svg' },
+            { sigla: 'SP', nome: 'São Paulo', flag: '/assets/flags/SP.svg' },
+            { sigla: 'TO', nome: 'Tocantins', flag: '/assets/flags/TO.svg' }
         ];
 
         // Estado do aplicativo
