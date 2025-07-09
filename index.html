@@ -530,10 +530,9 @@
                 const history = downloadHistory[estado.sigla] || {};
                 
                 row.innerHTML = `
-                    <td>
-                        <img src="${estado.flag}" alt="${estado.nome}" class="flag-icon" onerror="this.src='https://via.placeholder.com/28x18/cccccc/666666?text=${estado.sigla}'">
-                        <strong>${estado.sigla}</strong>
-                        <small class="text-muted d-block">${estado.nome}</small>
+                    <td class="align-middle text-center">
+                        <img src="assets/flags/${estado.sigla}.png" alt="Bandeira de ${estado.nome}" class="flag-icon" style="height: 32px; width: auto; max-width: 48px; object-fit: contain; vertical-align: middle; margin-right: 8px;">
+                        <span class="align-middle">${estado.sigla}</span>
                     </td>
                     <td>
                         <code class="bg-light px-2 py-1 rounded">${estado.sigla}</code>
