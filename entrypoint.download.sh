@@ -21,7 +21,7 @@ TIMEOUT=${TIMEOUT:-30}
 MAX_RETRIES=${MAX_RETRIES:-5}
 mkdir -p "$FOLDER"
 
-PYENV_VERSION="$PYTHON_VERSION" pyenv exec python examples/download_state.py \
+PYENV_VERSION="$PYTHON_VERSION" pyenv exec python download_state.py \
   --state "$STATE" \
   --polygon "$POLYGON" \
   --folder "$FOLDER" \

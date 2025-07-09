@@ -1,4 +1,4 @@
-# examples/download_state.py
+# download_state.py
 """Example script to download data from download_car using environment variables and command-line arguments."""
 
 import os

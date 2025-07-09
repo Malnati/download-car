@@ -78,7 +78,7 @@ DEBUG="${DEBUG:-False}"
 echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com tries=$TRIES, debug=$DEBUG, timeout=$TIMEOUT e max_retries=$MAX_RETRIES..."
 
 # \u25B6️ Executa o script download_state.py com os parâmetros fornecidos
-PYENV_VERSION="$PYTHON_VERSION" pyenv exec python examples/download_state.py \
+PYENV_VERSION="$PYTHON_VERSION" pyenv exec python download_state.py \
   --state "$STATE" \
   --polygon "$POLYGON" \
   --folder "$FOLDER" \
