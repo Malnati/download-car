@@ -571,7 +571,7 @@
                                 <tr>
                                     <th><i class="bi bi-flag me-1"></i>&nbsp;Estado</th>
                                     <th><i class="bi bi-folder me-1"></i>&nbsp;Diretório</th>
-                                    <th><i class="bi bi-clock me-1"></i>&nbsp;Espera (s)</th>
+                                    <th><i class="bi bi-clock me-1"></i>&nbsp;Timeout (ms)</th>
                                     <th><i class="bi bi-arrow-repeat me-1"></i>&nbsp;Tentativas</th>
                                     <th><i class="bi bi-calendar-event me-1"></i>&nbsp;Última</th>
                                     <th><i class="bi bi-info-circle me-1"></i>&nbsp;Status</th>
@@ -609,6 +609,10 @@
     <script>
         // Configuração inicial
         const DEFAULT_API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '/api';
+        const DEFAULT_TIMEOUT = 30000; // 30 segundos
+        const TIMEOUT_INCREMENT = 10000; // 10 segundos
+        const MIN_TIMEOUT = 10000; // 10 segundos
+        const MAX_TIMEOUT = 300000; // 5 minutos
         const estados = [
             { sigla: 'AC', nome: 'Acre', flag: '/assets/flags/AC.svg' },
             { sigla: 'AL', nome: 'Alagoas', flag: '/assets/flags/AL.svg' },
@@ -692,6 +696,15 @@
             }, 2000);
         }
 
+        // Resetar timeout para valor padrão
+        function resetTimeout(estado) {
+            if (!downloadHistory[estado]) downloadHistory[estado] = {};
+            downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
+            saveDownloadHistory();
+            renderEstadosTable();
+            showNotification(`Timeout de ${estado} resetado para ${DEFAULT_TIMEOUT/1000}s`, 'info');
+        }
+
         // Renderizar tabela de estados
         function renderEstadosTable() {
             const tbody = document.getElementById('estadosTable');
@@ -711,9 +724,16 @@
                         <code class="bg-light px-2 py-1 rounded">${estado.sigla}</code>
                     </td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" 
-                               value="${history.timeout || 30}" min="10" max="300" 
-                               onchange="updateTimeout('${estado.sigla}', this.value)">
+                        <div class="d-flex align-items-center gap-1">
+                            <input type="number" class="form-control form-control-sm" 
+                                   value="${history.timeout || DEFAULT_TIMEOUT}" min="${MIN_TIMEOUT}" max="${MAX_TIMEOUT}" 
+                                   onchange="updateTimeout('${estado.sigla}', this.value)">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                    onclick="resetTimeout('${estado.sigla}')" 
+                                    title="Resetar timeout para ${DEFAULT_TIMEOUT/1000}s">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
                     </td>
                     <td>
                         <input type="number" class="form-control form-control-sm" 
@@ -838,8 +858,21 @@
         async function downloadEstado(estado) {
             const apiUrl = document.getElementById('apiUrl').value;
             const history = downloadHistory[estado] || {};
-            const timeout = history.timeout || 30;
+            let timeout = history.timeout || DEFAULT_TIMEOUT;
             const maxRetries = history.maxRetries || 5;
+            
+            // Se o último download falhou, incrementar timeout automaticamente
+            if (history.status === 'error' && history.lastDownload) {
+                const lastAttempt = new Date(history.lastDownload);
+                const now = new Date();
+                const timeDiff = now - lastAttempt;
+                
+                // Se a última tentativa foi há menos de 5 minutos, incrementar timeout
+                if (timeDiff < 5 * 60 * 1000) {
+                    timeout = Math.min(timeout + TIMEOUT_INCREMENT, MAX_TIMEOUT);
+                    console.log(`Timeout incrementado para ${estado}: ${timeout}ms`);
+                }
+            }
             
             const button = document.getElementById(`btn-${estado}`);
             const btnText = button.querySelector('.btn-text');
@@ -854,6 +887,7 @@
             if (!downloadHistory[estado]) downloadHistory[estado] = {};
             downloadHistory[estado].status = 'pending';
             downloadHistory[estado].lastDownload = new Date().toISOString();
+            downloadHistory[estado].timeout = timeout; // Salvar timeout atual
             saveDownloadHistory();
             renderEstadosTable();
 
@@ -885,6 +919,8 @@
                     // Atualizar histórico
                     downloadHistory[estado].status = 'success';
                     downloadHistory[estado].errorMessage = null; // Limpar erro anterior
+                    // Resetar timeout para o valor padrão após sucesso
+                    downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
                     showNotification(`Download de ${estado} realizado com sucesso!`, 'success');
                 } else {
                     let errorMessage = 'Erro no download';
