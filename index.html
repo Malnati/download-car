@@ -275,6 +275,8 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
             backdrop-filter: blur(10px);
             margin-bottom: 0.5rem;
+            min-width: 300px;
+            max-width: 400px;
         }
 
         .toast-header {
@@ -289,6 +291,43 @@
         /* Toast container para empilhamento */
         .toast-container {
             z-index: 9999;
+            pointer-events: none;
+        }
+
+        .toast-container .toast {
+            pointer-events: auto;
+        }
+
+        /* Garantir que toasts sejam visíveis */
+        .toast.show {
+            display: block !important;
+            opacity: 1 !important;
+        }
+
+        /* Animações de toast */
+        .toast {
+            transition: all 0.3s ease;
+        }
+
+        /* Botão de fechar customizado */
+        .btn-close {
+            background: transparent;
+            border: none;
+            font-size: 1.25rem;
+            line-height: 1;
+            color: currentColor;
+            opacity: 0.5;
+            cursor: pointer;
+            padding: 0;
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-close:hover {
+            opacity: 1;
         }
 
         /* Tooltip customizado para status */
@@ -497,10 +536,14 @@
                             </label>
                             <input type="url" class="form-control" id="apiUrl" placeholder="http://localhost:8000">
                         </div>
-                        <div class="col-md-6 d-flex align-items-end">
+                        <div class="col-md-6 d-flex align-items-end gap-2">
                             <button type="button" class="btn btn-outline-primary" onclick="testConnection()">
                                 <i class="bi bi-plug me-2"></i>
                                 Testar Conexão
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="testToasts()">
+                                <i class="bi bi-bell me-2"></i>
+                                Testar Toasts
                             </button>
                         </div>
                     </div>
@@ -627,6 +670,18 @@
             saveDownloadHistory();
             renderEstadosTable();
             showNotification('Erro de teste simulado para SP', 'error');
+        }
+
+        // Função de teste para toasts
+        function testToasts() {
+            console.log('Testando toasts...');
+            showNotification('Teste de notificação de sucesso!', 'success');
+            setTimeout(() => {
+                showNotification('Teste de notificação de erro!', 'error');
+            }, 1000);
+            setTimeout(() => {
+                showNotification('Teste de notificação de informação!', 'info');
+            }, 2000);
         }
 
         // Renderizar tabela de estados
@@ -850,7 +905,13 @@
 
         // Mostrar notificação
         function showNotification(message, type = 'info') {
+            console.log('showNotification chamada:', message, type);
+            
             const toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) {
+                console.error('Container de toast não encontrado!');
+                return;
+            }
             
             // Criar novo toast
             const toastId = 'toast-' + Date.now();
@@ -868,7 +929,7 @@
                 <div class="toast-header">
                     <i class="bi ${icon} me-2"></i>
                     <strong class="me-auto">${type === 'success' ? 'Sucesso' : type === 'error' ? 'Erro' : 'Informação'}</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    <button type="button" class="btn-close" onclick="this.closest('.toast').remove()"></button>
                 </div>
                 <div class="toast-body">
                     ${message}
@@ -877,18 +938,33 @@
             
             // Adicionar toast ao container
             toastContainer.appendChild(toast);
+            console.log('Toast adicionado ao container:', toastId);
             
-            // Mostrar toast
-            const bsToast = new bootstrap.Toast(toast, {
-                autohide: true,
-                delay: type === 'error' ? 8000 : 5000
-            });
-            bsToast.show();
+            // Mostrar toast imediatamente
+            toast.style.display = 'block';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
             
-            // Remover toast do DOM após ser escondido
-            toast.addEventListener('hidden.bs.toast', function() {
-                toast.remove();
-            });
+            // Animar entrada
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(0)';
+            }, 10);
+            
+            // Auto-hide após delay
+            const delay = type === 'error' ? 8000 : 5000;
+            setTimeout(() => {
+                // Animar saída
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                        console.log('Toast removido:', toastId);
+                    }
+                }, 300);
+            }, delay);
         }
     </script>
 </body>
