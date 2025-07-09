@@ -730,7 +730,7 @@
                 const formData = new FormData();
                 formData.append('state', estado);
                 formData.append('polygon', 'APPS');
-                formData.append('timeout', history.timeout || DEFAULT_TIMEOUT);
+                formData.append('timeout', Math.floor((history.timeout || DEFAULT_TIMEOUT) / 1000));
                 formData.append('max_retries', history.maxRetries || 5);
                 formData.append('debug', 'false');
 
@@ -974,7 +974,7 @@
                 const formData = new FormData();
                 formData.append('state', estado);
                 formData.append('polygon', 'APPS'); // Polígono padrão
-                formData.append('timeout', timeout);
+                formData.append('timeout', Math.floor(timeout / 1000));
                 formData.append('max_retries', maxRetries);
                 formData.append('debug', 'false');
 

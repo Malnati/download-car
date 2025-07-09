@@ -7,9 +7,16 @@ import os
 import zipfile
 from pathlib import Path
 from typing import Optional
+import os
 
 from download_car import DownloadCar, State, Polygon
 from download_car.drivers import Tesseract
+
+# Configurações CORS baseadas em variáveis de ambiente
+CORS_ALLOW_ORIGINS = os.getenv("CORS_ALLOW_ORIGINS", "*").split(",")
+CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
+CORS_ALLOW_METHODS = os.getenv("CORS_ALLOW_METHODS", "GET,POST,OPTIONS").split(",")
+CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS", "*").split(",")
 
 app = FastAPI(
     title="Download CAR API",
@@ -23,6 +30,7 @@ app = FastAPI(
     
     - **Download por Estado**: Baixa dados de um estado específico
     - **Download Nacional**: Baixa dados de todos os estados do Brasil
+    - **Busca por CAR**: Localiza o estado de um imóvel pelo número do CAR
     - **Múltiplos Tipos de Polígonos**: APPS, Reserva Legal, Vegetação Nativa, etc.
     - **Formato Shapefile**: Arquivos compatíveis com sistemas GIS
     
@@ -58,15 +66,15 @@ app = FastAPI(
     
     ## Tipos de Polígonos Disponíveis
     
-    - **AREA_PROPERTY**: Perímetros dos imóveis (Property perimeters)
+    - **AREA_IMOVEL**: Perímetros dos imóveis (Property perimeters)
     - **APPS**: Área de Preservação Permanente (Permanent preservation area)
-    - **NATIVE_VEGETATION**: Remanescente de Vegetação Nativa (Native Vegetation Remnants)
-    - **CONSOLIDATED_AREA**: Área Consolidada (Consolidated Area)
-    - **AREA_FALL**: Área de Pousio (Fallow Area)
-    - **HYDROGRAPHY**: Hidrografia (Hydrography)
-    - **RESTRICTED_USE**: Uso Restrito (Restricted Use)
-    - **ADMINISTRATIVE_SERVICE**: Servidão Administrativa (Administrative Servitude)
-    - **LEGAL_RESERVE**: Reserva Legal (Legal reserve)
+    - **VEGETACAO_NATIVA**: Remanescente de Vegetação Nativa (Native Vegetation Remnants)
+    - **AREA_CONSOLIDADA**: Área Consolidada (Consolidated Area)
+    - **AREA_POUSIO**: Área de Pousio (Fallow Area)
+    - **HIDROGRAFIA**: Hidrografia (Hydrography)
+    - **USO_RESTRITO**: Uso Restrito (Restricted Use)
+    - **SERVIDAO_ADMINISTRATIVA**: Servidão Administrativa (Administrative Servitude)
+    - **RESERVA_LEGAL**: Reserva Legal (Legal reserve)
     """,
     version="1.0.0",
     contact={
@@ -79,13 +87,13 @@ app = FastAPI(
     },
 )
 
-# Configuração CORS
+# Configuração CORS baseada em variáveis de ambiente
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permite todas as origens
-    allow_credentials=True,
-    allow_methods=["*"],  # Permite todos os métodos
-    allow_headers=["*"],  # Permite todos os headers
+    allow_origins=CORS_ALLOW_ORIGINS,
+    allow_credentials=CORS_ALLOW_CREDENTIALS,
+    allow_methods=CORS_ALLOW_METHODS,
+    allow_headers=CORS_ALLOW_HEADERS,
 )
 
 
@@ -157,7 +165,7 @@ async def download_state_endpoint(
         ...,
         description="Tipo de polígono a ser baixado",
         example="APPS",
-        regex="^(AREA_PROPERTY|APPS|NATIVE_VEGETATION|CONSOLIDATED_AREA|AREA_FALL|HYDROGRAPHY|RESTRICTED_USE|ADMINISTRATIVE_SERVICE|LEGAL_RESERVE)$"
+        regex="^(AREA_IMOVEL|APPS|VEGETACAO_NATIVA|AREA_CONSOLIDADA|AREA_POUSIO|HIDROGRAFIA|USO_RESTRITO|SERVIDAO_ADMINISTRATIVA|RESERVA_LEGAL)$"
     ),
     folder: Optional[str] = Form(
         None,
