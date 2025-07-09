@@ -12,6 +12,42 @@ if ! command -v pyenv &> /dev/null; then
   exit 2
 fi
 
+# 🔍 Detecta o sistema operacional
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  OS="macos"
+  PACKAGE_MANAGER="brew"
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  OS="linux"
+  PACKAGE_MANAGER="apt"
+else
+  echo -e "\u274c Sistema operacional não suportado: $OSTYPE"
+  exit 2
+fi
+
+# 📷 Verifica e instala Tesseract OCR
+if ! command -v tesseract &> /dev/null; then
+  echo -e "\u23f3 Tesseract OCR não encontrado. Instalando..."
+  
+  if [[ "$OS" == "macos" ]]; then
+    if ! command -v brew &> /dev/null; then
+      echo -e "\u274c Homebrew não encontrado. Instale com:\n  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+      exit 2
+    fi
+    brew install tesseract
+  elif [[ "$OS" == "linux" ]]; then
+    sudo apt update
+    sudo apt install tesseract-ocr -y
+  fi
+  
+  # Verifica se a instalação foi bem-sucedida
+  if ! command -v tesseract &> /dev/null; then
+    echo -e "\u274c Falha na instalação do Tesseract OCR"
+    exit 2
+  fi
+  
+  echo -e "\u2705 Tesseract OCR instalado com sucesso!"
+fi
+
 # \U1F40D Define Python version
 PYTHON_VERSION="3.10.12"
 if ! pyenv versions --bare | grep -q "^$PYTHON_VERSION$"; then
