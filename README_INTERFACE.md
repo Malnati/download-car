@@ -2,7 +2,7 @@
 
 ## 📋 Visão Geral
 
-Esta interface web permite gerenciar downloads de dados do Cadastro Ambiental Rural (CAR) para todos os estados brasileiros de forma intuitiva e responsiva.
+Esta interface web permite gerenciar downloads de dados do Cadastro Ambiental Rural (CAR) para todos os estados brasileiros de forma intuitiva e responsiva, utilizando o **tema Bootstrap mais popular e gratuito do mercado**.
 
 ## 🚀 Como Acessar
 
@@ -22,22 +22,25 @@ python -m http.server 8080
 
 ## 🎨 Características da Interface
 
-### ✨ Design Responsivo
+### ✨ Design Moderno com Tema Bootstrap Popular
+- **Bootstrap Icons 1.11.3**: Biblioteca de ícones mais popular e gratuita
 - **Cores da EMBRAPA**: Verde institucional (#2E7D32, #4CAF50, #1B5E20)
 - **Bootstrap 5.4.0**: Framework CSS moderno e responsivo
-- **Font Awesome**: Ícones profissionais
-- **Google Fonts**: Tipografia Inter para melhor legibilidade
+- **Google Fonts Inter**: Tipografia moderna para melhor legibilidade
+- **Gradientes modernos**: Efeitos visuais sofisticados
+- **Animações suaves**: Transições e hover effects
 
 ### 🏁 Bandeiras dos Estados
 - Todas as 27 bandeiras dos estados brasileiros
 - Carregamento via CDN (Wikimedia Commons)
 - Fallback para placeholder em caso de erro
+- Efeito hover com zoom nas bandeiras
 
-### 📊 Tabela Interativa
+### 📊 Tabela Interativa Moderna
 | Coluna | Descrição | Funcionalidade |
 |--------|-----------|----------------|
-| **Estado** | Bandeira + Sigla | Exibição visual com bandeira |
-| **Diretório** | Sigla do estado | Código do diretório destino |
+| **Estado** | Bandeira + Sigla + Nome | Exibição visual completa |
+| **Diretório** | Código do estado | Badge estilizado |
 | **Espera (s)** | Timeout em segundos | Campo editável (10-300s) |
 | **Tentativas** | Máximo de retry | Campo editável (1-20) |
 | **Última** | Data/hora último download | Formato: yyyy-MM-dd HH:mm |
@@ -79,29 +82,30 @@ python -m http.server 8080
 - **Persistência** no localStorage
 - **Atualização automática** da interface
 
-### 🔔 Notificações
+### 🔔 Notificações Modernas
 - **Toast notifications** no canto superior direito
 - **Cores por tipo**: Verde (sucesso), Vermelho (erro), Azul (info)
 - **Auto-dismiss** após alguns segundos
+- **Design moderno** com backdrop blur
 
 ## 🛠️ Tecnologias Utilizadas
 
 ### Frontend
 - **HTML5**: Estrutura semântica
-- **CSS3**: Estilos customizados com variáveis CSS
+- **CSS3**: Estilos customizados com variáveis CSS e gradientes
 - **JavaScript ES6+**: Funcionalidades interativas
 - **Bootstrap 5.4.0**: Framework CSS responsivo
-- **Font Awesome 6.4.0**: Biblioteca de ícones
+- **Bootstrap Icons 1.11.3**: Biblioteca de ícones mais popular
 
 ### CDNs Utilizados
 ```html
-<!-- Bootstrap -->
+<!-- Bootstrap 5.4.0 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0/dist/css/bootstrap.min.css">
 
-<!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Bootstrap Icons 1.11.3 - Mais popular e gratuito -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-<!-- Google Fonts -->
+<!-- Google Fonts Inter -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Bandeiras dos Estados -->
@@ -123,7 +127,7 @@ python -m http.server 8080
 
 ### Adaptações Mobile
 - **Fonte menor** na tabela
-- **Bandeiras menores** (20x14px)
+- **Bandeiras menores** (24x16px)
 - **Botões compactos**
 - **Scroll horizontal** na tabela
 
@@ -139,21 +143,54 @@ python -m http.server 8080
     --embrapa-red: #F44336;          /* Vermelho */
     --embrapa-gray: #757575;         /* Cinza */
     --embrapa-light-gray: #F5F5F5;   /* Cinza claro */
+    
+    /* Gradientes EMBRAPA */
+    --embrapa-gradient: linear-gradient(135deg, var(--embrapa-green), var(--embrapa-light-green));
+    --embrapa-gradient-dark: linear-gradient(135deg, var(--embrapa-dark-green), var(--embrapa-green));
+    --embrapa-gradient-light: linear-gradient(135deg, var(--embrapa-light-green), #66BB6A);
 }
 ```
 
 ## 🔄 Estados de Download
 
-### Status Icons
-- ✅ **Sucesso**: `fa-check-circle` (verde)
-- ❌ **Erro**: `fa-times-circle` (vermelho)
-- ⏳ **Pendente**: `fa-clock` (laranja)
-- ➖ **Nenhum**: `fa-minus` (cinza)
+### Status Icons (Bootstrap Icons)
+- ✅ **Sucesso**: `bi-check-circle-fill` (verde)
+- ❌ **Erro**: `bi-x-circle-fill` (vermelho)
+- ⏳ **Pendente**: `bi-clock-fill` (laranja)
+- ➖ **Nenhum**: `bi-dash-circle` (cinza)
 
 ### Estados do Botão
 - **Normal**: "Download" com ícone
 - **Carregando**: Spinner + "Baixando..."
 - **Desabilitado**: Durante download
+
+## 🎨 Melhorias Visuais
+
+### Design System
+- **Cards modernos**: Bordas arredondadas e sombras suaves
+- **Navbar com gradiente**: Efeito visual sofisticado
+- **Botões com animações**: Efeitos hover e transições
+- **Formulários estilizados**: Campos com foco visual
+- **Scrollbar customizada**: Cores EMBRAPA
+- **Footer institucional**: Identidade visual
+
+### Animações
+- **Fade In Up**: Cards aparecem com animação
+- **Hover Effects**: Interações suaves
+- **Button Shine**: Efeito de brilho nos botões
+- **Flag Zoom**: Bandeiras aumentam no hover
+
+### Ícones Bootstrap
+- **bi-download**: Download
+- **bi-gear-fill**: Configuração
+- **bi-table**: Tabela
+- **bi-flag**: Estado
+- **bi-folder**: Diretório
+- **bi-clock**: Tempo
+- **bi-arrow-repeat**: Tentativas
+- **bi-calendar-event**: Data
+- **bi-info-circle**: Status
+- **bi-play-circle**: Ação
 
 ## 📝 Exemplo de Uso
 
@@ -185,4 +222,6 @@ python -m http.server 8080
 - [ ] Exportação de histórico
 - [ ] Configurações avançadas
 - [ ] Tema escuro
-- [ ] PWA (Progressive Web App) 
+- [ ] PWA (Progressive Web App)
+- [ ] Modo offline
+- [ ] Notificações push 
