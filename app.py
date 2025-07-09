@@ -149,16 +149,25 @@ def run_download_state(state: str, polygon: str, folder: str, tries: int, debug:
     # Executa o comando
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
     
-    if result.returncode != 0:
-        raise Exception(f"Erro ao executar download_state.py: {result.stderr}")
-    
     # Constrói o caminho esperado do arquivo
-    expected_file = os.path.join(folder, f"{state}_{polygon}.zip")
+    # O download_state.py cria arquivos com o nome {state}_AREA_IMOVEL.zip
+    # independentemente do polígono passado (AREA_PROPERTY é mapeado para AREA_IMOVEL)
+    expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
     
-    if not os.path.exists(expected_file):
-        raise Exception(f"Arquivo não foi criado: {expected_file}")
+    # Verifica se o arquivo foi criado, mesmo que o processo tenha falhado
+    if os.path.exists(expected_file):
+        return expected_file
     
-    return expected_file
+    # Se o arquivo não existe, verifica se houve erro
+    if result.returncode != 0:
+        error_msg = result.stderr.strip()
+        if "UrlNotOkException" in error_msg:
+            raise Exception(f"Falha no download devido a problemas de captcha. Tente novamente em alguns minutos. Detalhes: {error_msg}")
+        else:
+            raise Exception(f"Erro ao executar download_state.py: {error_msg}")
+    
+    # Se chegou aqui, o processo não falhou mas o arquivo não foi criado
+    raise Exception(f"Download concluído mas arquivo não foi criado: {expected_file}")
 
 
 @app.post(
@@ -244,7 +253,7 @@ async def download_state_endpoint(
         # Retorna o arquivo como resposta
         return FileResponse(
             path=file_path,
-            filename=f"{state}_{polygon}.zip",
+            filename=f"{state}_AREA_IMOVEL.zip",
             media_type="application/zip"
         )
         
