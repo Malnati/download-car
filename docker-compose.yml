@@ -8,6 +8,8 @@ services:
     volumes:
       - .:/download-car
     entrypoint: ./entrypoint.download.sh
+    environment:
+      - POLYGON=AREA_IMOVEL
 
   download-car-api:
     build:

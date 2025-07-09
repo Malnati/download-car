@@ -50,6 +50,15 @@ download:
 	@echo "🛠️  Executando download_state.sh com parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
 	./download_state.sh --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries)
 
+# Comandos para as novas funcionalidades
+search-car:
+	@echo "🔍  Buscando estado do CAR: $(car)"
+	curl -X GET "http://localhost:8000/state?car=$(car)"
+
+download-property:
+	@echo "🏠  Baixando propriedade do CAR: $(car)"
+	curl -X GET "http://localhost:8000/property?car=$(car)" --output property_$(car).zip
+
 download-up:
 	@echo "🚀  Iniciando serviço download-car..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up download-car -d

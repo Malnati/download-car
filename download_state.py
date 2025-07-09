@@ -8,7 +8,7 @@ from download_car.drivers import Paddle, Tesseract
 
 parser = argparse.ArgumentParser(description="Download SICAR state polygon.")
 parser.add_argument("--state", type=str, default=os.getenv("STATE", "DF"))
-parser.add_argument("--polygon", type=str, default=os.getenv("POLYGON", "APPS"))
+parser.add_argument("--polygon", type=str, default=os.getenv("POLYGON", "AREA_IMOVEL"))
 parser.add_argument("--folder", type=str, default=os.getenv("FOLDER", "data/DF"))
 parser.add_argument("--tries", type=int, default=int(os.getenv("TRIES", "25")))
 parser.add_argument("--debug", type=lambda x: str(x).lower() == "true", default=os.getenv("DEBUG", "False"))
@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 # Read parameters from environment variables with reasonable defaults
 state = State[args.state] if args.state in State.__members__ else State[os.getenv("STATE", "DF")]
-polygon = Polygon[args.polygon] if args.polygon in Polygon.__members__ else Polygon[os.getenv("POLYGON", "APPS")]
+polygon = Polygon[args.polygon] if args.polygon in Polygon.__members__ else Polygon[os.getenv("POLYGON", "AREA_IMOVEL")]
 folder = args.folder
 tries = args.tries
 debug = args.debug

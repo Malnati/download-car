@@ -31,7 +31,7 @@ app = FastAPI(
     - **Download por Estado**: Baixa dados de um estado específico
     - **Download Nacional**: Baixa dados de todos os estados do Brasil
     - **Busca por CAR**: Localiza o estado de um imóvel pelo número do CAR
-    - **Múltiplos Tipos de Polígonos**: APPS, Reserva Legal, Vegetação Nativa, etc.
+    - **Múltiplos Tipos de Polígonos**: AREA_IMOVEL, APPS, Reserva Legal, Vegetação Nativa, etc.
     - **Formato Shapefile**: Arquivos compatíveis com sistemas GIS
     
     ## Estados Disponíveis
@@ -66,7 +66,7 @@ app = FastAPI(
     
     ## Tipos de Polígonos Disponíveis
     
-    - **AREA_IMOVEL**: Perímetros dos imóveis (Property perimeters)
+    - **AREA_IMOVEL**: Perímetros dos imóveis (Property perimeters) - **PADRÃO**
     - **APPS**: Área de Preservação Permanente (Permanent preservation area)
     - **VEGETACAO_NATIVA**: Remanescente de Vegetação Nativa (Native Vegetation Remnants)
     - **AREA_CONSOLIDADA**: Área Consolidada (Consolidated Area)
@@ -139,10 +139,10 @@ def extract_and_find_shp(upload_file: UploadFile, temp_dir: str) -> str:
     ```bash
     curl -X POST "http://localhost:8000/download_state" \\
          -F "state=SP" \\
-         -F "polygon=APPS" \\
+         -F "polygon=AREA_IMOVEL" \\
          -F "tries=25" \\
          -F "debug=false" \\
-         --output SP_APPS.zip
+         --output SP_AREA_IMOVEL.zip
     ```
     
     **Arquivo de retorno:**
@@ -162,9 +162,9 @@ async def download_state_endpoint(
         regex="^[A-Z]{2}$"
     ),
     polygon: str = Form(
-        ...,
-        description="Tipo de polígono a ser baixado",
-        example="APPS",
+        "AREA_IMOVEL",
+        description="Tipo de polígono a ser baixado (padrão: AREA_IMOVEL)",
+        example="AREA_IMOVEL",
         regex="^(AREA_IMOVEL|APPS|VEGETACAO_NATIVA|AREA_CONSOLIDADA|AREA_POUSIO|HIDROGRAFIA|USO_RESTRITO|SERVIDAO_ADMINISTRATIVA|RESERVA_LEGAL)$"
     ),
     folder: Optional[str] = Form(
@@ -204,9 +204,9 @@ async def download_state_endpoint(
     
     **Parâmetros obrigatórios:**
     - `state`: Sigla do estado (ex: SP, RJ, MG)
-    - `polygon`: Tipo de polígono (ex: APPS, AREA_PROPERTY, LEGAL_RESERVE)
     
     **Parâmetros opcionais:**
+    - `polygon`: Tipo de polígono (padrão: AREA_IMOVEL)
     - `folder`: Pasta de destino (padrão: pasta temporária)
     - `tries`: Tentativas de download (padrão: 25)
     - `debug`: Modo debug (padrão: False)
@@ -270,11 +270,11 @@ async def download_state_endpoint(
     **Exemplo de uso:**
     ```bash
     curl -X POST "http://localhost:8000/download_country" \\
-         -F "polygon=APPS" \\
+         -F "polygon=AREA_IMOVEL" \\
          -F "folder=brazil" \\
          -F "tries=25" \\
          -F "debug=false" \\
-         --output brazil_APPS.zip
+         --output brazil_AREA_IMOVEL.zip
     ```
     
     **Arquivo de retorno:**
@@ -287,9 +287,9 @@ async def download_state_endpoint(
 )
 async def download_country_endpoint(
     polygon: str = Form(
-        ...,
-        description="Tipo de polígono a ser baixado para todos os estados",
-        example="APPS",
+        "AREA_IMOVEL",
+        description="Tipo de polígono a ser baixado para todos os estados (padrão: AREA_IMOVEL)",
+        example="AREA_IMOVEL",
         regex="^(AREA_IMOVEL|APPS|VEGETACAO_NATIVA|AREA_CONSOLIDADA|AREA_POUSIO|HIDROGRAFIA|USO_RESTRITO|SERVIDAO_ADMINISTRATIVA|RESERVA_LEGAL)$"
     ),
     folder: str = Form(
@@ -321,7 +321,7 @@ async def download_country_endpoint(
     Baixa dados do CAR para todos os estados do Brasil.
     
     **Parâmetros obrigatórios:**
-    - `polygon`: Tipo de polígono (ex: APPS, AREA_PROPERTY, LEGAL_RESERVE)
+    - `polygon`: Tipo de polígono (padrão: AREA_IMOVEL)
     
     **Parâmetros opcionais:**
     - `folder`: Pasta base de destino (padrão: "brazil")
@@ -403,37 +403,20 @@ async def get_states():
     """
     states = []
     for state in State:
+        state_names = {
+            "AC": "Acre", "AL": "Alagoas", "AM": "Amazonas", "AP": "Amapá",
+            "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal",
+            "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão",
+            "MG": "Minas Gerais", "MS": "Mato Grosso do Sul", "MT": "Mato Grosso",
+            "PA": "Pará", "PB": "Paraíba", "PE": "Pernambuco", "PI": "Piauí",
+            "PR": "Paraná", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte",
+            "RO": "Rondônia", "RR": "Roraima", "RS": "Rio Grande do Sul",
+            "SC": "Santa Catarina", "SE": "Sergipe", "SP": "São Paulo", "TO": "Tocantins"
+        }
+        
         states.append({
             "sigla": state.value,
-            "nome": {
-                "AC": "Acre",
-                "AL": "Alagoas", 
-                "AM": "Amazonas",
-                "AP": "Amapá",
-                "BA": "Bahia",
-                "CE": "Ceará",
-                "DF": "Distrito Federal",
-                "ES": "Espírito Santo",
-                "GO": "Goiás",
-                "MA": "Maranhão",
-                "MG": "Minas Gerais",
-                "MS": "Mato Grosso do Sul",
-                "MT": "Mato Grosso",
-                "PA": "Pará",
-                "PB": "Paraíba",
-                "PE": "Pernambuco",
-                "PI": "Piauí",
-                "PR": "Paraná",
-                "RJ": "Rio de Janeiro",
-                "RN": "Rio Grande do Norte",
-                "RO": "Rondônia",
-                "RR": "Roraima",
-                "RS": "Rio Grande do Sul",
-                "SC": "Santa Catarina",
-                "SE": "Sergipe",
-                "SP": "São Paulo",
-                "TO": "Tocantins"
-            }.get(state.value, state.value)
+            "nome": state_names.get(state.value, state.value)
         })
     return {"states": states}
 
@@ -459,7 +442,7 @@ async def get_polygons():
     polygons = []
     for polygon in Polygon:
         descriptions = {
-            "AREA_PROPERTY": "Perímetros dos imóveis (Property perimeters)",
+            "AREA_PROPERTY": "Perímetros dos imóveis (Property perimeters) - PADRÃO",
             "APPS": "Área de Preservação Permanente (Permanent preservation area)",
             "NATIVE_VEGETATION": "Remanescente de Vegetação Nativa (Native Vegetation Remnants)",
             "CONSOLIDATED_AREA": "Área Consolidada (Consolidated Area)",
@@ -479,7 +462,7 @@ async def get_polygons():
 
 
 @app.get(
-    "/estado",
+    "/state",
     summary="Buscar estado de um imóvel pelo número do CAR",
     description="""
     Busca o estado onde está cadastrado um imóvel específico pelo seu número do CAR.
@@ -491,7 +474,7 @@ async def get_polygons():
     
     **Exemplo de uso:**
     ```bash
-    curl -X GET "http://localhost:8000/estado?car=SP12345678901234567890"
+    curl -X GET "http://localhost:8000/state?car=SP12345678901234567890"
     ```
     
     **Retorno:**
@@ -509,6 +492,14 @@ async def buscar_estado_por_car(
         min_length=10,
         max_length=50
     ),
+    state: Optional[str] = Query(
+        None,
+        description="Sigla do estado para limitar a busca (opcional)",
+        example="SP",
+        min_length=2,
+        max_length=2,
+        regex="^[A-Z]{2}$"
+    ),
     data_folder: str = Query(
         "data",
         description="Pasta onde estão os dados baixados dos estados",
@@ -522,6 +513,7 @@ async def buscar_estado_por_car(
     - `car`: Número do CAR do imóvel
     
     **Parâmetros opcionais:**
+    - `state`: Sigla do estado para limitar a busca
     - `data_folder`: Pasta com os dados baixados (padrão: "data")
     
     **Retorna:**
@@ -540,14 +532,17 @@ async def buscar_estado_por_car(
                 "error": f"Pasta de dados '{data_folder}' não encontrada. Baixe os dados primeiro usando /download_state ou /download_country."
             }
         
-        # Buscar shapefiles de área de imóvel em todos os estados
+        # Buscar shapefiles de área de imóvel
         found_imovel = None
         found_state = None
         found_file = None
         
+        # Definir estados para buscar
+        states_to_search = [State[state.upper()]] if state else list(State)
+        
         # Procurar em cada estado
-        for state in State:
-            state_folder = data_path / state.value
+        for state_enum in states_to_search:
+            state_folder = data_path / state_enum.value
             if not state_folder.exists():
                 continue
                 
@@ -569,7 +564,7 @@ async def buscar_estado_por_car(
                     mask = gdf['cod_imovel'] == car
                     if mask.any():
                         found_imovel = gdf[mask].iloc[0]
-                        found_state = state.value
+                        found_state = state_enum.value
                         found_file = str(shp_file)
                         break
                         
@@ -627,6 +622,153 @@ async def buscar_estado_por_car(
 
 
 @app.get(
+    "/property",
+    summary="Buscar propriedade pelo número do CAR",
+    description="""
+    Busca uma propriedade específica pelo seu número do CAR e retorna o shape da propriedade.
+    
+    Este endpoint analisa os shapefiles baixados de todos os estados para encontrar
+    a propriedade com o número do CAR informado e retorna o shape da propriedade.
+    
+    **⚠️ Atenção:** Este endpoint requer que os dados dos estados estejam baixados.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X GET "http://localhost:8000/property?car=SP12345678901234567890"
+    ```
+    
+    **Retorno:**
+    - Shape da propriedade encontrada
+    - Em caso de erro: JSON com mensagem de erro
+    """,
+    response_description="Shape da propriedade encontrada",
+    tags=["Busca por CAR"]
+)
+async def buscar_propriedade_por_car(
+    car: str = Query(
+        ...,
+        description="Número do CAR da propriedade a ser buscada",
+        example="SP12345678901234567890",
+        min_length=10,
+        max_length=50
+    ),
+    state: Optional[str] = Query(
+        None,
+        description="Sigla do estado para limitar a busca (opcional)",
+        example="SP",
+        min_length=2,
+        max_length=2,
+        regex="^[A-Z]{2}$"
+    ),
+    data_folder: str = Query(
+        "data",
+        description="Pasta onde estão os dados baixados dos estados",
+        example="data"
+    )
+):
+    """
+    Busca uma propriedade pelo número do CAR e retorna o shape da propriedade.
+    
+    **Parâmetros obrigatórios:**
+    - `car`: Número do CAR da propriedade
+    
+    **Parâmetros opcionais:**
+    - `state`: Sigla do estado para limitar a busca
+    - `data_folder`: Pasta com os dados baixados (padrão: "data")
+    
+    **Retorna:**
+    - Shape da propriedade encontrada
+    - Em caso de erro: JSON com mensagem de erro
+    """
+    try:
+        import geopandas as gpd
+        from pathlib import Path
+        import glob
+        
+        # Verificar se a pasta de dados existe
+        data_path = Path(data_folder)
+        if not data_path.exists():
+            return {
+                "error": f"Pasta de dados '{data_folder}' não encontrada. Baixe os dados primeiro usando /download_state ou /download_country."
+            }
+        
+        # Buscar shapefiles de área de imóvel
+        found_imovel = None
+        found_state = None
+        found_file = None
+        
+        # Definir estados para buscar
+        states_to_search = [State[state.upper()]] if state else list(State)
+        
+        # Procurar em cada estado
+        for state_enum in states_to_search:
+            state_folder = data_path / state_enum.value
+            if not state_folder.exists():
+                continue
+                
+            # Procurar por arquivos de área de imóvel
+            shp_files = list(state_folder.glob("*AREA_IMOVEL*.shp"))
+            if not shp_files:
+                continue
+                
+            for shp_file in shp_files:
+                try:
+                    # Ler o shapefile
+                    gdf = gpd.read_file(shp_file)
+                    
+                    # Verificar se existe a coluna cod_imovel
+                    if 'cod_imovel' not in gdf.columns:
+                        continue
+                    
+                    # Buscar o CAR
+                    mask = gdf['cod_imovel'] == car
+                    if mask.any():
+                        found_imovel = gdf[mask].iloc[0]
+                        found_state = state_enum.value
+                        found_file = str(shp_file)
+                        break
+                        
+                except Exception as e:
+                    print(f"Erro ao ler {shp_file}: {e}")
+                    continue
+            
+            if found_imovel is not None:
+                break
+        
+        if found_imovel is None:
+            return {
+                "error": f"Propriedade com CAR '{car}' não encontrada em nenhum estado.",
+                "suggestion": "Verifique se o número do CAR está correto e se os dados dos estados foram baixados."
+            }
+        
+        # Criar GeoDataFrame apenas com a propriedade encontrada
+        property_gdf = gpd.GeoDataFrame([found_imovel], crs=gdf.crs)
+        
+        # Salvar shape da propriedade em arquivo temporário
+        temp_shp_path = f"temp_property_{car}.shp"
+        property_gdf.to_file(temp_shp_path)
+        
+        # Criar ZIP com o shape da propriedade
+        zip_path = zip_shapefile(temp_shp_path)
+        zip_file_handle = open(zip_path, "rb")
+        
+        return StreamingResponse(
+            zip_file_handle,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="property_{car}.zip"'},
+        )
+        
+    except ImportError:
+        return {
+            "error": "Biblioteca geopandas não encontrada. Instale com: pip install geopandas"
+        }
+    except Exception as exc:
+        return {
+            "error": f"Erro ao buscar propriedade: {str(exc)}"
+        }
+
+
+@app.get(
     "/",
     summary="Informações da API",
     description="""
@@ -649,7 +791,8 @@ async def root():
         "endpoints": {
             "download_state": "/download_state - Download de dados por estado",
             "download_country": "/download_country - Download de dados para todo o Brasil",
-            "estado": "/estado - Buscar estado de um imóvel pelo CAR",
+            "state": "/state - Buscar estado de um imóvel pelo CAR",
+            "property": "/property - Buscar propriedade pelo CAR",
             "states": "/states - Lista de estados disponíveis",
             "polygons": "/polygons - Lista de polígonos disponíveis",
             "docs": "/docs - Documentação Swagger",
