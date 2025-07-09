@@ -9,7 +9,7 @@ services:
       - .:/download-car
     entrypoint: ./entrypoint.download.sh
     environment:
-      - POLYGON=AREA_IMOVEL
+      - POLYGON=AREA_PROPERTY
 
   download-car-api:
     build:
