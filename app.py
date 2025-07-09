@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import tempfile
@@ -219,9 +219,27 @@ async def download_state_endpoint(
     """
     try:
         car = DownloadCar(driver=Tesseract)
+        
+        # Mapear o valor do polígono para o enum correto
+        polygon_mapping = {
+            "AREA_IMOVEL": Polygon.AREA_PROPERTY,
+            "APPS": Polygon.APPS,
+            "VEGETACAO_NATIVA": Polygon.NATIVE_VEGETATION,
+            "AREA_CONSOLIDADA": Polygon.CONSOLIDATED_AREA,
+            "AREA_POUSIO": Polygon.AREA_FALL,
+            "HIDROGRAFIA": Polygon.HYDROGRAPHY,
+            "USO_RESTRITO": Polygon.RESTRICTED_USE,
+            "SERVIDAO_ADMINISTRATIVA": Polygon.ADMINISTRATIVE_SERVICE,
+            "RESERVA_LEGAL": Polygon.LEGAL_RESERVE
+        }
+        
+        polygon_enum = polygon_mapping.get(polygon.upper())
+        if not polygon_enum:
+            return {"error": f"Polígono '{polygon}' não reconhecido"}
+        
         path = car.download_state(
             state=State[state.upper()],
-            polygon=Polygon[polygon.upper()],
+            polygon=polygon_enum,
             folder=folder or "temp",
             tries=tries,
             debug=debug,
@@ -272,7 +290,7 @@ async def download_country_endpoint(
         ...,
         description="Tipo de polígono a ser baixado para todos os estados",
         example="APPS",
-        regex="^(AREA_PROPERTY|APPS|NATIVE_VEGETATION|CONSOLIDATED_AREA|AREA_FALL|HYDROGRAPHY|RESTRICTED_USE|ADMINISTRATIVE_SERVICE|LEGAL_RESERVE)$"
+        regex="^(AREA_IMOVEL|APPS|VEGETACAO_NATIVA|AREA_CONSOLIDADA|AREA_POUSIO|HIDROGRAFIA|USO_RESTRITO|SERVIDAO_ADMINISTRATIVA|RESERVA_LEGAL)$"
     ),
     folder: str = Form(
         "brazil",
@@ -322,8 +340,26 @@ async def download_country_endpoint(
     """
     try:
         car = DownloadCar(driver=Tesseract)
+        
+        # Mapear o valor do polígono para o enum correto
+        polygon_mapping = {
+            "AREA_IMOVEL": Polygon.AREA_PROPERTY,
+            "APPS": Polygon.APPS,
+            "VEGETACAO_NATIVA": Polygon.NATIVE_VEGETATION,
+            "AREA_CONSOLIDADA": Polygon.CONSOLIDATED_AREA,
+            "AREA_POUSIO": Polygon.AREA_FALL,
+            "HIDROGRAFIA": Polygon.HYDROGRAPHY,
+            "USO_RESTRITO": Polygon.RESTRICTED_USE,
+            "SERVIDAO_ADMINISTRATIVA": Polygon.ADMINISTRATIVE_SERVICE,
+            "RESERVA_LEGAL": Polygon.LEGAL_RESERVE
+        }
+        
+        polygon_enum = polygon_mapping.get(polygon.upper())
+        if not polygon_enum:
+            return {"error": f"Polígono '{polygon}' não reconhecido"}
+        
         result = car.download_country(
-            polygon=Polygon[polygon.upper()],
+            polygon=polygon_enum,
             folder=folder,
             tries=tries,
             debug=debug,
@@ -443,6 +479,154 @@ async def get_polygons():
 
 
 @app.get(
+    "/estado",
+    summary="Buscar estado de um imóvel pelo número do CAR",
+    description="""
+    Busca o estado onde está cadastrado um imóvel específico pelo seu número do CAR.
+    
+    Este endpoint analisa os shapefiles baixados de todos os estados para encontrar
+    o imóvel com o número do CAR informado e retorna o shape do estado correspondente.
+    
+    **⚠️ Atenção:** Este endpoint requer que os dados dos estados estejam baixados.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X GET "http://localhost:8000/estado?car=SP12345678901234567890"
+    ```
+    
+    **Retorno:**
+    - JSON com informações do imóvel encontrado
+    - Shape do estado onde o imóvel está cadastrado
+    """,
+    response_description="Informações do imóvel e shape do estado",
+    tags=["Busca por CAR"]
+)
+async def buscar_estado_por_car(
+    car: str = Query(
+        ...,
+        description="Número do CAR do imóvel a ser buscado",
+        example="SP12345678901234567890",
+        min_length=10,
+        max_length=50
+    ),
+    data_folder: str = Query(
+        "data",
+        description="Pasta onde estão os dados baixados dos estados",
+        example="data"
+    )
+):
+    """
+    Busca o estado de um imóvel pelo número do CAR.
+    
+    **Parâmetros obrigatórios:**
+    - `car`: Número do CAR do imóvel
+    
+    **Parâmetros opcionais:**
+    - `data_folder`: Pasta com os dados baixados (padrão: "data")
+    
+    **Retorna:**
+    - JSON com informações do imóvel e estado encontrado
+    - Em caso de erro: JSON com mensagem de erro
+    """
+    try:
+        import geopandas as gpd
+        from pathlib import Path
+        import glob
+        
+        # Verificar se a pasta de dados existe
+        data_path = Path(data_folder)
+        if not data_path.exists():
+            return {
+                "error": f"Pasta de dados '{data_folder}' não encontrada. Baixe os dados primeiro usando /download_state ou /download_country."
+            }
+        
+        # Buscar shapefiles de área de imóvel em todos os estados
+        found_imovel = None
+        found_state = None
+        found_file = None
+        
+        # Procurar em cada estado
+        for state in State:
+            state_folder = data_path / state.value
+            if not state_folder.exists():
+                continue
+                
+            # Procurar por arquivos de área de imóvel
+            shp_files = list(state_folder.glob("*AREA_IMOVEL*.shp"))
+            if not shp_files:
+                continue
+                
+            for shp_file in shp_files:
+                try:
+                    # Ler o shapefile
+                    gdf = gpd.read_file(shp_file)
+                    
+                    # Verificar se existe a coluna cod_imovel
+                    if 'cod_imovel' not in gdf.columns:
+                        continue
+                    
+                    # Buscar o CAR
+                    mask = gdf['cod_imovel'] == car
+                    if mask.any():
+                        found_imovel = gdf[mask].iloc[0]
+                        found_state = state.value
+                        found_file = str(shp_file)
+                        break
+                        
+                except Exception as e:
+                    print(f"Erro ao ler {shp_file}: {e}")
+                    continue
+            
+            if found_imovel is not None:
+                break
+        
+        if found_imovel is None:
+            return {
+                "error": f"Imóvel com CAR '{car}' não encontrado em nenhum estado.",
+                "suggestion": "Verifique se o número do CAR está correto e se os dados dos estados foram baixados."
+            }
+        
+        # Preparar resposta com informações do imóvel
+        imovel_info = {}
+        for col in found_imovel.index:
+            if col != 'geometry':
+                imovel_info[col] = str(found_imovel[col])
+        
+        # Buscar informações do estado
+        state_names = {
+            "AC": "Acre", "AL": "Alagoas", "AM": "Amazonas", "AP": "Amapá",
+            "BA": "Bahia", "CE": "Ceará", "DF": "Distrito Federal",
+            "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão",
+            "MG": "Minas Gerais", "MS": "Mato Grosso do Sul", "MT": "Mato Grosso",
+            "PA": "Pará", "PB": "Paraíba", "PE": "Pernambuco", "PI": "Piauí",
+            "PR": "Paraná", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte",
+            "RO": "Rondônia", "RR": "Roraima", "RS": "Rio Grande do Sul",
+            "SC": "Santa Catarina", "SE": "Sergipe", "SP": "São Paulo", "TO": "Tocantins"
+        }
+        
+        return {
+            "success": True,
+            "car": car,
+            "estado": {
+                "sigla": found_state,
+                "nome": state_names.get(str(found_state), str(found_state))
+            },
+            "imovel": imovel_info,
+            "arquivo_origem": found_file,
+            "message": f"Imóvel encontrado no estado {found_state} ({state_names.get(str(found_state), str(found_state))})"
+        }
+        
+    except ImportError:
+        return {
+            "error": "Biblioteca geopandas não encontrada. Instale com: pip install geopandas"
+        }
+    except Exception as exc:
+        return {
+            "error": f"Erro ao buscar imóvel: {str(exc)}"
+        }
+
+
+@app.get(
     "/",
     summary="Informações da API",
     description="""
@@ -465,6 +649,7 @@ async def root():
         "endpoints": {
             "download_state": "/download_state - Download de dados por estado",
             "download_country": "/download_country - Download de dados para todo o Brasil",
+            "estado": "/estado - Buscar estado de um imóvel pelo CAR",
             "states": "/states - Lista de estados disponíveis",
             "polygons": "/polygons - Lista de polígonos disponíveis",
             "docs": "/docs - Documentação Swagger",
