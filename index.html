@@ -616,17 +616,17 @@
         const TIMEOUT_INCREMENT = 10000; // 10 segundos
         const MIN_TIMEOUT = 10000; // 10 segundos
         const MAX_TIMEOUT = 300000; // 5 minutos
-        const DEFAULT_POLYGON = 'AREA_IMOVEL'; // Polígono padrão
+        const DEFAULT_POLYGON = 'AREA_PROPERTY'; // Polígono padrão
         const POLYGONS = [
-            { value: 'AREA_IMOVEL', label: 'Área do Imóvel' },
+            { value: 'AREA_PROPERTY', label: 'Área do Imóvel' },
             { value: 'APPS', label: 'APPS' },
-            { value: 'VEGETACAO_NATIVA', label: 'Vegetação Nativa' },
-            { value: 'AREA_CONSOLIDADA', label: 'Área Consolidada' },
-            { value: 'AREA_POUSIO', label: 'Área de Pousio' },
-            { value: 'HIDROGRAFIA', label: 'Hidrografia' },
-            { value: 'USO_RESTRITO', label: 'Uso Restrito' },
-            { value: 'SERVIDAO_ADMINISTRATIVA', label: 'Servidão Administrativa' },
-            { value: 'RESERVA_LEGAL', label: 'Reserva Legal' }
+            { value: 'NATIVE_VEGETATION', label: 'Vegetação Nativa' },
+            { value: 'CONSOLIDATED_AREA', label: 'Área Consolidada' },
+            { value: 'AREA_FALL', label: 'Área de Pousio' },
+            { value: 'HYDROGRAPHY', label: 'Hidrografia' },
+            { value: 'RESTRICTED_USE', label: 'Uso Restrito' },
+            { value: 'ADMINISTRATIVE_SERVICE', label: 'Servidão Administrativa' },
+            { value: 'LEGAL_RESERVE', label: 'Reserva Legal' }
         ];
         const estados = [
             { sigla: 'AC', nome: 'Acre', flag: '/assets/flags/AC.svg' },
@@ -744,6 +744,8 @@
                 const formData = new FormData();
                 formData.append('state', estado);
                 formData.append('polygon', history.polygon || DEFAULT_POLYGON);
+                formData.append('folder', 'temp'); // Pasta temporária
+                formData.append('tries', '25'); // Número de tentativas
                 formData.append('timeout', Math.floor((history.timeout || DEFAULT_TIMEOUT) / 1000));
                 formData.append('max_retries', history.maxRetries || 5);
                 formData.append('debug', 'false');
@@ -1063,6 +1065,8 @@
                 const formData = new FormData();
                 formData.append('state', estado);
                 formData.append('polygon', history.polygon || DEFAULT_POLYGON); // Usar polígono selecionado ou padrão
+                formData.append('folder', 'temp'); // Pasta temporária
+                formData.append('tries', '25'); // Número de tentativas
                 formData.append('timeout', Math.floor(timeout / 1000));
                 formData.append('max_retries', maxRetries);
                 formData.append('debug', 'false');
