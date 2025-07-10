@@ -803,7 +803,7 @@
 
             try {
                 const apiUrl = document.getElementById('apiUrl').value;
-                const response = await fetch(`${apiUrl}/property?car=${encodeURIComponent(car)}&state=${estado}`);
+                const response = await fetch(`${apiUrl}/state?car=${encodeURIComponent(car)}&state=${estado}`);
 
                 if (response.ok) {
                     const blob = await response.blob();
@@ -926,6 +926,47 @@
             saveDownloadHistory();
         }
 
+        // Lidar com tecla Enter no campo CAR
+        function handleCarKeyPress(event, estado) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchProperty(estado);
+            }
+        }
+
+        // Buscar propriedade
+        async function searchProperty(estado) {
+            const carInput = document.getElementById(`car-input-${estado}`);
+            const car = carInput ? carInput.value.trim() : '';
+            
+            if (!car) {
+                showNotification('Informe um código CAR válido', 'error');
+                return;
+            }
+
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const response = await fetch(`${apiUrl}/state?car=${encodeURIComponent(car)}&state=${estado}`);
+
+                if (response.ok) {
+                    // Marcar que a propriedade foi buscada com sucesso
+                    if (!downloadHistory[estado]) downloadHistory[estado] = {};
+                    downloadHistory[estado].propertySearched = true;
+                    downloadHistory[estado].car = car;
+                    saveDownloadHistory();
+                    
+                    // Atualizar a tabela para mostrar apenas o link de download
+                    renderEstadosTable();
+                    showNotification(`Propriedade ${car} encontrada! Clique em Download propriedade para baixar.`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Propriedade não encontrada');
+                }
+            } catch (error) {
+                showNotification(`Erro ao buscar propriedade ${car}: ${error.message}`, 'error');
+            }
+        }
+
         // Escapar HTML para segurança
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -950,18 +991,28 @@
         // Obter link de propriedade
         function getPropertyLink(estado, history) {
             if (history.status === 'success') {
+                // Se já foi feita a busca da propriedade, mostrar apenas o link de download
+                if (history.propertySearched && history.car && history.car.trim() !== '') {
+                    return `<a href="#" class="download-link" onclick="downloadProperty('${estado}', '${history.car}'); return false;">
+                                <i class="bi bi-house"></i>
+                                Download propriedade ${history.car}
+                            </a>`;
+                }
+                
+                // Se ainda não foi feita a busca, mostrar o campo com botão de lupa
                 return `<div class="d-flex flex-column gap-1">
-                            <input type="text" class="form-control form-control-sm" 
-                                   placeholder="Código CAR" 
-                                   value="${history.car || ''}" 
-                                   onchange="updateCar('${estado}', this.value)">
-                            ${history.car && history.car.trim() !== '' ? 
-                                `<a href="#" class="download-link" onclick="downloadProperty('${estado}', '${history.car}'); return false;">
-                                    <i class="bi bi-house"></i>
-                                    Download Propriedade
-                                </a>` : 
-                                `<span class="text-muted small">Informe CAR</span>`
-                            }
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" 
+                                       placeholder="Código CAR" 
+                                       value="${history.car || ''}" 
+                                       onchange="updateCar('${estado}', this.value)"
+                                       onkeypress="handleCarKeyPress(event, '${estado}')"
+                                       id="car-input-${estado}">
+                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                            <span class="text-muted small">Informe CAR</span>
                         </div>`;
             } else {
                 return `<span class="text-muted small">N/A</span>`;
