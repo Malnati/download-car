@@ -663,7 +663,7 @@
                             <thead>
                                 <tr>
                                     <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Sigla do estado brasileiro"><i class="bi bi-flag me-1"></i>&nbsp;Estado</th>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tempo limite em milissegundos para a requisição. Valores maiores podem ajudar em conexões lentas."><i class="bi bi-clock me-1"></i>&nbsp;Timeout (ms)</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tempo limite em minutos para a requisição. Valores maiores podem ajudar em conexões lentas."><i class="bi bi-clock me-1"></i>&nbsp;Timeout (min)</th>
                                     <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Número máximo de tentativas em caso de falha na requisição"><i class="bi bi-arrow-repeat me-1"></i>&nbsp;Tentativas</th>
                                     <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Data e hora do último download realizado"><i class="bi bi-calendar-event me-1"></i>&nbsp;Última</th>
                                     <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Status atual do download: sucesso, erro, em andamento ou nenhum"><i class="bi bi-info-circle me-1"></i>&nbsp;Status</th>
@@ -862,7 +862,7 @@
                 formData.append('polygon', history.polygon || DEFAULT_POLYGON);
                 formData.append('folder', 'temp'); // Pasta temporária
                 formData.append('tries', '25'); // Número de tentativas
-                formData.append('timeout', Math.floor((history.timeout || DEFAULT_TIMEOUT) / 1000));
+                formData.append('timeout', Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)); // Converter de milissegundos para minutos
                 formData.append('max_retries', history.maxRetries || 5);
                 formData.append('debug', 'false');
 
@@ -924,7 +924,7 @@
                 formData.append('folder', 'PROPERTY');
                 formData.append('tries', '25');
                 formData.append('debug', 'false');
-                formData.append('timeout', '30');
+                formData.append('timeout', '1'); // 1 minuto
                 formData.append('max_retries', '5');
 
                 const response = await fetch(`${apiUrl}/download-property`, {
@@ -1011,21 +1011,21 @@
                     <td>
                         <div class="d-flex align-items-center gap-1">
                             <input type="number" class="form-control form-control-sm" 
-                                   value="${history.timeout || DEFAULT_TIMEOUT}" min="${MIN_TIMEOUT}" max="${MAX_TIMEOUT}" 
-                                   onchange="updateTimeout('${estado.sigla}', this.value)"
+                                   value="${Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)}" min="1" max="5" 
+                                   onchange="updateTimeout('${estado.sigla}', this.value * 60000)"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                   data-bs-title="Timeout em milissegundos para a requisição. Valores maiores podem ajudar em conexões lentas.">
+                                   data-bs-title="Timeout em minutos para a requisição. Valores maiores podem ajudar em conexões lentas.">
                             <button type="button" class="btn btn-outline-secondary btn-sm" 
                                     onclick="resetTimeout('${estado.sigla}')" 
                                     data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Resetar timeout para o valor padrão (${DEFAULT_TIMEOUT/1000}s)">
+                                    data-bs-title="Resetar timeout para o valor padrão (${Math.floor(DEFAULT_TIMEOUT/60000)} min)">
                                 <i class="bi bi-arrow-clockwise"></i>
                             </button>
                         </div>
                     </td>
                     <td>
                         <input type="number" class="form-control form-control-sm" 
-                               value="${history.maxRetries || 5}" min="1" max="20" 
+                               value="${history.maxRetries || 5}" min="1" max="99" 
                                onchange="updateMaxRetries('${estado.sigla}', this.value)"
                                data-bs-toggle="tooltip" data-bs-placement="top" 
                                data-bs-title="Número máximo de tentativas em caso de falha na requisição.">
@@ -1134,7 +1134,7 @@
                 formData.append('folder', 'PROPERTY');
                 formData.append('tries', '25');
                 formData.append('debug', 'false');
-                formData.append('timeout', '30');
+                formData.append('timeout', '1'); // 1 minuto
                 formData.append('max_retries', '5');
 
                 const response = await fetch(`${apiUrl}/download-property`, {
@@ -1234,7 +1234,20 @@
                             </span>
                         </a>`;
             }
-            
+            // Se o download está em andamento, mostrar o mesmo botão, mas só com spinner
+            if (history.status === 'pending') {
+                return `<a class="icon-link" href="#" id="btn-${estado}" style="pointer-events: none; opacity: 0.7;"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Download em andamento. Aguarde a conclusão.">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                            </svg>
+                            <span class="loading" style="display: inline-flex; align-items: center;">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                            </span>
+                        </a>`;
+            }
             // Se o download foi bem-sucedido e o arquivo está pronto, mostrar link de download
             if (history.status === 'success' && history.fileReady) {
                 return `<a href="#" class="download-link" onclick="downloadFile('${estado}'); return false;"
@@ -1249,19 +1262,6 @@
             } else if (history.status === 'error') {
                 return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
                                 data-bs-title="Erro no download. Verifique a conexão e tente novamente.">Erro</span>`;
-            } else if (history.status === 'pending') {
-                return `<button class="btn btn-download btn-sm" disabled id="btn-${estado}"
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Download em andamento. Aguarde a conclusão.">
-                            <span class="btn-text">
-                                <i class="bi bi-clock me-1"></i>
-                                Processando...
-                            </span>
-                            <span class="loading">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                Processando...
-                            </span>
-                        </button>`;
             } else {
                 return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
                                 data-bs-title="Nenhum download realizado. Clique em Requisitar para iniciar.">N/A</span>`;
@@ -1346,16 +1346,20 @@
                             </span>
                         </a>`;
             }
-            
-            // Se está em andamento, mostrar botão desabilitado
+            // Se está em andamento, mostrar botão "Limpar" desabilitado só com spinner
             if (history.status === 'pending') {
-                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                return `<a class="icon-link" href="#" id="btn-clear-${estado}" style="pointer-events: none; opacity: 0.7;"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
                                 data-bs-title="Download em andamento. Aguarde a conclusão para limpar.">
-                            <i class="bi bi-clock me-1"></i>
-                            Processando...
-                        </span>`;
+                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                            </svg>
+                            <span class="loading" style="display: inline-flex; align-items: center;">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                            </span>
+                        </a>`;
             }
-            
             // Se não há status, erro ou nenhum download foi realizado, não mostrar botão
             return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
                                 data-bs-title="Nenhum download realizado ainda. Requisite um download primeiro.">-</span>`;
@@ -1472,7 +1476,7 @@
                 formData.append('polygon', history.polygon || DEFAULT_POLYGON); // Usar polígono selecionado ou padrão
                 formData.append('folder', 'temp'); // Pasta temporária
                 formData.append('tries', '25'); // Número de tentativas
-                formData.append('timeout', Math.floor(timeout / 1000));
+                formData.append('timeout', Math.floor(timeout / 60000)); // Converter de milissegundos para minutos
                 formData.append('max_retries', maxRetries);
                 formData.append('debug', 'false');
 
