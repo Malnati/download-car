@@ -672,6 +672,12 @@
                                 <i class="bi bi-trash me-2"></i>
                                 Limpar Todos
                             </button>
+                            <button type="button" class="btn btn-outline-info" onclick="checkAllEstadosStatus()"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Verificar status de todos os estados novamente">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Verificar Status
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1344,54 +1350,38 @@
 
         // Obter link de download
         function getDownloadLink(estado, history) {
-            // Se não há status (nenhum download realizado), mostrar botão "Requisitar"
-            if (!history.status || history.status === '') {
-                return `<a class="icon-link" href="#" onclick="downloadEstado('${estado}'); return false;" id="btn-${estado}" 
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Clique para requisitar o download dos dados do estado ${estado}. Esta operação pode levar alguns minutos.">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                            </svg>
-                            <span class="btn-text">Requisitar</span>
-                            <span class="loading" style="display: none;">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
-                                Processando...
-                            </span>
-                        </a>`;
+            if (history.status === 'loading') {
+                return '<span class="spinner-border spinner-border-sm text-primary" role="status" title="Verificando arquivos..."></span>';
             }
-            // Se o download está em andamento, mostrar o mesmo botão, mas só com spinner
-            if (history.status === 'pending') {
-                return `<a class="icon-link" href="#" id="btn-${estado}" style="pointer-events: none; opacity: 0.7;"
+            if (history.status === 'ready' && Array.isArray(history.downloadFiles) && history.downloadFiles.length > 0) {
+                const filesHtml = history.downloadFiles.map(f => {
+                    const polygonLabel = f.polygon_type.replace(/_/g, ' ');
+                    const sizeText = f.size_mb ? ` (${f.size_mb.toFixed(1)} MB)` : '';
+                    return `<a href="${f.download_url}" class="btn btn-sm btn-success me-1 mb-1" download 
                                 data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Download em andamento. Aguarde a conclusão.">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                            </svg>
-                            <span class="loading" style="display: inline-flex; align-items: center;">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
-                            </span>
-                        </a>`;
+                                data-bs-title="Baixar arquivo ${polygonLabel}${sizeText}">
+                                <i class="bi bi-download me-1"></i>${polygonLabel}${sizeText}
+                            </a>`;
+                }).join(' ');
+                
+                const totalInfo = history.totalSizeMB ? 
+                    `<div class="small text-muted mt-1">Total: ${history.totalFiles || history.downloadFiles.length} arquivo(s), ${history.totalSizeMB.toFixed(1)} MB</div>` : '';
+                
+                return `<div>${filesHtml}${totalInfo}</div>`;
             }
-            // Se o download foi bem-sucedido e o arquivo está pronto, mostrar link de download
-            if (history.status === 'success' && history.fileReady) {
-                return `<a href="#" class="download-link" onclick="downloadFile('${estado}'); return false;"
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Clique para baixar o arquivo ZIP com os dados do estado ${estado}. O arquivo contém todos os imóveis rurais.">
-                            <i class="bi bi-download"></i>
-                            Download ${estado}
-                        </a>`;
-            } else if (history.status === 'success') {
-                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Download processado com sucesso. Clique em Download para baixar o arquivo.">Processado</span>`;
-            } else if (history.status === 'error') {
-                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Erro no download. Verifique a conexão e tente novamente.">Erro</span>`;
-            } else {
-                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Nenhum download realizado. Clique em Requisitar para iniciar.">N/A</span>`;
+            if (history.status === 'notfound') {
+                return `<span class="text-muted" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="${history.message || 'Nenhum arquivo encontrado para este estado'}">
+                            <i class="bi bi-dash-circle me-1"></i>Nenhum arquivo
+                        </span>`;
             }
+            if (history.status === 'error') {
+                return `<span class="text-danger" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="${history.errorMessage || 'Erro ao verificar arquivos'}">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Erro
+                        </span>`;
+            }
+            return '<span class="text-muted">-</span>';
         }
 
         // Obter link de propriedade
@@ -1493,20 +1483,19 @@
 
         // Obter ícone de status com Bootstrap Icons
         function getStatusIcon(status, errorMessage = null) {
-            switch(status) {
-                case 'success':
-                    return '<i class="bi bi-check-circle-fill status-success" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download realizado com sucesso! O arquivo está pronto para download."></i>';
-                case 'error':
-                    if (errorMessage) {
-                        return `<i class="bi bi-x-circle-fill status-error" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Erro no download: ${escapeHtml(errorMessage)}"></i>`;
-                    } else {
-                        return '<i class="bi bi-x-circle-fill status-error" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Erro no download. Verifique a conexão e tente novamente."></i>';
-                    }
-                case 'pending':
-                    return '<i class="bi bi-clock-fill status-warning" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download em andamento. Aguarde a conclusão."></i>';
-                default:
-                    return '<i class="bi bi-dash-circle status-pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Nenhum download realizado. Clique em Requisitar para iniciar."></i>';
+            if (status === 'loading') {
+                return '<span class="spinner-border spinner-border-sm text-primary" role="status" title="Verificando arquivos..."></span>';
             }
+            if (status === 'ready') {
+                return '<i class="bi bi-check-circle-fill text-success" title="Arquivos disponíveis para download"></i>';
+            }
+            if (status === 'notfound') {
+                return '<i class="bi bi-dash-circle text-secondary" title="Nenhum arquivo encontrado"></i>';
+            }
+            if (status === 'error') {
+                return `<i class="bi bi-exclamation-triangle text-danger" title="${errorMessage || 'Erro ao verificar arquivos'}"></i>`;
+            }
+            return '<i class="bi bi-question-circle text-muted" title="Status não verificado"></i>';
         }
 
         // Formatar data/hora
@@ -1814,6 +1803,97 @@
                 }
             });
         }
+
+        // Função para buscar status do estado na API
+        async function fetchEstadoStatus(estado) {
+            const apiUrl = document.getElementById('apiUrl').value;
+            console.log(`[Status] Iniciando busca de status para ${estado} em ${apiUrl}/state_status/${estado}`);
+            
+            try {
+                // Marcar como carregando
+                if (!downloadHistory[estado]) downloadHistory[estado] = {};
+                downloadHistory[estado].status = 'loading';
+                downloadHistory[estado].lastStatusCheck = new Date().toISOString();
+                renderEstadosTable();
+                
+                const startTime = Date.now();
+                const response = await fetch(`${apiUrl}/state_status/${estado}`);
+                const responseTime = Date.now() - startTime;
+                
+                console.log(`[Status] ${estado} - Resposta recebida em ${responseTime}ms - Status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(`[Status] ${estado} - Dados recebidos:`, data);
+                    
+                    if (data.has_files && data.available_files && data.available_files.length > 0) {
+                        downloadHistory[estado].status = 'ready';
+                        downloadHistory[estado].downloadFiles = data.available_files;
+                        downloadHistory[estado].totalFiles = data.total_files;
+                        downloadHistory[estado].totalSizeMB = data.total_size_mb;
+                        console.log(`[Status] ${estado} - Arquivos encontrados: ${data.available_files.length} arquivos, ${data.total_size_mb}MB total`);
+                    } else {
+                        downloadHistory[estado].status = 'notfound';
+                        downloadHistory[estado].downloadFiles = [];
+                        downloadHistory[estado].message = data.message || 'Nenhum arquivo encontrado';
+                        console.log(`[Status] ${estado} - Nenhum arquivo encontrado: ${data.message}`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error(`[Status] ${estado} - Erro HTTP ${response.status}: ${errorText}`);
+                    downloadHistory[estado].status = 'error';
+                    downloadHistory[estado].downloadFiles = [];
+                    downloadHistory[estado].errorMessage = `Erro HTTP ${response.status}: ${response.statusText}`;
+                }
+            } catch (error) {
+                console.error(`[Status] ${estado} - Erro de rede:`, error);
+                downloadHistory[estado].status = 'error';
+                downloadHistory[estado].downloadFiles = [];
+                downloadHistory[estado].errorMessage = `Erro de rede: ${error.message}`;
+            }
+            
+            saveDownloadHistory();
+            renderEstadosTable();
+            console.log(`[Status] ${estado} - Status final: ${downloadHistory[estado].status}`);
+        }
+
+        // Função para verificar status de todos os estados
+        async function checkAllEstadosStatus() {
+            console.log('[Status] Iniciando verificação de status para todos os estados...');
+            const startTime = Date.now();
+            let successCount = 0;
+            let errorCount = 0;
+            
+            // Fazer requisições em paralelo para melhor performance
+            const promises = estados.map(async (estado) => {
+                try {
+                    await fetchEstadoStatus(estado.sigla);
+                    successCount++;
+                } catch (error) {
+                    console.error(`[Status] Erro ao verificar ${estado.sigla}:`, error);
+                    errorCount++;
+                }
+            });
+            
+            await Promise.allSettled(promises);
+            const totalTime = Date.now() - startTime;
+            
+            console.log(`[Status] Verificação concluída em ${totalTime}ms - Sucessos: ${successCount}, Erros: ${errorCount}`);
+            
+            if (errorCount > 0) {
+                showNotification(`Verificação de status concluída com ${errorCount} erro(s). Verifique o console para detalhes.`, 'warning');
+            } else {
+                showNotification(`Status de todos os estados verificado com sucesso em ${totalTime}ms!`, 'success');
+            }
+        }
+
+        // Chamar busca de status para cada estado ao carregar a página
+        window.addEventListener('DOMContentLoaded', () => {
+            // Aguardar um pouco para garantir que a página carregou completamente
+            setTimeout(() => {
+                checkAllEstadosStatus();
+            }, 500);
+        });
     </script>
 </body>
 </html> 

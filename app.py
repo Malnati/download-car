@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, Path
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -9,10 +9,11 @@ import tempfile
 import shutil
 import os
 import zipfile
-from pathlib import Path
+from pathlib import Path as FilePath
 from typing import Optional
 import subprocess
 import sys
+from datetime import datetime
 
 from download_car import DownloadCar, State, Polygon
 from download_car.drivers import Tesseract
@@ -748,6 +749,184 @@ async def buscar_propriedade_por_car(
             "error": str(e),
             "car_number": car
         }
+
+
+@app.get(
+    "/state_status/{state}",
+    summary="Verificar status de arquivo de estado",
+    description="""
+    Verifica se existe arquivo baixado para um estado específico e retorna informações para download.
+    
+    Este endpoint verifica se há arquivos ZIP disponíveis para o estado informado e retorna
+    informações sobre os arquivos encontrados, incluindo links para download.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X GET "http://localhost:8000/state_status/SP"
+    ```
+    
+    **Retorno:**
+    - JSON com informações sobre os arquivos disponíveis para o estado
+    - Links para download dos arquivos encontrados
+    """,
+    response_description="Informações sobre arquivos disponíveis para o estado",
+    tags=["Status de Estados"]
+)
+async def get_state_status(
+    state: str = Path(...),
+    folder: str = Query(
+        "temp",
+        description="Pasta onde buscar os arquivos do estado",
+        example="temp"
+    )
+):
+    """
+    Verifica se existe arquivo baixado para um estado específico.
+    """
+    try:
+        # Lista de possíveis arquivos para o estado
+        state_files_patterns = [
+            f"{state}_AREA_IMOVEL.zip",
+            f"{state}_APPS.zip",
+            f"{state}_NATIVE_VEGETATION.zip",
+            f"{state}_CONSOLIDATED_AREA.zip",
+            f"{state}_AREA_FALL.zip",
+            f"{state}_HYDROGRAPHY.zip",
+            f"{state}_RESTRICTED_USE.zip",
+            f"{state}_ADMINISTRATIVE_SERVICE.zip",
+            f"{state}_LEGAL_RESERVE.zip"
+        ]
+        
+        available_files = []
+        total_size = 0
+        
+        for pattern in state_files_patterns:
+            file_path = os.path.join(folder, pattern)
+            if os.path.exists(file_path):
+                try:
+                    file_size = os.path.getsize(file_path)
+                    file_mtime = os.path.getmtime(file_path)
+                    
+                    # Extrair tipo de polígono do nome do arquivo
+                    polygon_type = pattern.replace(f"{state}_", "").replace(".zip", "")
+                    
+                    available_files.append({
+                        "filename": pattern,
+                        "file_path": file_path,
+                        "size_bytes": file_size,
+                        "size_mb": round(file_size / (1024 * 1024), 2),
+                        "modified": datetime.fromtimestamp(file_mtime).isoformat(),
+                        "polygon_type": polygon_type,
+                        "download_url": f"/download_state_file/{state}/{polygon_type}"
+                    })
+                    
+                    total_size += file_size
+                except Exception as e:
+                    continue
+        
+        # Verificar se há arquivos do estado em ZIPs nacionais
+        national_files_containing_state = []
+        national_zip_patterns = [
+            "brazil_AREA_IMOVEL.zip",
+            "brazil_APPS.zip",
+            "brazil_NATIVE_VEGETATION.zip",
+            "brazil_CONSOLIDATED_AREA.zip",
+            "brazil_AREA_FALL.zip",
+            "brazil_HYDROGRAPHY.zip",
+            "brazil_RESTRICTED_USE.zip",
+            "brazil_ADMINISTRATIVE_SERVICE.zip",
+            "brazil_LEGAL_RESERVE.zip"
+        ]
+        
+        for pattern in national_zip_patterns:
+            zip_path = os.path.join(folder, pattern)
+            if os.path.exists(zip_path):
+                try:
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        state_files_in_zip = [f for f in zip_ref.namelist() if f.startswith(f"{state}_")]
+                        if state_files_in_zip:
+                            national_files_containing_state.append({
+                                "national_zip": pattern,
+                                "state_files": state_files_in_zip
+                            })
+                except Exception as e:
+                    continue
+        
+        return {
+            "state": state,
+            "has_files": len(available_files) > 0,
+            "available_files": available_files,
+            "total_files": len(available_files),
+            "total_size_mb": round(total_size / (1024 * 1024), 2),
+            "national_files_containing_state": national_files_containing_state,
+            "folder": folder,
+            "message": f"Encontrados {len(available_files)} arquivo(s) para o estado {state}" if available_files else f"Nenhum arquivo encontrado para o estado {state}"
+        }
+        
+    except Exception as e:
+        return {
+            "state": state,
+            "has_files": False,
+            "error": str(e),
+            "message": f"Erro ao verificar arquivos do estado {state}"
+        }
+
+
+@app.get(
+    "/download_state_file/{state}/{polygon_type}",
+    summary="Download de arquivo específico de estado",
+    description="""
+    Faz download de um arquivo específico de um estado e tipo de polígono.
+    
+    Este endpoint permite baixar um arquivo ZIP específico de um estado e tipo de polígono
+    que já foi baixado anteriormente.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X GET "http://localhost:8000/download_state_file/SP/AREA_IMOVEL" --output SP_AREA_IMOVEL.zip
+    ```
+    
+    **Retorno:**
+    - Arquivo ZIP do estado solicitado
+    """,
+    response_description="Arquivo ZIP do estado solicitado",
+    tags=["Download por Estado"]
+)
+async def download_state_file(
+    state: str = Path(...),
+    polygon_type: str = Path(...),
+    folder: str = Query(
+        "temp",
+        description="Pasta onde buscar o arquivo",
+        example="temp"
+    )
+):
+    """
+    Faz download de um arquivo específico de um estado.
+    """
+    try:
+        filename = f"{state}_{polygon_type}.zip"
+        file_path = os.path.join(folder, filename)
+        
+        if not os.path.exists(file_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Arquivo {filename} não encontrado para o estado {state}"
+            )
+        
+        return FileResponse(
+            path=file_path,
+            filename=filename,
+            media_type="application/zip"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao baixar arquivo: {str(e)}"
+        )
 
 
 @app.get(
