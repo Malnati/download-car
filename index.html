@@ -741,35 +741,35 @@
         const DEFAULT_TIMEOUT = 800000; // 800 segundos (13.3 minutos)
         const TIMEOUT_INCREMENT = 10000; // 10 segundos
         
-        // Timeouts específicos por estado baseados em medições reais (dobro do tempo medido)
+        // Timeouts específicos por estado baseados em medições reais (arredondados para minutos)
         const STATE_TIMEOUTS = {
-            'AC': 30000,   // 30s
-            'AL': 80000,   // 80s
-            'AM': 55000,   // 55s
-            'AP': 20000,   // 20s
-            'BA': 600000,  // 600s (10 min)
-            'CE': 200000,  // 200s (3.3 min)
-            'DF': 25000,   // 25s
-            'ES': 74000,   // 74s
-            'GO': 300000,  // 300s (5 min)
-            'MA': 180000,  // 180s (3 min)
-            'MG': 269000,  // 269s (4.5 min)
-            'MS': 50000,   // 50s
-            'MT': 46000,   // 46s
-            'PA': 93000,   // 93s
-            'PB': 43000,   // 43s
-            'PE': 127000,  // 127s (2.1 min)
-            'PI': 25000,   // 25s
-            'PR': 122000,  // 122s (2 min)
-            'RJ': 62000,   // 62s
-            'RN': 58000,   // 58s
-            'RO': 63000,   // 63s
-            'RR': 40000,   // 40s
-            'RS': 137000,  // 137s (2.3 min)
-            'SC': 131000,  // 131s (2.2 min)
-            'SE': 60000,   // 60s
-            'SP': 800000,  // 800s (13.3 min) - timeout alto devido ao erro
-            'TO': 586000   // 586s (9.8 min)
+            'AC': 60000,   // 1 min
+            'AL': 120000,  // 2 min
+            'AM': 60000,   // 1 min
+            'AP': 60000,   // 1 min
+            'BA': 600000,  // 10 min
+            'CE': 240000,  // 4 min
+            'DF': 60000,   // 1 min
+            'ES': 120000,  // 2 min
+            'GO': 300000,  // 5 min
+            'MA': 180000,  // 3 min
+            'MG': 300000,  // 5 min
+            'MS': 60000,   // 1 min
+            'MT': 60000,   // 1 min
+            'PA': 120000,  // 2 min
+            'PB': 60000,   // 1 min
+            'PE': 180000,  // 3 min
+            'PI': 60000,   // 1 min
+            'PR': 120000,  // 2 min
+            'RJ': 120000,  // 2 min
+            'RN': 60000,   // 1 min
+            'RO': 120000,  // 2 min
+            'RR': 60000,   // 1 min
+            'RS': 180000,  // 3 min
+            'SC': 180000,  // 3 min
+            'SE': 60000,   // 1 min
+            'SP': 840000,  // 14 min
+            'TO': 600000   // 10 min
         };
         const MIN_TIMEOUT = 10000; // 10 segundos
         const MAX_TIMEOUT = 300000; // 5 minutos
@@ -1057,37 +1057,7 @@
             }
         }
 
-        // Resetar timeout para valor padrão
-        async function resetTimeout(estado) {
-            // Encontrar o botão de reset e mostrar spinner
-            const resetButton = event.target.closest('button');
-            let originalButtonContent = '';
-            
-            if (resetButton) {
-                originalButtonContent = resetButton.innerHTML;
-                resetButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></span>';
-                resetButton.disabled = true;
-            }
 
-            try {
-                // Simular um pequeno delay para mostrar o spinner
-                await new Promise(resolve => setTimeout(resolve, 300));
-                
-                if (!downloadHistory[estado]) downloadHistory[estado] = {};
-                downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
-                saveDownloadHistory();
-                renderEstadosTable();
-                showNotification(`Timeout de ${estado} resetado para ${Math.floor((STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT)/1000)}s`, 'info');
-            } catch (error) {
-                showNotification(`Erro ao resetar timeout de ${estado}: ${error.message}`, 'error');
-            } finally {
-                // Restaurar botão
-                if (resetButton) {
-                    resetButton.innerHTML = originalButtonContent;
-                    resetButton.disabled = false;
-                }
-            }
-        }
 
         // Renderizar tabela de estados
         function renderEstadosTable() {
@@ -1112,12 +1082,6 @@
                                   data-bs-title="Clique para editar o timeout (em minutos)">
                                 ${Math.floor((history.timeout || STATE_TIMEOUTS[estado.sigla] || DEFAULT_TIMEOUT) / 60000)} min
                             </span>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" 
-                                    onclick="resetTimeout('${estado.sigla}')" 
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Resetar timeout para o valor otimizado (${Math.floor((STATE_TIMEOUTS[estado.sigla] || DEFAULT_TIMEOUT)/60000)} min)">
-                                <i class="bi bi-arrow-clockwise"></i>
-                            </button>
                         </div>
                     </td>
                     <td>
