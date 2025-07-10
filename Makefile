@@ -2,7 +2,6 @@
 DOCKER_CONFIG  ?= /tmp/docker-config-noauth
 IMAGE          ?= download-car
 API_IMAGE      ?= download-car-api
-DOCKERFILE     ?= Dockerfile
 API_DOCKERFILE ?= Dockerfile.api
 
 api-up:
@@ -10,8 +9,6 @@ api-up:
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up api -d
 
 build:
-	@echo "🛠️  Buildando imagem $(IMAGE):latest via $(DOCKERFILE)..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker build -t $(IMAGE):latest -f $(DOCKERFILE) .
 	@$(MAKE) build-base build-download build-api
 
 build-api:
