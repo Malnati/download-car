@@ -5,7 +5,6 @@ Ferramenta que automatiza o download de arquivos do [Cadastro Ambiental Rural (S
 
 ## Badges
 
-[![Open In Collab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Malnati/download-car/blob/main/colab.ipynb)
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Docker Pulls](https://img.shields.io/docker/pulls/malnati/download-car)](https://hub.docker.com/r/malnati/download-car)
@@ -21,7 +20,7 @@ Permitir o download programático dos dados públicos do SICAR. O projeto inclui
 >
 > Use [Google Translate version](https://translate.google.com/translate?hl=en&sl=pt&tl=en&u=https://github.com/Malnati/download-car/blob/main/README.md) (auto-generated).
 >
-> This project automates downloads of SICAR shapefiles (Brazilian Rural Environmental Registry), with CLI, Python, Docker, API and Jupyter/Colab support. See below for parameter examples, references and data sources.
+> This project automates downloads of SICAR shapefiles (Brazilian Rural Environmental Registry), with CLI, Python, Docker, API and Jupyter support. See below for parameter examples, references and data sources.
 
 ---
 
@@ -33,12 +32,12 @@ Permitir o download programático dos dados públicos do SICAR. O projeto inclui
   - [1️⃣ Execução via Python (direto)](#1️⃣-execução-via-python-direto)
   - [2️⃣ Execução via Shell Script](#2️⃣-execução-via-shell-script)
   - [3️⃣ Execução via Docker Compose](#3️⃣-execução-via-docker-compose)
-  - [4️⃣ Execução via Google Colab (Notebook Interativo)](#4️⃣-execução-via-google-colab-notebook-interativo)
-  - [5️⃣ Execução via API](#5️⃣-execução-via-api)
+  - [4️⃣ Execução via API](#4️⃣-execução-via-api)
     - [Campos esperados (multipart/form)](#campos-esperados-multipartform)
     - [Exemplo via curl](#exemplo-via-curl)
     - [Rodando localmente com FastAPI](#rodando-localmente-com-fastapi)
-  - [6️⃣ Importação como módulo Python](#6️⃣-importação-como-módulo-python)
+  - [5️⃣ Importação como módulo Python](#5️⃣-importação-como-módulo-python)
+  - [6️⃣ Comandos Makefile](#6️⃣-comandos-makefile)
 - [📦 Resultados e arquivos de saída](#-resultados-e-arquivos-de-saída)
 - [📊 Data dictionary](#data-dictionary)
 - [📝 Licença](#license)
@@ -184,13 +183,7 @@ docker compose up
 Os logs do container de download indicarão o progresso do script, enquanto a
 API poderá ser acessada em `http://localhost` via Nginx (porta `80`).
 
-## 4️⃣ Execução via Google Colab (Notebook Interativo)
-
-[![Open In Collab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Malnati/download-car/blob/main/colab.ipynb)
-
-O notebook permite baixar os shapefiles diretamente no navegador sem instalar nada.
-
-## 5️⃣ Execução via API
+## 4️⃣ Execução via API
 
 A API FastAPI está disponível em `http://localhost:8000` e oferece os seguintes endpoints:
 
@@ -269,7 +262,7 @@ Rotas disponíveis:
 - `POST /download_country` &ndash; recebe apenas `polygon` e retorna um ZIP
   contendo os arquivos de todos os estados.
 
-## 6️⃣ Importação como módulo Python
+## 5️⃣ Importação como módulo Python
 
 Após instalar com `pip install git+https://github.com/Malnati/download-car`, basta importar e usar:
 
@@ -278,6 +271,57 @@ from download_car import DownloadCar, State, Polygon
 
 car = DownloadCar()
 car.download_state(State.MG, Polygon.LEGAL_RESERVE, folder="MG")
+```
+
+## 6️⃣ Comandos Makefile
+
+O projeto inclui um Makefile com diversos comandos úteis para facilitar o desenvolvimento e uso:
+
+### 🚀 Comandos de inicialização:
+- `make up` - Inicia todos os serviços
+- `make api-up` - Inicia apenas o serviço API
+- `make download-up` - Inicia apenas o serviço download-car
+
+### 🛠️ Comandos de build:
+- `make build` - Builda todas as imagens
+- `make build-api` - Builda apenas a imagem da API
+- `make build-base` - Builda a imagem base
+- `make build-download` - Builda a imagem de download
+
+### 🗑️ Comandos de limpeza:
+- `make clean` - Remove imagens, volumes e containers órfãos
+- `make clean-volumes` - Remove volumes Docker, incluindo arquivos montados
+- `make clean-api` - Remove apenas a imagem da API
+- `make clean-image` - Remove apenas a imagem principal
+
+### 🛑 Comandos de controle:
+- `make down` - Para e remove containers
+- `make ps` - Lista containers e serviços
+- `make logs service=X` - Exibe logs do serviço especificado
+
+### 🔗 Comandos de acesso:
+- `make shell` - Entra no container principal
+- `make shell-api` - Entra no container da API
+- `make run CMD=X` - Executa comando no container
+- `make run-api` - Executa container da API
+
+### 🧪 Comandos de teste:
+- `make test` - Executa todos os testes
+- `make unit-test` - Executa testes unitários
+- `make integration-test` - Executa testes de integração
+
+### 📥 Comandos de download:
+- `make download state=X polygon=Y folder=Z debug=W timeout=T max_retries=R` - Executa download com parâmetros específicos
+- `make search-car car=X` - Busca estado do CAR
+- `make download-property car=X` - Baixa propriedade do CAR
+
+### 🔄 Comandos de manutenção:
+- `make git-update` - Atualiza repositório Git
+
+Para ver todos os comandos disponíveis:
+
+```bash
+make help
 ```
 
 ---
