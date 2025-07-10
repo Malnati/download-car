@@ -957,7 +957,7 @@
                 formData.append('folder', 'PROPERTY');
                 formData.append('tries', '25');
                 formData.append('debug', 'false');
-                formData.append('timeout', '1'); // 1 minuto
+                formData.append('timeout', '60'); // 60 segundos (1 minuto)
                 formData.append('max_retries', '5');
 
                 const response = await fetch(`${apiUrl}/download-property`, {
@@ -1166,7 +1166,7 @@
                 formData.append('folder', 'PROPERTY');
                 formData.append('tries', '25');
                 formData.append('debug', 'false');
-                formData.append('timeout', '1'); // 1 minuto
+                formData.append('timeout', '60'); // 60 segundos (1 minuto)
                 formData.append('max_retries', '5');
 
                 const response = await fetch(`${apiUrl}/download-property`, {
