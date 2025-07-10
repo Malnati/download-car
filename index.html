@@ -1453,8 +1453,8 @@
 
         // Obter botão de ação (Limpar)
         function getActionButton(estado, history) {
-            // Se o download foi bem-sucedido, mostrar botão "Limpar"
-            if (history.status === 'success') {
+            // Se o download foi bem-sucedido ou há arquivos prontos, mostrar botão "Limpar"
+            if (history.status === 'success' || history.status === 'ready') {
                 return `<a class="icon-link" href="#" onclick="clearEstado('${estado}'); return false;" id="btn-clear-${estado}"
                                 data-bs-toggle="tooltip" data-bs-placement="top" 
                                 data-bs-title="Clique para limpar o download de ${estado}. Isso excluirá os arquivos do servidor e permitirá uma nova requisição.">
