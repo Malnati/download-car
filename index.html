@@ -197,6 +197,28 @@
             box-shadow: none;
         }
 
+        .btn-success {
+            background: var(--system-gradient);
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-success:hover {
+            background: var(--system-gradient-dark);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 125, 50, 0.4);
+        }
+
+        .btn-success:disabled {
+            background: var(--system-gray);
+            transform: none;
+            box-shadow: none;
+        }
+
         .btn-outline-primary {
             border: 2px solid var(--system-green);
             color: var(--system-green);
@@ -598,7 +620,7 @@
                                     <th><i class="bi bi-shapes me-1"></i>&nbsp;Polígono</th>
                                     <th><i class="bi bi-link-45deg me-1"></i>&nbsp;Download estado</th>
                                     <th><i class="bi bi-house me-1"></i>&nbsp;Download propriedade</th>
-                                    <th><i class="bi bi-play-circle me-1"></i>&nbsp;Ação</th>
+                                    <th><i class="bi bi-arrow-clockwise me-1"></i>&nbsp;Reiniciar</th>
                                 </tr>
                             </thead>
                             <tbody id="estadosTable">
@@ -976,6 +998,21 @@
 
         // Obter link de download
         function getDownloadLink(estado, history) {
+            // Se não há status (nenhum download realizado), mostrar botão "Requisitar"
+            if (!history.status || history.status === '') {
+                return `<button class="btn btn-download btn-sm" onclick="downloadEstado('${estado}')" id="btn-${estado}">
+                            <span class="btn-text">
+                                <i class="bi bi-cloud-download me-1"></i>
+                                Requisitar
+                            </span>
+                            <span class="loading">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                Processando...
+                            </span>
+                        </button>`;
+            }
+            
+            // Se o download foi bem-sucedido e o arquivo está pronto, mostrar link de download
             if (history.status === 'success' && history.fileReady) {
                 return `<a href="#" class="download-link" onclick="downloadFile('${estado}'); return false;">
                             <i class="bi bi-download"></i>
@@ -983,6 +1020,19 @@
                         </a>`;
             } else if (history.status === 'success') {
                 return `<span class="text-muted small">Processado</span>`;
+            } else if (history.status === 'error') {
+                return `<span class="text-muted small">Erro</span>`;
+            } else if (history.status === 'pending') {
+                return `<button class="btn btn-download btn-sm" disabled id="btn-${estado}">
+                            <span class="btn-text">
+                                <i class="bi bi-clock me-1"></i>
+                                Processando...
+                            </span>
+                            <span class="loading">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                Processando...
+                            </span>
+                        </button>`;
             } else {
                 return `<span class="text-muted small">N/A</span>`;
             }
@@ -1019,39 +1069,11 @@
             }
         }
 
-        // Obter botão de ação
+        // Obter botão de ação (Reiniciar)
         function getActionButton(estado, history) {
-            // Se não há status (nenhum download realizado), mostrar botão "Requisitar"
-            if (!history.status || history.status === '') {
-                return `<button class="btn btn-download btn-sm" onclick="downloadEstado('${estado}')" id="btn-${estado}">
-                            <span class="btn-text">
-                                <i class="bi bi-cloud-download me-1"></i>
-                                Requisitar
-                            </span>
-                            <span class="loading">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                Processando...
-                            </span>
-                        </button>`;
-            }
-            
-            // Se o download foi bem-sucedido e o campo CAR está preenchido com pelo menos 1 caractere, mostrar "Procurar"
-            if (history.status === 'success' && history.car && history.car.trim().length > 0) {
-                return `<button class="btn btn-download btn-sm" onclick="downloadEstado('${estado}')" id="btn-${estado}">
-                            <span class="btn-text">
-                                <i class="bi bi-search me-1"></i>
-                                Procurar
-                            </span>
-                            <span class="loading">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                Processando...
-                            </span>
-                        </button>`;
-            }
-            
             // Se o download foi bem-sucedido ou falhou, mostrar botão "Reiniciar"
             if (history.status === 'success' || history.status === 'error') {
-                return `<button class="btn btn-download btn-sm" onclick="downloadEstado('${estado}')" id="btn-${estado}">
+                return `<button class="btn btn-success btn-sm" onclick="downloadEstado('${estado}')" id="btn-restart-${estado}">
                             <span class="btn-text">
                                 <i class="bi bi-arrow-clockwise me-1"></i>
                                 Reiniciar
@@ -1065,7 +1087,7 @@
             
             // Se está em andamento, mostrar botão desabilitado
             if (history.status === 'pending') {
-                return `<button class="btn btn-download btn-sm" disabled id="btn-${estado}">
+                return `<button class="btn btn-success btn-sm" disabled id="btn-restart-${estado}">
                             <span class="btn-text">
                                 <i class="bi bi-clock me-1"></i>
                                 Processando...
@@ -1077,17 +1099,8 @@
                         </button>`;
             }
             
-            // Fallback - mostrar botão "Requisitar"
-            return `<button class="btn btn-download btn-sm" onclick="downloadEstado('${estado}')" id="btn-${estado}">
-                        <span class="btn-text">
-                            <i class="bi bi-cloud-download me-1"></i>
-                            Requisitar
-                        </span>
-                        <span class="loading">
-                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            Processando...
-                        </span>
-                    </button>`;
+            // Se não há status ou nenhum download foi realizado, não mostrar botão
+            return `<span class="text-muted small">-</span>`;
         }
 
         // Obter ícone de status com Bootstrap Icons
@@ -1177,14 +1190,21 @@
                 }
             }
             
-            const button = document.getElementById(`btn-${estado}`);
-            const btnText = button.querySelector('.btn-text');
-            const loading = button.querySelector('.loading');
+            // Determinar qual botão está sendo usado (Requisitar ou Reiniciar)
+            let button = document.getElementById(`btn-${estado}`);
+            if (!button) {
+                button = document.getElementById(`btn-restart-${estado}`);
+            }
             
-            // Atualizar estado do botão
-            button.disabled = true;
-            btnText.style.display = 'none';
-            loading.style.display = 'inline-block';
+            if (button) {
+                const btnText = button.querySelector('.btn-text');
+                const loading = button.querySelector('.loading');
+                
+                // Atualizar estado do botão
+                button.disabled = true;
+                btnText.style.display = 'none';
+                loading.style.display = 'inline-block';
+            }
             
             // Atualizar status
             if (!downloadHistory[estado]) downloadHistory[estado] = {};
@@ -1245,10 +1265,15 @@
                 downloadHistory[estado].errorMessage = error.message;
                 showNotification(`Erro no download de ${estado}: ${error.message}`, 'error');
             } finally {
-                // Restaurar botão
-                button.disabled = false;
-                btnText.style.display = 'inline-block';
-                loading.style.display = 'none';
+                // Restaurar botão se existir
+                if (button) {
+                    const btnText = button.querySelector('.btn-text');
+                    const loading = button.querySelector('.loading');
+                    
+                    button.disabled = false;
+                    btnText.style.display = 'inline-block';
+                    loading.style.display = 'none';
+                }
                 
                 // Atualizar tabela
                 renderEstadosTable();
