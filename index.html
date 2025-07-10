@@ -738,8 +738,39 @@
     <script>
         // Configuração inicial
         const DEFAULT_API_URL = 'http://192.168.5.179:8787';
-        const DEFAULT_TIMEOUT = 60000; // 1 minuto
+        const DEFAULT_TIMEOUT = 800000; // 800 segundos (13.3 minutos)
         const TIMEOUT_INCREMENT = 10000; // 10 segundos
+        
+        // Timeouts específicos por estado baseados em medições reais (dobro do tempo medido)
+        const STATE_TIMEOUTS = {
+            'AC': 30000,   // 30s
+            'AL': 80000,   // 80s
+            'AM': 55000,   // 55s
+            'AP': 20000,   // 20s
+            'BA': 600000,  // 600s (10 min)
+            'CE': 200000,  // 200s (3.3 min)
+            'DF': 25000,   // 25s
+            'ES': 74000,   // 74s
+            'GO': 300000,  // 300s (5 min)
+            'MA': 180000,  // 180s (3 min)
+            'MG': 269000,  // 269s (4.5 min)
+            'MS': 50000,   // 50s
+            'MT': 46000,   // 46s
+            'PA': 93000,   // 93s
+            'PB': 43000,   // 43s
+            'PE': 127000,  // 127s (2.1 min)
+            'PI': 25000,   // 25s
+            'PR': 122000,  // 122s (2 min)
+            'RJ': 62000,   // 62s
+            'RN': 58000,   // 58s
+            'RO': 63000,   // 63s
+            'RR': 40000,   // 40s
+            'RS': 137000,  // 137s (2.3 min)
+            'SC': 131000,  // 131s (2.2 min)
+            'SE': 60000,   // 60s
+            'SP': 800000,  // 800s (13.3 min) - timeout alto devido ao erro
+            'TO': 586000   // 586s (9.8 min)
+        };
         const MIN_TIMEOUT = 10000; // 10 segundos
         const MAX_TIMEOUT = 300000; // 5 minutos
         const DEFAULT_POLYGON = 'AREA_PROPERTY'; // Polígono padrão
@@ -791,6 +822,13 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Definir URL padrão
             document.getElementById('apiUrl').value = DEFAULT_API_URL;
+            
+            // Definir timeouts específicos por estado
+            Object.keys(STATE_TIMEOUTS).forEach(state => {
+                if (!downloadHistory[state]) downloadHistory[state] = {};
+                downloadHistory[state].timeout = STATE_TIMEOUTS[state];
+            });
+            saveDownloadHistory();
             
             // Renderizar tabela
             renderEstadosTable();
@@ -895,7 +933,7 @@
                 formData.append('polygon', history.polygon || DEFAULT_POLYGON);
                 formData.append('folder', 'temp'); // Pasta temporária
                 formData.append('tries', '25'); // Número de tentativas
-                formData.append('timeout', Math.floor((history.timeout || DEFAULT_TIMEOUT) / 1000)); // Converter de milissegundos para segundos
+                formData.append('timeout', Math.floor((history.timeout || STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT) / 1000)); // Converter de milissegundos para segundos
                 formData.append('max_retries', history.maxRetries || 5);
                 formData.append('debug', 'false');
 
@@ -1011,10 +1049,10 @@
                 await new Promise(resolve => setTimeout(resolve, 300));
                 
                 if (!downloadHistory[estado]) downloadHistory[estado] = {};
-                downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
+                downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
                 saveDownloadHistory();
                 renderEstadosTable();
-                showNotification(`Timeout de ${estado} resetado para ${DEFAULT_TIMEOUT/1000}s`, 'info');
+                showNotification(`Timeout de ${estado} resetado para ${Math.floor((STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT)/1000)}s`, 'info');
             } catch (error) {
                 showNotification(`Erro ao resetar timeout de ${estado}: ${error.message}`, 'error');
             } finally {
@@ -1044,15 +1082,15 @@
                     <td>
                         <div class="d-flex align-items-center gap-1">
                             <span class="form-control-plaintext form-control-sm clickable-field" 
-                                  onclick="makeEditable(this, 'timeout', '${estado.sigla}', ${Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)})"
+                                  onclick="makeEditable(this, 'timeout', '${estado.sigla}', ${Math.floor((history.timeout || STATE_TIMEOUTS[estado.sigla] || DEFAULT_TIMEOUT) / 60000)})"
                                   data-bs-toggle="tooltip" data-bs-placement="top" 
                                   data-bs-title="Clique para editar o timeout (em minutos)">
-                                ${Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)} min
+                                ${Math.floor((history.timeout || STATE_TIMEOUTS[estado.sigla] || DEFAULT_TIMEOUT) / 60000)} min
                             </span>
                             <button type="button" class="btn btn-outline-secondary btn-sm" 
                                     onclick="resetTimeout('${estado.sigla}')" 
                                     data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Resetar timeout para o valor padrão (${Math.floor(DEFAULT_TIMEOUT/60000)} min)">
+                                    data-bs-title="Resetar timeout para o valor otimizado (${Math.floor((STATE_TIMEOUTS[estado.sigla] || DEFAULT_TIMEOUT)/60000)} min)">
                                 <i class="bi bi-arrow-clockwise"></i>
                             </button>
                         </div>
@@ -1555,7 +1593,7 @@
         async function downloadEstado(estado) {
             const apiUrl = document.getElementById('apiUrl').value;
             const history = downloadHistory[estado] || {};
-            let timeout = history.timeout || DEFAULT_TIMEOUT;
+            let timeout = history.timeout || STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
             const maxRetries = history.maxRetries || 5;
             
             // Se o último download falhou, incrementar timeout automaticamente
@@ -1616,7 +1654,7 @@
                         downloadHistory[estado].errorMessage = null; // Limpar erro anterior
                         downloadHistory[estado].fileReady = true; // Marcar arquivo como pronto
                         // Resetar timeout para o valor padrão após sucesso
-                        downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
+                        downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
                         showNotification(`Arquivo de ${estado} processado com sucesso! Clique em Download para baixar.`, 'success');
                     } else {
                         // Verificar se é uma resposta de erro em JSON
