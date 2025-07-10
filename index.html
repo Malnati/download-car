@@ -881,16 +881,41 @@
                     
                     // Definir timeout para ocultar tooltips após 100ms
                     tooltipHideTimeout = setTimeout(function() {
-                        const tooltipElements = document.querySelectorAll('.tooltip');
-                        tooltipElements.forEach(function(tooltip) {
-                            if (tooltip.style.display !== 'none' && tooltip.style.opacity !== '0') {
-                                const tooltipInstance = bootstrap.Tooltip.getInstance(tooltip);
-                                if (tooltipInstance) {
-                                    tooltipInstance.hide();
-                                }
-                            }
-                        });
+                        hideAllTooltips();
                     }, 100);
+                });
+                
+                // Adicionar listener para ocultar tooltips ao clicar em qualquer lugar
+                document.addEventListener('click', function(event) {
+                    // Verificar se o clique não foi em um elemento com tooltip
+                    const clickedElement = event.target;
+                    const hasTooltip = clickedElement.closest('[data-bs-toggle="tooltip"]');
+                    
+                    if (!hasTooltip) {
+                        hideAllTooltips();
+                    }
+                });
+                
+                // Adicionar listener para ocultar tooltips ao pressionar Enter
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        hideAllTooltips();
+                    }
+                });
+            }
+        }
+        
+        // Função para ocultar todos os tooltips
+        function hideAllTooltips() {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                const tooltipElements = document.querySelectorAll('.tooltip');
+                tooltipElements.forEach(function(tooltip) {
+                    if (tooltip.style.display !== 'none' && tooltip.style.opacity !== '0') {
+                        const tooltipInstance = bootstrap.Tooltip.getInstance(tooltip);
+                        if (tooltipInstance) {
+                            tooltipInstance.hide();
+                        }
+                    }
                 });
             }
         }
