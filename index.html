@@ -620,7 +620,7 @@
                                     <th><i class="bi bi-shapes me-1"></i>&nbsp;Polígono</th>
                                     <th><i class="bi bi-link-45deg me-1"></i>&nbsp;Download estado</th>
                                     <th><i class="bi bi-house me-1"></i>&nbsp;Download propriedade</th>
-                                    <th><i class="bi bi-arrow-clockwise me-1"></i>&nbsp;Reiniciar</th>
+                                    <th><i class="bi bi-trash me-1"></i>&nbsp;Limpar</th>
                                 </tr>
                             </thead>
                             <tbody id="estadosTable">
@@ -989,6 +989,20 @@
             }
         }
 
+        // Limpar estado (apagar último download)
+        function clearEstado(estado) {
+            if (confirm(`Tem certeza que deseja limpar o download de ${estado}?`)) {
+                // Remover completamente o histórico do estado
+                delete downloadHistory[estado];
+                saveDownloadHistory();
+                
+                // Atualizar a tabela
+                renderEstadosTable();
+                
+                showNotification(`Download de ${estado} foi limpo. O botão "Requisitar" e o campo "Informe CAR" foram re-exibidos.`, 'success');
+            }
+        }
+
         // Escapar HTML para segurança
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -1064,42 +1078,50 @@
                             </div>
                             <span class="text-muted small">Informe CAR</span>
                         </div>`;
+            } else if (history.status === 'error') {
+                // Se houve erro, mostrar o campo com botão de lupa
+                return `<div class="d-flex flex-column gap-1">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" 
+                                       placeholder="Código CAR" 
+                                       value="${history.car || ''}" 
+                                       onchange="updateCar('${estado}', this.value)"
+                                       onkeypress="handleCarKeyPress(event, '${estado}')"
+                                       id="car-input-${estado}">
+                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                            <span class="text-muted small">Informe CAR</span>
+                        </div>`;
             } else {
                 return `<span class="text-muted small">N/A</span>`;
             }
         }
 
-        // Obter botão de ação (Reiniciar)
+        // Obter botão de ação (Limpar)
         function getActionButton(estado, history) {
-            // Se o download foi bem-sucedido ou falhou, mostrar botão "Reiniciar"
-            if (history.status === 'success' || history.status === 'error') {
-                return `<button class="btn btn-success btn-sm" onclick="downloadEstado('${estado}')" id="btn-restart-${estado}">
+            // Se o download foi bem-sucedido, mostrar botão "Limpar"
+            if (history.status === 'success') {
+                return `<button class="btn btn-success btn-sm" onclick="clearEstado('${estado}')" id="btn-clear-${estado}">
                             <span class="btn-text">
-                                <i class="bi bi-arrow-clockwise me-1"></i>
-                                Reiniciar
-                            </span>
-                            <span class="loading">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                Processando...
+                                <i class="bi bi-trash me-1"></i>
+                                Limpar
                             </span>
                         </button>`;
             }
             
             // Se está em andamento, mostrar botão desabilitado
             if (history.status === 'pending') {
-                return `<button class="btn btn-success btn-sm" disabled id="btn-restart-${estado}">
+                return `<button class="btn btn-success btn-sm" disabled id="btn-clear-${estado}">
                             <span class="btn-text">
                                 <i class="bi bi-clock me-1"></i>
-                                Processando...
-                            </span>
-                            <span class="loading">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
                                 Processando...
                             </span>
                         </button>`;
             }
             
-            // Se não há status ou nenhum download foi realizado, não mostrar botão
+            // Se não há status, erro ou nenhum download foi realizado, não mostrar botão
             return `<span class="text-muted small">-</span>`;
         }
 
@@ -1190,11 +1212,8 @@
                 }
             }
             
-            // Determinar qual botão está sendo usado (Requisitar ou Reiniciar)
+            // Determinar qual botão está sendo usado (Requisitar)
             let button = document.getElementById(`btn-${estado}`);
-            if (!button) {
-                button = document.getElementById(`btn-restart-${estado}`);
-            }
             
             if (button) {
                 const btnText = button.querySelector('.btn-text');
