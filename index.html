@@ -1357,7 +1357,7 @@
                 const filesHtml = history.downloadFiles.map(f => {
                     const polygonLabel = f.polygon_type.replace(/_/g, ' ');
                     const sizeText = f.size_mb ? ` (${f.size_mb.toFixed(1)} MB)` : '';
-                    return `<a href="${f.download_url}" class="btn btn-sm btn-success me-1 mb-1" download 
+                    return `<a href="${f.download_url}" class="download-link" download 
                                 data-bs-toggle="tooltip" data-bs-placement="top" 
                                 data-bs-title="Baixar arquivo ${polygonLabel}${sizeText}">
                                 <i class="bi bi-download me-1"></i>${polygonLabel}${sizeText}
@@ -1370,27 +1370,51 @@
                 return `<div>${filesHtml}${totalInfo}</div>`;
             }
             if (history.status === 'notfound') {
-                // Quando não há arquivo, mostrar botão para requisitar download
-                return `<a href="#" class="btn btn-sm btn-primary" onclick="downloadEstado('${estado}'); return false;"
+                // Quando não há arquivo, mostrar botão para requisitar download (formato original)
+                return `<a class="icon-link" href="#" onclick="downloadEstado('${estado}'); return false;" id="btn-${estado}"
                             data-bs-toggle="tooltip" data-bs-placement="top" 
-                            data-bs-title="Clique para requisitar o download dos dados do estado ${estado}">
-                            <i class="bi bi-cloud-download me-1"></i>Requisitar
-                        </a>`;
+                            data-bs-title="Clique para requisitar o download dos dados do estado ${estado}. Esta operação pode levar alguns minutos.">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                        </svg>
+                        <span class="btn-text">Requisitar</span>
+                        <span class="loading" style="display: none;">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                            Processando...
+                        </span>
+                    </a>`;
             }
             if (history.status === 'error') {
-                // Quando há erro, também mostrar botão para tentar novamente
-                return `<a href="#" class="btn btn-sm btn-warning" onclick="downloadEstado('${estado}'); return false;"
+                // Quando há erro, mostrar botão para tentar novamente (formato original)
+                return `<a class="icon-link" href="#" onclick="downloadEstado('${estado}'); return false;" id="btn-${estado}"
                             data-bs-toggle="tooltip" data-bs-placement="top" 
                             data-bs-title="Tentar novamente o download dos dados do estado ${estado}">
-                            <i class="bi bi-arrow-clockwise me-1"></i>Tentar Novamente
-                        </a>`;
-            }
-            // Status inicial ou não verificado - mostrar botão para requisitar
-            return `<a href="#" class="btn btn-sm btn-primary" onclick="downloadEstado('${estado}'); return false;"
-                        data-bs-toggle="tooltip" data-bs-placement="top" 
-                        data-bs-title="Clique para requisitar o download dos dados do estado ${estado}">
-                        <i class="bi bi-cloud-download me-1"></i>Requisitar
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                        </svg>
+                        <span class="btn-text">Tentar Novamente</span>
+                        <span class="loading" style="display: none;">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                            Processando...
+                        </span>
                     </a>`;
+            }
+            // Status inicial ou não verificado - mostrar botão para requisitar (formato original)
+            return `<a class="icon-link" href="#" onclick="downloadEstado('${estado}'); return false;" id="btn-${estado}"
+                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                        data-bs-title="Clique para requisitar o download dos dados do estado ${estado}. Esta operação pode levar alguns minutos.">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                    </svg>
+                    <span class="btn-text">Requisitar</span>
+                    <span class="loading" style="display: none;">
+                        <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                        Processando...
+                    </span>
+                </a>`;
         }
 
         // Obter link de propriedade
@@ -1548,13 +1572,16 @@
             }
             
             // Determinar qual botão está sendo usado (Requisitar)
-            let button = document.querySelector(`a[onclick*="downloadEstado('${estado}')"]`);
+            let button = document.getElementById(`btn-${estado}`);
             
             if (button) {
-                const originalContent = button.innerHTML;
-                button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>Requisitando...';
+                const btnText = button.querySelector('.btn-text');
+                const loading = button.querySelector('.loading');
+                
+                // Atualizar estado do botão
                 button.style.pointerEvents = 'none';
-                button.setAttribute('data-original-content', originalContent);
+                if (btnText) btnText.style.display = 'none';
+                if (loading) loading.style.display = 'inline-flex';
             }
             
             // Atualizar status
@@ -1618,11 +1645,12 @@
             } finally {
                 // Restaurar botão se existir
                 if (button) {
-                    const originalContent = button.getAttribute('data-original-content');
-                    if (originalContent) {
-                        button.innerHTML = originalContent;
-                    }
+                    const btnText = button.querySelector('.btn-text');
+                    const loading = button.querySelector('.loading');
+                    
                     button.style.pointerEvents = 'auto';
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
                 }
                 
                 // Atualizar tabela
