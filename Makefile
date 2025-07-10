@@ -34,6 +34,20 @@ clean:
 	@echo "🗑️  Removendo imagens, volumes e containers órfãos..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down --rmi all --volumes --remove-orphans
 
+clean-volumes:
+	@echo "🗑️  Removendo volumes Docker, incluindo arquivos montados..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down --volumes --remove-orphans
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker volume prune -f
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker system prune -f --volumes
+	@echo "🗑️  Limpando arquivos locais em temp/"
+	rm -rf temp/* || true
+	@echo "🗑️  Limpando arquivos locais em data/"
+	rm -rf data/* || true
+	@echo "🗑️  Limpando arquivos locais em __pycache__/"
+	rm -rf __pycache__/* || true
+	@echo "🗑️  Limpando arquivos locais em download_car.egg-info/"
+	rm -rf download_car.egg-info/* || true
+
 clean-api:
 	@echo "🗑️  Removendo imagem $(API_IMAGE):latest..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker rmi $(API_IMAGE):latest
@@ -49,6 +63,15 @@ down:
 download:
 	@echo "🛠️  Executando download_state.sh com parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
 	./download_state.sh --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries)
+
+# Comandos para as novas funcionalidades
+search-car:
+	@echo "🔍  Buscando estado do CAR: $(car)"
+	curl -X GET "http://localhost:8000/state?car=$(car)"
+
+download-property:
+	@echo "🏠  Baixando propriedade do CAR: $(car)"
+	curl -X GET "http://localhost:8000/property?car=$(car)" --output property_$(car).zip
 
 download-up:
 	@echo "🚀  Iniciando serviço download-car..."
@@ -98,3 +121,47 @@ unit-test:
 up:
 	@echo "🔼  Iniciando todos os serviços..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up -d
+
+help:
+	@echo "📋  Comandos disponíveis no Makefile:"
+	@echo ""
+	@echo "🚀  Comandos de inicialização:"
+	@echo "  up              - Inicia todos os serviços"
+	@echo "  api-up          - Inicia apenas o serviço API"
+	@echo "  download-up     - Inicia apenas o serviço download-car"
+	@echo ""
+	@echo "🛠️  Comandos de build:"
+	@echo "  build           - Builda todas as imagens"
+	@echo "  build-api       - Builda apenas a imagem da API"
+	@echo "  build-base      - Builda a imagem base"
+	@echo "  build-download  - Builda a imagem de download"
+	@echo ""
+	@echo "🗑️  Comandos de limpeza:"
+	@echo "  clean           - Remove imagens, volumes e containers órfãos"
+	@echo "  clean-volumes   - Remove volumes Docker, incluindo arquivos montados"
+	@echo "  clean-api       - Remove apenas a imagem da API"
+	@echo "  clean-image     - Remove apenas a imagem principal"
+	@echo ""
+	@echo "🛑  Comandos de controle:"
+	@echo "  down            - Para e remove containers"
+	@echo "  ps              - Lista containers e serviços"
+	@echo "  logs service=X  - Exibe logs do serviço especificado"
+	@echo ""
+	@echo "🔗  Comandos de acesso:"
+	@echo "  shell           - Entra no container principal"
+	@echo "  shell-api       - Entra no container da API"
+	@echo "  run CMD=X       - Executa comando no container"
+	@echo "  run-api         - Executa container da API"
+	@echo ""
+	@echo "🧪  Comandos de teste:"
+	@echo "  test            - Executa todos os testes"
+	@echo "  unit-test       - Executa testes unitários"
+	@echo "  integration-test - Executa testes de integração"
+	@echo ""
+	@echo "📥  Comandos de download:"
+	@echo "  download state=X polygon=Y folder=Z debug=W timeout=T max_retries=R"
+	@echo "  search-car car=X - Busca estado do CAR"
+	@echo "  download-property car=X - Baixa propriedade do CAR"
+	@echo ""
+	@echo "🔄  Comandos de manutenção:"
+	@echo "  git-update      - Atualiza repositório Git"

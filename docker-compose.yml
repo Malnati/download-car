@@ -8,6 +8,8 @@ services:
     volumes:
       - .:/download-car
     entrypoint: ./entrypoint.download.sh
+    environment:
+      - POLYGON=AREA_PROPERTY
 
   download-car-api:
     build:
@@ -17,6 +19,17 @@ services:
       - .:/download-car
     ports:
       - "8000:8000"
+    environment:
+      - API_URL=http://192.168.5.179:8787/api
+      - CORS_ALLOW_ORIGINS=*
+      - CORS_ALLOW_CREDENTIALS=true
+      - CORS_ALLOW_METHODS=GET,POST,OPTIONS
+      - CORS_ALLOW_HEADERS=*
+      - PROPERTY_FOLDER=PROPERTY
+      - PROPERTY_TRIES=25
+      - PROPERTY_DEBUG=false
+      - PROPERTY_TIMEOUT=30
+      - PROPERTY_MAX_RETRIES=5
 
   nginx:
     image: nginx:alpine
@@ -24,6 +37,10 @@ services:
       - "8787:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./assets:/usr/share/nginx/html/assets:ro
     depends_on:
       - download-car-api
       - download-car-download
+    environment:
+      - DEFAULT_API_URL=http://192.168.5.179:8787/api

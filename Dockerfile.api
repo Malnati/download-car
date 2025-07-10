@@ -5,8 +5,10 @@ FROM download-car-base:latest
 WORKDIR /download-car
 
 COPY app.py /download-car/
+COPY download_car/ /download-car/download_car/
 
-RUN pip install fastapi uvicorn httpx Pillow tqdm python-multipart
+# Instalar dependências adicionais necessárias para a API
+RUN pip install fastapi uvicorn httpx Pillow tqdm python-multipart geopandas fiona
 
 ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 

@@ -1,4 +1,4 @@
-# examples/download_state.py
+# download_state.py
 """Example script to download data from download_car using environment variables and command-line arguments."""
 
 import os
@@ -8,7 +8,7 @@ from download_car.drivers import Paddle, Tesseract
 
 parser = argparse.ArgumentParser(description="Download SICAR state polygon.")
 parser.add_argument("--state", type=str, default=os.getenv("STATE", "DF"))
-parser.add_argument("--polygon", type=str, default=os.getenv("POLYGON", "APPS"))
+parser.add_argument("--polygon", type=str, default=os.getenv("POLYGON", "AREA_PROPERTY"))
 parser.add_argument("--folder", type=str, default=os.getenv("FOLDER", "data/DF"))
 parser.add_argument("--tries", type=int, default=int(os.getenv("TRIES", "25")))
 parser.add_argument("--debug", type=lambda x: str(x).lower() == "true", default=os.getenv("DEBUG", "False"))
@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 # Read parameters from environment variables with reasonable defaults
 state = State[args.state] if args.state in State.__members__ else State[os.getenv("STATE", "DF")]
-polygon = Polygon[args.polygon] if args.polygon in Polygon.__members__ else Polygon[os.getenv("POLYGON", "APPS")]
+polygon = Polygon[args.polygon] if args.polygon in Polygon.__members__ else Polygon[os.getenv("POLYGON", "AREA_PROPERTY")]
 folder = args.folder
 tries = args.tries
 debug = args.debug
@@ -28,7 +28,7 @@ max_retries = args.max_retries
 
 # Create DownloadCar instance (default driver is Tesseract)
 car = DownloadCar(driver=Tesseract)
-# car = DownloadCar(driver=Paddle)
+# car = DownloadCar(driver=Paddle())
 
 # Download polygon for the selected state
 car.download_state(

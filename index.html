@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download CAR - Estados Brasileiros</title>
+    
+    <!-- Bootstrap 5.3.2 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Cores do Sistema */
+            --system-green: #2E7D32;
+            --system-light-green: #4CAF50;
+            --system-dark-green: #1B5E20;
+            --system-yellow: #FFC107;
+            --system-orange: #FF9800;
+            --system-red: #F44336;
+            --system-gray: #757575;
+            --system-light-gray: #F5F5F5;
+            
+            /* Cores do tema Bootstrap moderno adaptadas */
+            --bs-primary: var(--system-green);
+            --bs-primary-rgb: 46, 125, 50;
+            --bs-secondary: var(--system-gray);
+            --bs-success: var(--system-light-green);
+            --bs-info: var(--system-light-green);
+            --bs-warning: var(--system-orange);
+            --bs-danger: var(--system-red);
+            --bs-light: var(--system-light-gray);
+            --bs-dark: var(--system-dark-green);
+            
+            /* Gradientes do Sistema */
+            --system-gradient: linear-gradient(135deg, var(--system-green), var(--system-light-green));
+            --system-gradient-dark: linear-gradient(135deg, var(--system-dark-green), var(--system-green));
+            --system-gradient-light: linear-gradient(135deg, var(--system-light-green), #66BB6A);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        /* Navbar moderno com tema do Sistema */
+        .navbar {
+            background: var(--system-gradient) !important;
+            box-shadow: 0 4px 20px rgba(46, 125, 50, 0.15);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: white !important;
+            font-size: 1.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand:hover {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        /* Cards modernos */
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(46, 125, 50, 0.12);
+        }
+
+        .card-header {
+            background: var(--system-gradient);
+            color: white;
+            border-radius: 16px 16px 0 0 !important;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 1.25rem 1.5rem;
+            border: none;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Tabela moderna */
+        .table {
+            margin-bottom: 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, var(--system-light-gray), #ffffff);
+            border-bottom: 3px solid var(--system-green);
+            font-weight: 600;
+            color: var(--system-dark-green);
+            padding: 1rem 0.75rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+
+        .table td {
+            vertical-align: middle;
+            border-color: #f1f3f4;
+            padding: 1rem 0.75rem;
+            transition: background-color 0.2s ease;
+            text-align: center;
+        }
+
+        /* Coluna Estado - alinhamento à esquerda */
+        .table th:first-child,
+        .table td:first-child {
+            text-align: left;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(76, 175, 80, 0.05);
+        }
+
+        /* Bandeiras dos estados */
+        .flag-icon {
+            width: 28px;
+            height: 18px;
+            border-radius: 4px;
+            margin-right: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .flag-icon:hover {
+            transform: scale(1.1);
+        }
+
+        /* Botões modernos */
+        .btn {
+            border-radius: 12px;
+            font-weight: 500;
+            padding: 0.6rem 1.2rem;
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-download {
+            background: var(--system-gradient);
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-download:hover {
+            background: var(--system-gradient-dark);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 125, 50, 0.4);
+        }
+
+        .btn-download:disabled {
+            background: var(--system-gray);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: var(--system-gradient);
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-success:hover {
+            background: var(--system-gradient-dark);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 125, 50, 0.4);
+        }
+
+        .btn-success:disabled {
+            background: var(--system-gray);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--system-green);
+            color: var(--system-green);
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--system-green);
+            color: white;
+            border-color: var(--system-green);
+        }
+
+        /* Formulários modernos */
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-control:focus {
+            border-color: var(--system-green);
+            box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.15);
+            background: white;
+        }
+
+        .form-control-sm {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 8px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--system-dark-green);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Status icons com Bootstrap Icons */
+        .status-success {
+            color: var(--system-green);
+            font-size: 1.2rem;
+        }
+
+        .status-error {
+            color: var(--system-red);
+            font-size: 1.2rem;
+        }
+
+        .status-warning {
+            color: var(--system-orange);
+            font-size: 1.2rem;
+        }
+
+        .status-pending {
+            color: var(--system-gray);
+            font-size: 1.2rem;
+        }
+
+        /* Loading states */
+        .loading {
+            display: none;
+        }
+
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        /* Toast notifications modernas */
+        .toast {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            backdrop-filter: blur(10px);
+            margin-bottom: 0.5rem;
+            min-width: 300px;
+            max-width: 400px;
+        }
+
+        .toast-header {
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .toast-body {
+            padding: 1rem;
+        }
+
+        /* Toast container para empilhamento */
+        .toast-container {
+            z-index: 9999;
+            pointer-events: none;
+            position: fixed !important;
+            top: 1rem !important;
+            right: 1rem !important;
+            left: auto !important;
+            bottom: auto !important;
+            padding: 1rem !important;
+            max-height: calc(100vh - 2rem) !important;
+            overflow-y: auto !important;
+        }
+
+        .toast-container .toast {
+            pointer-events: auto;
+        }
+
+        /* Garantir que toasts sejam visíveis */
+        .toast.show {
+            display: block !important;
+            opacity: 1 !important;
+        }
+
+        /* Animações de toast */
+        .toast {
+            transition: all 0.3s ease;
+        }
+
+        /* Botão de fechar customizado */
+        .btn-close {
+            background: transparent;
+            border: none;
+            font-size: 1.25rem;
+            line-height: 1;
+            color: currentColor;
+            opacity: 0.5;
+            cursor: pointer;
+            padding: 0;
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-close:hover {
+            opacity: 1;
+        }
+
+        /* Tooltip customizado para status */
+        .status-tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .status-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 300px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            border-radius: 8px;
+            padding: 12px;
+            position: absolute;
+            z-index: 10000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -150px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            word-wrap: break-word;
+        }
+
+        .status-tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        .status-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Badges modernos */
+        .badge {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 0.5rem 0.75rem;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+                border-radius: 12px;
+            }
+            
+            .flag-icon {
+                width: 24px;
+                height: 16px;
+            }
+            
+            .btn-download {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.875rem;
+            }
+
+            .card-header {
+                font-size: 1rem;
+                padding: 1rem 1.25rem;
+            }
+
+            .navbar-brand {
+                font-size: 1.25rem;
+            }
+        }
+
+        /* Animações */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--system-green);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--system-dark-green);
+        }
+
+        /* Estados dos estados */
+        .estado-item {
+            transition: all 0.3s ease;
+        }
+
+        .estado-item:hover {
+            background-color: rgba(76, 175, 80, 0.05);
+        }
+
+        /* Container principal */
+        .main-container {
+            padding: 2rem 0;
+        }
+
+        /* Configuração da API */
+        .api-config-section {
+            display: none;
+        }
+
+        .api-config-section.show {
+            display: block;
+        }
+
+        .api-config-toggle {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .api-config-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .api-config-toggle .bi-chevron-down,
+        .api-config-toggle .bi-chevron-up {
+            transition: transform 0.3s ease;
+        }
+
+        .api-config-toggle:hover .bi-chevron-down,
+        .api-config-toggle:hover .bi-chevron-up {
+            transform: scale(1.1);
+        }
+
+        /* Espaçamento entre containers */
+        .estados-container {
+            margin-top: 2rem;
+        }
+
+        /* Footer sutil */
+        .footer {
+            background: var(--system-gradient);
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+        }
+
+        /* Links de download */
+        .download-link {
+            color: var(--system-green) !important;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .download-link:hover {
+            color: var(--system-dark-green) !important;
+            text-decoration: underline;
+            transform: translateY(-1px);
+        }
+
+        .download-link:active {
+            transform: translateY(0);
+        }
+
+        /* Icon links */
+        .icon-link {
+            color: #007bff;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease-in-out;
+            font-size: 0.875rem;
+            border: 1px solid transparent;
+            background-color: transparent;
+        }
+
+        .icon-link:hover {
+            color: #0056b3;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            text-decoration: none;
+        }
+
+        .icon-link:active {
+            transform: translateY(1px);
+        }
+
+        .icon-link .bi {
+            width: 1em;
+            height: 1em;
+        }
+
+        .icon-link .btn-text {
+            font-weight: 500;
+        }
+
+        .icon-link .loading {
+            display: none;
+        }
+
+        /* Estilos para campos editáveis */
+        .clickable-field {
+            cursor: pointer;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .clickable-field:hover {
+            background-color: #e9ecef;
+            border-color: #ced4da;
+        }
+
+        .clickable-field:focus {
+            background-color: white;
+            border-color: var(--system-green);
+            box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.15);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar moderno -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <div class="navbar-brand" data-bs-toggle="tooltip" data-bs-placement="bottom" 
+                 data-bs-title="Sistema de Download de Dados do Cadastro Ambiental Rural (CAR)">
+                <i class="bi bi-download me-2"></i>
+                Download CAR - Estados Brasileiros
+            </div>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text" data-bs-toggle="tooltip" data-bs-placement="bottom" 
+                      data-bs-title="Interface para download de dados do Cadastro Ambiental Rural">
+                    <i class="bi bi-gear me-1"></i>
+                    Sistema de Download CAR
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="container">
+            <!-- Configuração da API -->
+            <div class="card mb-4">
+                <div class="card-header api-config-toggle" onclick="toggleApiConfig()" 
+                     data-bs-toggle="tooltip" data-bs-placement="top" 
+                     data-bs-title="Configurações da API. Clique para expandir/recolher.">
+                    <i class="bi bi-gear-fill me-2"></i>
+                    Configuração da API
+                    <i class="bi bi-chevron-down ms-auto" id="configToggleIcon"></i>
+                </div>
+                <div class="card-body api-config-section" id="apiConfigSection">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="apiUrl" class="form-label">
+                                <i class="bi bi-link-45deg me-1"></i>
+                                URL do Endpoint
+                            </label>
+                            <input type="url" class="form-control" id="apiUrl" placeholder="http://192.168.5.179:8787/api"
+                                   data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   data-bs-title="URL completa do endpoint da API. Ex: http://servidor:porta/api">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end gap-2">
+                            <button type="button" class="btn btn-outline-primary" onclick="testConnection()"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Testar se a API está acessível e respondendo corretamente">
+                                <i class="bi bi-plug me-2"></i>
+                                Testar Conexão
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="testToasts()"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Testar as notificações toast do sistema">
+                                <i class="bi bi-bell me-2"></i>
+                                Testar Toasts
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de Estados -->
+            <div class="card estados-container">
+                <div class="card-header" data-bs-toggle="tooltip" data-bs-placement="top" 
+                     data-bs-title="Tabela com todos os estados brasileiros. Configure parâmetros e faça downloads dos dados do CAR.">
+                    <i class="bi bi-table me-2"></i>
+                    Estados Brasileiros - Download CAR
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Sigla do estado brasileiro"><i class="bi bi-flag"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tempo limite em minutos para a requisição. Valores maiores podem ajudar em conexões lentas."><i class="bi bi-clock"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Número máximo de tentativas em caso de falha na requisição"><i class="bi bi-arrow-repeat"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Data e hora do último download realizado"><i class="bi bi-calendar-event"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Status atual do download: sucesso, erro, em andamento ou nenhum"><i class="bi bi-info-circle"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tipo de polígono para extração: área do imóvel, vegetação nativa, etc."><i class="bi bi-rulers"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download do arquivo ZIP com todos os imóveis do estado"><i class="bi bi-map"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Busca e download de propriedades específicas pelo código CAR"><i class="bi bi-house"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Limpar histórico e permitir nova requisição"><i class="bi bi-trash"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="estadosTable">
+                                <!-- Estados serão inseridos aqui via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="mb-0" data-bs-toggle="tooltip" data-bs-placement="top" 
+               data-bs-title="Sistema desenvolvido em 2024 sob licença MIT">
+                <i class="bi bi-c-circle me-1"></i>
+                2024 Sistema de Download CAR - Licença MIT
+            </p>
+        </div>
+    </footer>
+
+    <!-- Toast para notificações -->
+    <div class="toast-container">
+        <!-- Toasts serão criados dinamicamente aqui -->
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Configuração inicial
+        const DEFAULT_API_URL = 'http://192.168.5.179:8787/api';
+        const DEFAULT_TIMEOUT = 60000; // 1 minuto
+        const TIMEOUT_INCREMENT = 10000; // 10 segundos
+        const MIN_TIMEOUT = 10000; // 10 segundos
+        const MAX_TIMEOUT = 300000; // 5 minutos
+        const DEFAULT_POLYGON = 'AREA_PROPERTY'; // Polígono padrão
+        const POLYGONS = [
+            { value: 'AREA_PROPERTY', label: 'Área do Imóvel' },
+            { value: 'APPS', label: 'APPS' },
+            { value: 'NATIVE_VEGETATION', label: 'Vegetação Nativa' },
+            { value: 'CONSOLIDATED_AREA', label: 'Área Consolidada' },
+            { value: 'AREA_FALL', label: 'Área de Pousio' },
+            { value: 'HYDROGRAPHY', label: 'Hidrografia' },
+            { value: 'RESTRICTED_USE', label: 'Uso Restrito' },
+            { value: 'ADMINISTRATIVE_SERVICE', label: 'Servidão Administrativa' },
+            { value: 'LEGAL_RESERVE', label: 'Reserva Legal' }
+        ];
+        const estados = [
+            { sigla: 'AC', nome: 'Acre', flag: '/assets/flags/AC.svg' },
+            { sigla: 'AL', nome: 'Alagoas', flag: '/assets/flags/AL.svg' },
+            { sigla: 'AM', nome: 'Amazonas', flag: '/assets/flags/AM.svg' },
+            { sigla: 'AP', nome: 'Amapá', flag: '/assets/flags/AP.svg' },
+            { sigla: 'BA', nome: 'Bahia', flag: '/assets/flags/BA.svg' },
+            { sigla: 'CE', nome: 'Ceará', flag: '/assets/flags/CE.svg' },
+            { sigla: 'DF', nome: 'Distrito Federal', flag: '/assets/flags/DF.svg' },
+            { sigla: 'ES', nome: 'Espírito Santo', flag: '/assets/flags/ES.svg' },
+            { sigla: 'GO', nome: 'Goiás', flag: '/assets/flags/GO.svg' },
+            { sigla: 'MA', nome: 'Maranhão', flag: '/assets/flags/MA.svg' },
+            { sigla: 'MG', nome: 'Minas Gerais', flag: '/assets/flags/MG.svg' },
+            { sigla: 'MS', nome: 'Mato Grosso do Sul', flag: '/assets/flags/MS.svg' },
+            { sigla: 'MT', nome: 'Mato Grosso', flag: '/assets/flags/MT.svg' },
+            { sigla: 'PA', nome: 'Pará', flag: '/assets/flags/PA.svg' },
+            { sigla: 'PB', nome: 'Paraíba', flag: '/assets/flags/PB.svg' },
+            { sigla: 'PE', nome: 'Pernambuco', flag: '/assets/flags/PE.svg' },
+            { sigla: 'PI', nome: 'Piauí', flag: '/assets/flags/PI.svg' },
+            { sigla: 'PR', nome: 'Paraná', flag: '/assets/flags/PR.svg' },
+            { sigla: 'RJ', nome: 'Rio de Janeiro', flag: '/assets/flags/RJ.svg' },
+            { sigla: 'RN', nome: 'Rio Grande do Norte', flag: '/assets/flags/RN.svg' },
+            { sigla: 'RO', nome: 'Rondônia', flag: '/assets/flags/RO.svg' },
+            { sigla: 'RR', nome: 'Roraima', flag: '/assets/flags/RR.svg' },
+            { sigla: 'RS', nome: 'Rio Grande do Sul', flag: '/assets/flags/RS.svg' },
+            { sigla: 'SC', nome: 'Santa Catarina', flag: '/assets/flags/SC.svg' },
+            { sigla: 'SE', nome: 'Sergipe', flag: '/assets/flags/SE.svg' },
+            { sigla: 'SP', nome: 'São Paulo', flag: '/assets/flags/SP.svg' },
+            { sigla: 'TO', nome: 'Tocantins', flag: '/assets/flags/TO.svg' }
+        ];
+
+        // Estado do aplicativo
+        let downloadHistory = JSON.parse(localStorage.getItem('downloadHistory') || '{}');
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Definir URL padrão
+            document.getElementById('apiUrl').value = DEFAULT_API_URL;
+            
+            // Renderizar tabela
+            renderEstadosTable();
+            
+            // Carregar histórico
+            loadDownloadHistory();
+            
+            // Inicializar tooltips do Bootstrap
+            initializeTooltips();
+            
+            // Verificar se Bootstrap carregou
+            if (typeof bootstrap === 'undefined') {
+                console.warn('Bootstrap não carregou, usando fallback');
+                // Fallback para funcionalidades básicas
+                window.bootstrap = {
+                    Toast: function(element, options) {
+                        this.show = function() {
+                            element.style.display = 'block';
+                            element.style.opacity = '1';
+                        };
+                        this.hide = function() {
+                            element.style.opacity = '0';
+                            setTimeout(() => {
+                                element.style.display = 'none';
+                            }, 300);
+                        };
+                    }
+                };
+            }
+        });
+
+        // Função para inicializar tooltips
+        function initializeTooltips() {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
+        }
+
+        // Alternar exibição da configuração da API
+        function toggleApiConfig() {
+            const configSection = document.getElementById('apiConfigSection');
+            const toggleIcon = document.getElementById('configToggleIcon');
+            
+            if (configSection.classList.contains('show')) {
+                configSection.classList.remove('show');
+                toggleIcon.className = 'bi bi-chevron-down ms-auto';
+            } else {
+                configSection.classList.add('show');
+                toggleIcon.className = 'bi bi-chevron-up ms-auto';
+            }
+        }
+
+        // Função de teste para simular erros (apenas para demonstração)
+        function testErrorHandling() {
+            // Simular erro para teste
+            const testEstado = 'SP';
+            if (!downloadHistory[testEstado]) downloadHistory[testEstado] = {};
+            downloadHistory[testEstado].status = 'error';
+            downloadHistory[testEstado].errorMessage = 'Erro de teste: Timeout na conexão com o servidor. Verifique se a API está rodando na porta 8000.';
+            saveDownloadHistory();
+            renderEstadosTable();
+            showNotification('Erro de teste simulado para SP', 'error');
+        }
+
+        // Função de teste para toasts
+        function testToasts() {
+            console.log('Testando toasts...');
+            showNotification('Teste de notificação de sucesso!', 'success');
+            setTimeout(() => {
+                showNotification('Teste de notificação de erro!', 'error');
+            }, 1000);
+            setTimeout(() => {
+                showNotification('Teste de notificação de informação!', 'info');
+            }, 2000);
+        }
+
+        // Download do arquivo
+        async function downloadFile(estado) {
+            const history = downloadHistory[estado];
+            if (!history || history.status !== 'success') {
+                showNotification('Nenhum arquivo disponível para download', 'error');
+                return;
+            }
+
+            // Encontrar o link de download do estado e mostrar spinner
+            const downloadLink = document.querySelector(`a[onclick*="downloadFile('${estado}')"]`);
+            
+            if (downloadLink) {
+                const originalContent = downloadLink.innerHTML;
+                downloadLink.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>Baixando...';
+                downloadLink.style.pointerEvents = 'none';
+                downloadLink.setAttribute('data-original-content', originalContent);
+            }
+
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const formData = new FormData();
+                formData.append('state', estado);
+                formData.append('polygon', history.polygon || DEFAULT_POLYGON);
+                formData.append('folder', 'temp'); // Pasta temporária
+                formData.append('tries', '25'); // Número de tentativas
+                formData.append('timeout', Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)); // Converter de milissegundos para minutos
+                formData.append('max_retries', history.maxRetries || 5);
+                formData.append('debug', 'false');
+
+                const response = await fetch(`${apiUrl}/download_state`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${estado}_${history.polygon || DEFAULT_POLYGON}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showNotification(`Download de ${estado} realizado com sucesso!`, 'success');
+                } else {
+                    throw new Error('Erro ao baixar arquivo');
+                }
+            } catch (error) {
+                showNotification(`Erro ao baixar arquivo de ${estado}: ${error.message}`, 'error');
+            } finally {
+                // Restaurar link
+                            if (downloadLink) {
+                const originalContent = downloadLink.getAttribute('data-original-content');
+                if (originalContent) {
+                    downloadLink.innerHTML = originalContent;
+                }
+                downloadLink.style.pointerEvents = 'auto';
+            }
+            }
+        }
+
+        // Download da propriedade
+        async function downloadProperty(estado, car) {
+            if (!car || car.trim() === '') {
+                showNotification('Informe um código CAR válido', 'error');
+                return;
+            }
+
+            // Encontrar o link de download da propriedade e mostrar spinner
+            const propertyLink = document.querySelector(`a[onclick*="downloadProperty('${estado}', '${car}')"]`);
+            
+            if (propertyLink) {
+                const originalContent = propertyLink.innerHTML;
+                propertyLink.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>Baixando...';
+                propertyLink.style.pointerEvents = 'none';
+                propertyLink.setAttribute('data-original-content', originalContent);
+            }
+
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const formData = new FormData();
+                formData.append('car', car);
+                formData.append('state', estado);
+                formData.append('folder', 'PROPERTY');
+                formData.append('tries', '25');
+                formData.append('debug', 'false');
+                formData.append('timeout', '1'); // 1 minuto
+                formData.append('max_retries', '5');
+
+                const response = await fetch(`${apiUrl}/download-property`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `property_${car}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showNotification(`Download da propriedade ${car} realizado com sucesso!`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || errorData.error || 'Erro ao baixar propriedade');
+                }
+            } catch (error) {
+                showNotification(`Erro ao baixar propriedade ${car}: ${error.message}`, 'error');
+            } finally {
+                // Restaurar link
+                            if (propertyLink) {
+                const originalContent = propertyLink.getAttribute('data-original-content');
+                if (originalContent) {
+                    propertyLink.innerHTML = originalContent;
+                }
+                propertyLink.style.pointerEvents = 'auto';
+            }
+            }
+        }
+
+        // Resetar timeout para valor padrão
+        async function resetTimeout(estado) {
+            // Encontrar o botão de reset e mostrar spinner
+            const resetButton = event.target.closest('button');
+            let originalButtonContent = '';
+            
+            if (resetButton) {
+                originalButtonContent = resetButton.innerHTML;
+                resetButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></span>';
+                resetButton.disabled = true;
+            }
+
+            try {
+                // Simular um pequeno delay para mostrar o spinner
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                if (!downloadHistory[estado]) downloadHistory[estado] = {};
+                downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
+                saveDownloadHistory();
+                renderEstadosTable();
+                showNotification(`Timeout de ${estado} resetado para ${DEFAULT_TIMEOUT/1000}s`, 'info');
+            } catch (error) {
+                showNotification(`Erro ao resetar timeout de ${estado}: ${error.message}`, 'error');
+            } finally {
+                // Restaurar botão
+                if (resetButton) {
+                    resetButton.innerHTML = originalButtonContent;
+                    resetButton.disabled = false;
+                }
+            }
+        }
+
+        // Renderizar tabela de estados
+        function renderEstadosTable() {
+            const tbody = document.getElementById('estadosTable');
+            tbody.innerHTML = '';
+
+            estados.forEach(estado => {
+                const row = document.createElement('tr');
+                row.className = 'estado-item';
+                const history = downloadHistory[estado.sigla] || {};
+                
+                row.innerHTML = `
+                    <td class="align-middle text-center">
+                        <img src="assets/flags/${estado.sigla}.png" alt="Bandeira de ${estado.nome}" class="flag-icon" style="height: 32px; width: auto; max-width: 48px; object-fit: contain; vertical-align: middle; margin-right: 8px;">
+                        <span class="align-middle">${estado.sigla}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="form-control-plaintext form-control-sm clickable-field" 
+                                  onclick="makeEditable(this, 'timeout', '${estado.sigla}', ${Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)})"
+                                  data-bs-toggle="tooltip" data-bs-placement="top" 
+                                  data-bs-title="Clique para editar o timeout (em minutos)">
+                                ${Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)} min
+                            </span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                    onclick="resetTimeout('${estado.sigla}')" 
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Resetar timeout para o valor padrão (${Math.floor(DEFAULT_TIMEOUT/60000)} min)">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="form-control-plaintext form-control-sm clickable-field" 
+                              onclick="makeEditable(this, 'retries', '${estado.sigla}', ${history.maxRetries || 5})"
+                              data-bs-toggle="tooltip" data-bs-placement="top" 
+                              data-bs-title="Clique para editar o número de tentativas">
+                            ${history.maxRetries || 5}
+                        </span>
+                    </td>
+                    <td>
+                        <small class="text-muted" data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="${history.lastDownload ? `Último download realizado em ${formatDateTime(history.lastDownload)}` : 'Nenhum download realizado ainda'}">
+                            ${history.lastDownload ? formatDateTime(history.lastDownload) : 'Nunca'}
+                        </small>
+                    </td>
+                    <td>
+                        ${getStatusIcon(history.status, history.errorMessage)}
+                    </td>
+                    <td>
+                        <span class="form-control-plaintext form-control-sm clickable-field" 
+                              onclick="makeEditable(this, 'polygon', '${estado.sigla}', '${history.polygon || DEFAULT_POLYGON}')"
+                              data-bs-toggle="tooltip" data-bs-placement="top" 
+                              data-bs-title="Clique para editar o tipo de polígono">
+                            ${POLYGONS.find(p => p.value === (history.polygon || DEFAULT_POLYGON))?.label || 'Área do Imóvel'}
+                        </span>
+                    </td>
+                    <td>
+                        ${getDownloadLink(estado.sigla, history)}
+                    </td>
+                    <td>
+                        ${getPropertyLink(estado.sigla, history)}
+                    </td>
+                    <td>
+                        ${getActionButton(estado.sigla, history)}
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            // Inicializar tooltips após renderizar a tabela
+            initializeTooltips();
+        }
+
+        // Atualizar timeout
+        function updateTimeout(estado, value) {
+            if (!downloadHistory[estado]) downloadHistory[estado] = {};
+            downloadHistory[estado].timeout = parseInt(value);
+            saveDownloadHistory();
+        }
+
+        // Atualizar max retries
+        function updateMaxRetries(estado, value) {
+            if (!downloadHistory[estado]) downloadHistory[estado] = {};
+            downloadHistory[estado].maxRetries = parseInt(value);
+            saveDownloadHistory();
+        }
+
+        // Atualizar polígono
+        function updatePolygon(estado, value) {
+            if (!downloadHistory[estado]) downloadHistory[estado] = {};
+            downloadHistory[estado].polygon = value;
+            saveDownloadHistory();
+        }
+
+        // Atualizar CAR
+        function updateCar(estado, value) {
+            if (!downloadHistory[estado]) downloadHistory[estado] = {};
+            downloadHistory[estado].car = value;
+            saveDownloadHistory();
+        }
+
+        // Lidar com tecla Enter no campo CAR
+        function handleCarKeyPress(event, estado) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchProperty(estado);
+            }
+        }
+
+        // Buscar propriedade
+        async function searchProperty(estado) {
+            const carInput = document.getElementById(`car-input-${estado}`);
+            const car = carInput ? carInput.value.trim() : '';
+            
+            if (!car) {
+                showNotification('Informe um código CAR válido', 'error');
+                return;
+            }
+
+            // Encontrar o botão de busca e mostrar spinner
+            const searchButton = carInput ? carInput.closest('.input-group').querySelector('button') : null;
+            
+            if (searchButton) {
+                const originalIcon = searchButton.querySelector('i');
+                if (originalIcon) {
+                    originalIcon.style.display = 'none';
+                }
+                searchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></span>';
+                searchButton.disabled = true;
+            }
+
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const formData = new FormData();
+                formData.append('car', car);
+                formData.append('state', estado);
+                formData.append('folder', 'PROPERTY');
+                formData.append('tries', '25');
+                formData.append('debug', 'false');
+                formData.append('timeout', '1'); // 1 minuto
+                formData.append('max_retries', '5');
+
+                const response = await fetch(`${apiUrl}/download-property`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    // Marcar que a propriedade foi buscada com sucesso
+                    if (!downloadHistory[estado]) downloadHistory[estado] = {};
+                    downloadHistory[estado].propertySearched = true;
+                    downloadHistory[estado].car = car;
+                    saveDownloadHistory();
+                    
+                    // Atualizar a tabela para mostrar apenas o link de download
+                    renderEstadosTable();
+                    showNotification(`Propriedade ${car} encontrada! Clique em Download propriedade para baixar.`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || errorData.error || 'Propriedade não encontrada');
+                }
+            } catch (error) {
+                showNotification(`Erro ao buscar propriedade ${car}: ${error.message}`, 'error');
+            } finally {
+                // Restaurar botão
+                if (searchButton) {
+                    searchButton.innerHTML = '<i class="bi bi-search"></i>';
+                    searchButton.disabled = false;
+                }
+            }
+        }
+
+        // Limpar estado (apagar último download)
+        async function clearEstado(estado) {
+            if (confirm(`Tem certeza que deseja limpar o download de ${estado}?`)) {
+                // Encontrar o botão de limpar e mostrar spinner
+                const clearButton = document.getElementById(`btn-clear-${estado}`);
+                
+                if (clearButton) {
+                    // Mostrar spinner no icon-link
+                    const btnText = clearButton.querySelector('.btn-text');
+                    const loading = clearButton.querySelector('.loading');
+                    if (btnText) btnText.style.display = 'none';
+                    if (loading) loading.style.display = 'inline-flex';
+                    clearButton.style.pointerEvents = 'none';
+                }
+
+                try {
+                    // Simular um pequeno delay para mostrar o spinner
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Remover completamente o histórico do estado
+                    delete downloadHistory[estado];
+                    saveDownloadHistory();
+                    
+                    // Atualizar a tabela
+                    renderEstadosTable();
+                    
+                    showNotification(`Download de ${estado} foi limpo. O botão "Requisitar" e o campo "Informe CAR" foram re-exibidos.`, 'success');
+                } catch (error) {
+                    showNotification(`Erro ao limpar ${estado}: ${error.message}`, 'error');
+                } finally {
+                    // Restaurar botão se ainda existir (pode ter sido removido pela renderização)
+                    if (clearButton && clearButton.parentNode) {
+                        const btnText = clearButton.querySelector('.btn-text');
+                        const loading = clearButton.querySelector('.loading');
+                        if (btnText) btnText.style.display = 'inline-block';
+                        if (loading) loading.style.display = 'none';
+                        clearButton.style.pointerEvents = 'auto';
+                    }
+                }
+            }
+        }
+
+        // Escapar HTML para segurança
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Obter link de download
+        function getDownloadLink(estado, history) {
+            // Se não há status (nenhum download realizado), mostrar botão "Requisitar"
+            if (!history.status || history.status === '') {
+                return `<a class="icon-link" href="#" onclick="downloadEstado('${estado}'); return false;" id="btn-${estado}" 
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Clique para requisitar o download dos dados do estado ${estado}. Esta operação pode levar alguns minutos.">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                            </svg>
+                            <span class="btn-text">Requisitar</span>
+                            <span class="loading" style="display: none;">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                                Processando...
+                            </span>
+                        </a>`;
+            }
+            // Se o download está em andamento, mostrar o mesmo botão, mas só com spinner
+            if (history.status === 'pending') {
+                return `<a class="icon-link" href="#" id="btn-${estado}" style="pointer-events: none; opacity: 0.7;"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Download em andamento. Aguarde a conclusão.">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                            </svg>
+                            <span class="loading" style="display: inline-flex; align-items: center;">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                            </span>
+                        </a>`;
+            }
+            // Se o download foi bem-sucedido e o arquivo está pronto, mostrar link de download
+            if (history.status === 'success' && history.fileReady) {
+                return `<a href="#" class="download-link" onclick="downloadFile('${estado}'); return false;"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Clique para baixar o arquivo ZIP com os dados do estado ${estado}. O arquivo contém todos os imóveis rurais.">
+                            <i class="bi bi-download"></i>
+                            Download ${estado}
+                        </a>`;
+            } else if (history.status === 'success') {
+                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Download processado com sucesso. Clique em Download para baixar o arquivo.">Processado</span>`;
+            } else if (history.status === 'error') {
+                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Erro no download. Verifique a conexão e tente novamente.">Erro</span>`;
+            } else {
+                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Nenhum download realizado. Clique em Requisitar para iniciar.">N/A</span>`;
+            }
+        }
+
+        // Obter link de propriedade
+        function getPropertyLink(estado, history) {
+            if (history.status === 'success') {
+                // Se já foi feita a busca da propriedade, mostrar apenas o link de download
+                if (history.propertySearched && history.car && history.car.trim() !== '') {
+                    return `<a href="#" class="download-link" onclick="downloadProperty('${estado}', '${history.car}'); return false;"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Clique para baixar o arquivo ZIP com os dados da propriedade ${history.car}. O arquivo contém apenas este imóvel específico.">
+                                <i class="bi bi-house"></i>
+                                Download propriedade ${history.car}
+                            </a>`;
+                }
+                
+                // Se ainda não foi feita a busca, mostrar o campo com botão de lupa
+                return `<div class="d-flex flex-column gap-1">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" 
+                                       placeholder="Código CAR" 
+                                       value="${history.car || ''}" 
+                                       onchange="updateCar('${estado}', this.value)"
+                                       onkeypress="handleCarKeyPress(event, '${estado}')"
+                                       id="car-input-${estado}"
+                                       data-bs-toggle="tooltip" data-bs-placement="top" 
+                                       data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
+                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                            <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                  data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
+                        </div>`;
+            } else if (history.status === 'error') {
+                // Se houve erro, mostrar o campo com botão de lupa
+                return `<div class="d-flex flex-column gap-1">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" 
+                                       placeholder="Código CAR" 
+                                       value="${history.car || ''}" 
+                                       onchange="updateCar('${estado}', this.value)"
+                                       onkeypress="handleCarKeyPress(event, '${estado}')"
+                                       id="car-input-${estado}"
+                                       data-bs-toggle="tooltip" data-bs-placement="top" 
+                                       data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
+                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                            <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                  data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
+                        </div>`;
+            } else {
+                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Nenhum download realizado. Requisite um download primeiro para buscar propriedades.">N/A</span>`;
+            }
+        }
+
+        // Obter botão de ação (Limpar)
+        function getActionButton(estado, history) {
+            // Se o download foi bem-sucedido, mostrar botão "Limpar"
+            if (history.status === 'success') {
+                return `<a class="icon-link" href="#" onclick="clearEstado('${estado}'); return false;" id="btn-clear-${estado}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Clique para limpar o download de ${estado}. Isso removerá o arquivo baixado e permitirá uma nova requisição.">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                            </svg>
+                            <span class="btn-text">Limpar</span>
+                            <span class="loading" style="display: none;">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                                Limpando...
+                            </span>
+                        </a>`;
+            }
+            // Se está em andamento, mostrar botão "Limpar" desabilitado só com spinner
+            if (history.status === 'pending') {
+                return `<a class="icon-link" href="#" id="btn-clear-${estado}" style="pointer-events: none; opacity: 0.7;"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Download em andamento. Aguarde a conclusão para limpar.">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                            </svg>
+                            <span class="loading" style="display: inline-flex; align-items: center;">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                            </span>
+                        </a>`;
+            }
+            // Se não há status, erro ou nenhum download foi realizado, não mostrar botão
+            return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Nenhum download realizado ainda. Requisite um download primeiro.">-</span>`;
+        }
+
+        // Obter ícone de status com Bootstrap Icons
+        function getStatusIcon(status, errorMessage = null) {
+            switch(status) {
+                case 'success':
+                    return '<i class="bi bi-check-circle-fill status-success" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download realizado com sucesso! O arquivo está pronto para download."></i>';
+                case 'error':
+                    if (errorMessage) {
+                        return `<i class="bi bi-x-circle-fill status-error" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Erro no download: ${escapeHtml(errorMessage)}"></i>`;
+                    } else {
+                        return '<i class="bi bi-x-circle-fill status-error" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Erro no download. Verifique a conexão e tente novamente."></i>';
+                    }
+                case 'pending':
+                    return '<i class="bi bi-clock-fill status-warning" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download em andamento. Aguarde a conclusão."></i>';
+                default:
+                    return '<i class="bi bi-dash-circle status-pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Nenhum download realizado. Clique em Requisitar para iniciar."></i>';
+            }
+        }
+
+        // Formatar data/hora
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('pt-BR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).replace(',', '');
+        }
+
+        // Salvar histórico
+        function saveDownloadHistory() {
+            localStorage.setItem('downloadHistory', JSON.stringify(downloadHistory));
+        }
+
+        // Carregar histórico
+        function loadDownloadHistory() {
+            console.log('Histórico carregado:', downloadHistory);
+        }
+
+        // Testar conexão com a API
+        async function testConnection() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const button = event.target;
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Testando...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch(`${apiUrl}/`);
+                if (response.ok) {
+                    showNotification('Conexão estabelecida com sucesso!', 'success');
+                } else {
+                    showNotification('Erro na conexão com a API', 'error');
+                }
+            } catch (error) {
+                showNotification('Erro ao conectar com a API: ' + error.message, 'error');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // Download de estado
+        async function downloadEstado(estado) {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const history = downloadHistory[estado] || {};
+            let timeout = history.timeout || DEFAULT_TIMEOUT;
+            const maxRetries = history.maxRetries || 5;
+            
+            // Se o último download falhou, incrementar timeout automaticamente
+            if (history.status === 'error' && history.lastDownload) {
+                const lastAttempt = new Date(history.lastDownload);
+                const now = new Date();
+                const timeDiff = now - lastAttempt;
+                
+                // Se a última tentativa foi há menos de 5 minutos, incrementar timeout
+                if (timeDiff < 5 * 60 * 1000) {
+                    timeout = Math.min(timeout + TIMEOUT_INCREMENT, MAX_TIMEOUT);
+                    console.log(`Timeout incrementado para ${estado}: ${timeout}ms`);
+                }
+            }
+            
+            // Determinar qual botão está sendo usado (Requisitar)
+            let button = document.getElementById(`btn-${estado}`);
+            
+            if (button) {
+                const btnText = button.querySelector('.btn-text');
+                const loading = button.querySelector('.loading');
+                
+                // Atualizar estado do botão
+                button.disabled = true;
+                if (btnText) btnText.style.display = 'none';
+                if (loading) loading.style.display = 'inline-block';
+            }
+            
+            // Atualizar status
+            if (!downloadHistory[estado]) downloadHistory[estado] = {};
+            downloadHistory[estado].status = 'pending';
+            downloadHistory[estado].lastDownload = new Date().toISOString();
+            downloadHistory[estado].timeout = timeout; // Salvar timeout atual
+            saveDownloadHistory();
+            renderEstadosTable();
+
+            try {
+                const formData = new FormData();
+                formData.append('state', estado);
+                formData.append('polygon', history.polygon || DEFAULT_POLYGON); // Usar polígono selecionado ou padrão
+                formData.append('folder', 'temp'); // Pasta temporária
+                formData.append('tries', '25'); // Número de tentativas
+                formData.append('timeout', Math.floor(timeout / 60000)); // Converter de milissegundos para minutos
+                formData.append('max_retries', maxRetries);
+                formData.append('debug', 'false');
+
+                const response = await fetch(`${apiUrl}/download_state`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    // Verificar se a resposta contém dados válidos
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/zip')) {
+                        // Arquivo processado com sucesso
+                        downloadHistory[estado].status = 'success';
+                        downloadHistory[estado].errorMessage = null; // Limpar erro anterior
+                        downloadHistory[estado].fileReady = true; // Marcar arquivo como pronto
+                        // Resetar timeout para o valor padrão após sucesso
+                        downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
+                        showNotification(`Arquivo de ${estado} processado com sucesso! Clique em Download para baixar.`, 'success');
+                    } else {
+                        // Verificar se é uma resposta de erro em JSON
+                        const text = await response.text();
+                        try {
+                            const errorData = JSON.parse(text);
+                            throw new Error(errorData.detail || errorData.message || 'Erro no processamento');
+                        } catch (parseError) {
+                            throw new Error('Resposta inválida do servidor');
+                        }
+                    }
+                } else {
+                    let errorMessage = 'Erro no download';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorData.message || errorData.error || 'Erro no download';
+                    } catch (parseError) {
+                        errorMessage = `Erro HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+            } catch (error) {
+                downloadHistory[estado].status = 'error';
+                downloadHistory[estado].errorMessage = error.message;
+                showNotification(`Erro no download de ${estado}: ${error.message}`, 'error');
+            } finally {
+                // Restaurar botão se existir
+                if (button) {
+                    const btnText = button.querySelector('.btn-text');
+                    const loading = button.querySelector('.loading');
+                    
+                    button.disabled = false;
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                }
+                
+                // Atualizar tabela
+                renderEstadosTable();
+            }
+        }
+
+        // Mostrar notificação
+        function showNotification(message, type = 'info') {
+            console.log('showNotification chamada:', message, type);
+            
+            const toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) {
+                console.error('Container de toast não encontrado!');
+                return;
+            }
+            
+            // Definir classes e ícones por tipo
+            let toastClass = 'bg-info text-white';
+            let icon = 'bi-info-circle';
+            let title = 'Informação';
+            if (type === 'success') {
+                toastClass = 'bg-success text-white';
+                icon = 'bi-check-circle';
+                title = 'Sucesso';
+            } else if (type === 'error') {
+                toastClass = 'bg-danger text-white';
+                icon = 'bi-exclamation-triangle';
+                title = 'Erro';
+            } else if (type === 'warning' || type === 'alert') {
+                toastClass = 'bg-warning text-dark';
+                icon = 'bi-exclamation-circle';
+                title = 'Alerta';
+            }
+            
+            // Criar novo toast
+            const toastId = 'toast-' + Date.now();
+            const toast = document.createElement('div');
+            toast.className = `toast ${toastClass}`;
+            toast.id = toastId;
+            toast.setAttribute('role', 'alert');
+            
+            toast.innerHTML = `
+                <div class="toast-header">
+                    <i class="bi ${icon} me-2"></i>
+                    <strong class="me-auto">${title}</strong>
+                    <button type="button" class="btn-close" onclick="this.closest('.toast').remove()"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            `;
+            
+            // Adicionar toast ao container
+            toastContainer.appendChild(toast);
+            console.log('Toast adicionado ao container:', toastId);
+            
+            // Mostrar toast imediatamente
+            toast.style.display = 'block';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            
+            // Animar entrada
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(0)';
+            }, 10);
+            
+            // Auto-hide após delay
+            const delay = type === 'error' ? 8000 : 5000;
+            setTimeout(() => {
+                // Animar saída
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                        console.log('Toast removido:', toastId);
+                    }
+                }, 300);
+            }, delay);
+        }
+
+        // Função para tornar campo editável
+        function makeEditable(element, fieldType, estado, currentValue) {
+            const parent = element.parentElement;
+            const originalContent = element.innerHTML;
+            const originalClass = element.className;
+            
+            // Criar input baseado no tipo de campo
+            let input;
+            if (fieldType === 'polygon') {
+                input = document.createElement('select');
+                input.className = 'form-select form-select-sm';
+                POLYGONS.forEach(polygon => {
+                    const option = document.createElement('option');
+                    option.value = polygon.value;
+                    option.textContent = polygon.label;
+                    if (polygon.value === currentValue) {
+                        option.selected = true;
+                    }
+                    input.appendChild(option);
+                });
+            } else {
+                input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'form-control form-control-sm';
+                input.value = currentValue;
+                if (fieldType === 'timeout') {
+                    input.min = '1';
+                    input.max = '5';
+                } else if (fieldType === 'retries') {
+                    input.min = '1';
+                    input.max = '99';
+                }
+            }
+            
+            // Substituir elemento
+            element.style.display = 'none';
+            parent.insertBefore(input, element);
+            input.focus();
+            
+            // Função para salvar e restaurar
+            function saveAndRestore() {
+                let newValue;
+                if (fieldType === 'polygon') {
+                    newValue = input.value;
+                    updatePolygon(estado, newValue);
+                    element.innerHTML = POLYGONS.find(p => p.value === newValue)?.label || 'Área do Imóvel';
+                } else if (fieldType === 'timeout') {
+                    newValue = parseInt(input.value) * 60000; // Converter para milissegundos
+                    updateTimeout(estado, newValue);
+                    element.innerHTML = `${Math.floor(newValue / 60000)} min`;
+                } else if (fieldType === 'retries') {
+                    newValue = parseInt(input.value);
+                    updateMaxRetries(estado, newValue);
+                    element.innerHTML = newValue;
+                }
+                
+                // Restaurar elemento original
+                input.remove();
+                element.style.display = 'block';
+                initializeTooltips();
+            }
+            
+            // Event listeners
+            input.addEventListener('blur', saveAndRestore);
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    saveAndRestore();
+                } else if (e.key === 'Escape') {
+                    // Cancelar edição
+                    input.remove();
+                    element.style.display = 'block';
+                    initializeTooltips();
+                }
+            });
+        }
+    </script>
+</body>
+</html> 
