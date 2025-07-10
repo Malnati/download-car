@@ -865,7 +865,32 @@
             if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
                 const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                 tooltipTriggerList.map(function (tooltipTriggerEl) {
-                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                    return new bootstrap.Tooltip(tooltipTriggerEl, {
+                        trigger: 'hover',
+                        delay: { show: 200, hide: 100 }
+                    });
+                });
+                
+                // Adicionar listener para ocultar tooltips ao mover o mouse
+                let tooltipHideTimeout;
+                document.addEventListener('mousemove', function() {
+                    // Limpar timeout anterior
+                    if (tooltipHideTimeout) {
+                        clearTimeout(tooltipHideTimeout);
+                    }
+                    
+                    // Definir timeout para ocultar tooltips após 100ms
+                    tooltipHideTimeout = setTimeout(function() {
+                        const tooltipElements = document.querySelectorAll('.tooltip');
+                        tooltipElements.forEach(function(tooltip) {
+                            if (tooltip.style.display !== 'none' && tooltip.style.opacity !== '0') {
+                                const tooltipInstance = bootstrap.Tooltip.getInstance(tooltip);
+                                if (tooltipInstance) {
+                                    tooltipInstance.hide();
+                                }
+                            }
+                        });
+                    }, 100);
                 });
             }
         }
@@ -1493,7 +1518,7 @@
         function getActionButton(estado, history) {
             // Se o download foi bem-sucedido ou há arquivos prontos, mostrar botão "Limpar"
             if (history.status === 'success' || history.status === 'ready') {
-                return `<a class="icon-link" href="#" onclick="clearEstado('${estado}'); return false;" id="btn-clear-${estado}"
+                return `<a class="icon-link text-danger" href="#" onclick="clearEstado('${estado}'); return false;" id="btn-clear-${estado}"
                                 data-bs-toggle="tooltip" data-bs-placement="top" 
                                 data-bs-title="Clique para limpar o download de ${estado}. Isso excluirá os arquivos do servidor e permitirá uma nova requisição.">
                             <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
