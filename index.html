@@ -550,18 +550,59 @@
         .download-link:active {
             transform: translateY(0);
         }
+
+        /* Icon links */
+        .icon-link {
+            color: #007bff;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease-in-out;
+            font-size: 0.875rem;
+            border: 1px solid transparent;
+            background-color: transparent;
+        }
+
+        .icon-link:hover {
+            color: #0056b3;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            text-decoration: none;
+        }
+
+        .icon-link:active {
+            transform: translateY(1px);
+        }
+
+        .icon-link .bi {
+            width: 1em;
+            height: 1em;
+        }
+
+        .icon-link .btn-text {
+            font-weight: 500;
+        }
+
+        .icon-link .loading {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <!-- Navbar moderno -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <div class="navbar-brand">
+            <div class="navbar-brand" data-bs-toggle="tooltip" data-bs-placement="bottom" 
+                 data-bs-title="Sistema de Download de Dados do Cadastro Ambiental Rural (CAR)">
                 <i class="bi bi-download me-2"></i>
                 Download CAR - Estados Brasileiros
             </div>
             <div class="navbar-nav ms-auto">
-                <span class="navbar-text">
+                <span class="navbar-text" data-bs-toggle="tooltip" data-bs-placement="bottom" 
+                      data-bs-title="Interface para download de dados do Cadastro Ambiental Rural">
                     <i class="bi bi-gear me-1"></i>
                     Sistema de Download CAR
                 </span>
@@ -573,7 +614,9 @@
         <div class="container">
             <!-- Configuração da API -->
             <div class="card mb-4">
-                <div class="card-header api-config-toggle" onclick="toggleApiConfig()">
+                <div class="card-header api-config-toggle" onclick="toggleApiConfig()" 
+                     data-bs-toggle="tooltip" data-bs-placement="top" 
+                     data-bs-title="Configurações da API. Clique para expandir/recolher.">
                     <i class="bi bi-gear-fill me-2"></i>
                     Configuração da API
                     <i class="bi bi-chevron-down ms-auto" id="configToggleIcon"></i>
@@ -585,14 +628,20 @@
                                 <i class="bi bi-link-45deg me-1"></i>
                                 URL do Endpoint
                             </label>
-                            <input type="url" class="form-control" id="apiUrl" placeholder="http://192.168.5.179:8787/api">
+                            <input type="url" class="form-control" id="apiUrl" placeholder="http://192.168.5.179:8787/api"
+                                   data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   data-bs-title="URL completa do endpoint da API. Ex: http://servidor:porta/api">
                         </div>
                         <div class="col-md-6 d-flex align-items-end gap-2">
-                            <button type="button" class="btn btn-outline-primary" onclick="testConnection()">
+                            <button type="button" class="btn btn-outline-primary" onclick="testConnection()"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Testar se a API está acessível e respondendo corretamente">
                                 <i class="bi bi-plug me-2"></i>
                                 Testar Conexão
                             </button>
-                            <button type="button" class="btn btn-outline-secondary" onclick="testToasts()">
+                            <button type="button" class="btn btn-outline-secondary" onclick="testToasts()"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Testar as notificações toast do sistema">
                                 <i class="bi bi-bell me-2"></i>
                                 Testar Toasts
                             </button>
@@ -603,7 +652,8 @@
 
             <!-- Tabela de Estados -->
             <div class="card estados-container">
-                <div class="card-header">
+                <div class="card-header" data-bs-toggle="tooltip" data-bs-placement="top" 
+                     data-bs-title="Tabela com todos os estados brasileiros. Configure parâmetros e faça downloads dos dados do CAR.">
                     <i class="bi bi-table me-2"></i>
                     Estados Brasileiros - Download CAR
                 </div>
@@ -612,15 +662,15 @@
                         <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th><i class="bi bi-flag me-1"></i>&nbsp;Estado</th>
-                                    <th><i class="bi bi-clock me-1"></i>&nbsp;Timeout (ms)</th>
-                                    <th><i class="bi bi-arrow-repeat me-1"></i>&nbsp;Tentativas</th>
-                                    <th><i class="bi bi-calendar-event me-1"></i>&nbsp;Última</th>
-                                    <th><i class="bi bi-info-circle me-1"></i>&nbsp;Status</th>
-                                    <th><i class="bi bi-shapes me-1"></i>&nbsp;Polígono</th>
-                                    <th><i class="bi bi-link-45deg me-1"></i>&nbsp;Download estado</th>
-                                    <th><i class="bi bi-house me-1"></i>&nbsp;Download propriedade</th>
-                                    <th><i class="bi bi-trash me-1"></i>&nbsp;Limpar</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Sigla do estado brasileiro"><i class="bi bi-flag me-1"></i>&nbsp;Estado</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tempo limite em milissegundos para a requisição. Valores maiores podem ajudar em conexões lentas."><i class="bi bi-clock me-1"></i>&nbsp;Timeout (ms)</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Número máximo de tentativas em caso de falha na requisição"><i class="bi bi-arrow-repeat me-1"></i>&nbsp;Tentativas</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Data e hora do último download realizado"><i class="bi bi-calendar-event me-1"></i>&nbsp;Última</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Status atual do download: sucesso, erro, em andamento ou nenhum"><i class="bi bi-info-circle me-1"></i>&nbsp;Status</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tipo de polígono para extração: área do imóvel, vegetação nativa, etc."><i class="bi bi-shapes me-1"></i>&nbsp;Polígono</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download do arquivo ZIP com todos os imóveis do estado"><i class="bi bi-link-45deg me-1"></i>&nbsp;Download estado</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Busca e download de propriedades específicas pelo código CAR"><i class="bi bi-house me-1"></i>&nbsp;Download propriedade</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Limpar histórico e permitir nova requisição"><i class="bi bi-trash me-1"></i>&nbsp;Limpar</th>
                                 </tr>
                             </thead>
                             <tbody id="estadosTable">
@@ -636,7 +686,8 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p class="mb-0">
+            <p class="mb-0" data-bs-toggle="tooltip" data-bs-placement="top" 
+               data-bs-title="Sistema desenvolvido em 2024 sob licença MIT">
                 <i class="bi bi-c-circle me-1"></i>
                 2024 Sistema de Download CAR - Licença MIT
             </p>
@@ -714,6 +765,9 @@
             // Carregar histórico
             loadDownloadHistory();
             
+            // Inicializar tooltips do Bootstrap
+            initializeTooltips();
+            
             // Verificar se Bootstrap carregou
             if (typeof bootstrap === 'undefined') {
                 console.warn('Bootstrap não carregou, usando fallback');
@@ -734,6 +788,16 @@
                 };
             }
         });
+
+        // Função para inicializar tooltips
+        function initializeTooltips() {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
+        }
 
         // Alternar exibição da configuração da API
         function toggleApiConfig() {
@@ -781,6 +845,16 @@
                 return;
             }
 
+            // Encontrar o link de download do estado e mostrar spinner
+            const downloadLink = document.querySelector(`a[onclick*="downloadFile('${estado}')"]`);
+            
+            if (downloadLink) {
+                const originalContent = downloadLink.innerHTML;
+                downloadLink.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>Baixando...';
+                downloadLink.style.pointerEvents = 'none';
+                downloadLink.setAttribute('data-original-content', originalContent);
+            }
+
             try {
                 const apiUrl = document.getElementById('apiUrl').value;
                 const formData = new FormData();
@@ -813,6 +887,15 @@
                 }
             } catch (error) {
                 showNotification(`Erro ao baixar arquivo de ${estado}: ${error.message}`, 'error');
+            } finally {
+                // Restaurar link
+                            if (downloadLink) {
+                const originalContent = downloadLink.getAttribute('data-original-content');
+                if (originalContent) {
+                    downloadLink.innerHTML = originalContent;
+                }
+                downloadLink.style.pointerEvents = 'auto';
+            }
             }
         }
 
@@ -821,6 +904,16 @@
             if (!car || car.trim() === '') {
                 showNotification('Informe um código CAR válido', 'error');
                 return;
+            }
+
+            // Encontrar o link de download da propriedade e mostrar spinner
+            const propertyLink = document.querySelector(`a[onclick*="downloadProperty('${estado}', '${car}')"]`);
+            
+            if (propertyLink) {
+                const originalContent = propertyLink.innerHTML;
+                propertyLink.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>Baixando...';
+                propertyLink.style.pointerEvents = 'none';
+                propertyLink.setAttribute('data-original-content', originalContent);
             }
 
             try {
@@ -856,16 +949,48 @@
                 }
             } catch (error) {
                 showNotification(`Erro ao baixar propriedade ${car}: ${error.message}`, 'error');
+            } finally {
+                // Restaurar link
+                            if (propertyLink) {
+                const originalContent = propertyLink.getAttribute('data-original-content');
+                if (originalContent) {
+                    propertyLink.innerHTML = originalContent;
+                }
+                propertyLink.style.pointerEvents = 'auto';
+            }
             }
         }
 
         // Resetar timeout para valor padrão
-        function resetTimeout(estado) {
-            if (!downloadHistory[estado]) downloadHistory[estado] = {};
-            downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
-            saveDownloadHistory();
-            renderEstadosTable();
-            showNotification(`Timeout de ${estado} resetado para ${DEFAULT_TIMEOUT/1000}s`, 'info');
+        async function resetTimeout(estado) {
+            // Encontrar o botão de reset e mostrar spinner
+            const resetButton = event.target.closest('button');
+            let originalButtonContent = '';
+            
+            if (resetButton) {
+                originalButtonContent = resetButton.innerHTML;
+                resetButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></span>';
+                resetButton.disabled = true;
+            }
+
+            try {
+                // Simular um pequeno delay para mostrar o spinner
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                if (!downloadHistory[estado]) downloadHistory[estado] = {};
+                downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
+                saveDownloadHistory();
+                renderEstadosTable();
+                showNotification(`Timeout de ${estado} resetado para ${DEFAULT_TIMEOUT/1000}s`, 'info');
+            } catch (error) {
+                showNotification(`Erro ao resetar timeout de ${estado}: ${error.message}`, 'error');
+            } finally {
+                // Restaurar botão
+                if (resetButton) {
+                    resetButton.innerHTML = originalButtonContent;
+                    resetButton.disabled = false;
+                }
+            }
         }
 
         // Renderizar tabela de estados
@@ -887,10 +1012,13 @@
                         <div class="d-flex align-items-center gap-1">
                             <input type="number" class="form-control form-control-sm" 
                                    value="${history.timeout || DEFAULT_TIMEOUT}" min="${MIN_TIMEOUT}" max="${MAX_TIMEOUT}" 
-                                   onchange="updateTimeout('${estado.sigla}', this.value)">
+                                   onchange="updateTimeout('${estado.sigla}', this.value)"
+                                   data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   data-bs-title="Timeout em milissegundos para a requisição. Valores maiores podem ajudar em conexões lentas.">
                             <button type="button" class="btn btn-outline-secondary btn-sm" 
                                     onclick="resetTimeout('${estado.sigla}')" 
-                                    title="Resetar timeout para ${DEFAULT_TIMEOUT/1000}s">
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Resetar timeout para o valor padrão (${DEFAULT_TIMEOUT/1000}s)">
                                 <i class="bi bi-arrow-clockwise"></i>
                             </button>
                         </div>
@@ -898,10 +1026,13 @@
                     <td>
                         <input type="number" class="form-control form-control-sm" 
                                value="${history.maxRetries || 5}" min="1" max="20" 
-                               onchange="updateMaxRetries('${estado.sigla}', this.value)">
+                               onchange="updateMaxRetries('${estado.sigla}', this.value)"
+                               data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="Número máximo de tentativas em caso de falha na requisição.">
                     </td>
                     <td>
-                        <small class="text-muted">
+                        <small class="text-muted" data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="${history.lastDownload ? `Último download realizado em ${formatDateTime(history.lastDownload)}` : 'Nenhum download realizado ainda'}">
                             ${history.lastDownload ? formatDateTime(history.lastDownload) : 'Nunca'}
                         </small>
                     </td>
@@ -909,7 +1040,9 @@
                         ${getStatusIcon(history.status, history.errorMessage)}
                     </td>
                     <td>
-                        <select class="form-select form-select-sm" onchange="updatePolygon('${estado.sigla}', this.value)">
+                        <select class="form-select form-select-sm" onchange="updatePolygon('${estado.sigla}', this.value)"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Tipo de polígono para extração dos dados. AREA_IMOVEL inclui todos os imóveis, PERIMETRO_IMOVEL apenas o perímetro.">
                             ${POLYGONS.map(polygon => 
                                 `<option value="${polygon.value}" ${(history.polygon || DEFAULT_POLYGON) === polygon.value ? 'selected' : ''}>
                                     ${polygon.label}
@@ -930,6 +1063,9 @@
                 
                 tbody.appendChild(row);
             });
+            
+            // Inicializar tooltips após renderizar a tabela
+            initializeTooltips();
         }
 
         // Atualizar timeout
@@ -978,6 +1114,18 @@
                 return;
             }
 
+            // Encontrar o botão de busca e mostrar spinner
+            const searchButton = carInput ? carInput.closest('.input-group').querySelector('button') : null;
+            
+            if (searchButton) {
+                const originalIcon = searchButton.querySelector('i');
+                if (originalIcon) {
+                    originalIcon.style.display = 'none';
+                }
+                searchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></span>';
+                searchButton.disabled = true;
+            }
+
             try {
                 const apiUrl = document.getElementById('apiUrl').value;
                 const formData = new FormData();
@@ -1010,20 +1158,54 @@
                 }
             } catch (error) {
                 showNotification(`Erro ao buscar propriedade ${car}: ${error.message}`, 'error');
+            } finally {
+                // Restaurar botão
+                if (searchButton) {
+                    searchButton.innerHTML = '<i class="bi bi-search"></i>';
+                    searchButton.disabled = false;
+                }
             }
         }
 
         // Limpar estado (apagar último download)
-        function clearEstado(estado) {
+        async function clearEstado(estado) {
             if (confirm(`Tem certeza que deseja limpar o download de ${estado}?`)) {
-                // Remover completamente o histórico do estado
-                delete downloadHistory[estado];
-                saveDownloadHistory();
+                // Encontrar o botão de limpar e mostrar spinner
+                const clearButton = document.getElementById(`btn-clear-${estado}`);
                 
-                // Atualizar a tabela
-                renderEstadosTable();
-                
-                showNotification(`Download de ${estado} foi limpo. O botão "Requisitar" e o campo "Informe CAR" foram re-exibidos.`, 'success');
+                if (clearButton) {
+                    // Mostrar spinner no icon-link
+                    const btnText = clearButton.querySelector('.btn-text');
+                    const loading = clearButton.querySelector('.loading');
+                    if (btnText) btnText.style.display = 'none';
+                    if (loading) loading.style.display = 'inline-flex';
+                    clearButton.style.pointerEvents = 'none';
+                }
+
+                try {
+                    // Simular um pequeno delay para mostrar o spinner
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Remover completamente o histórico do estado
+                    delete downloadHistory[estado];
+                    saveDownloadHistory();
+                    
+                    // Atualizar a tabela
+                    renderEstadosTable();
+                    
+                    showNotification(`Download de ${estado} foi limpo. O botão "Requisitar" e o campo "Informe CAR" foram re-exibidos.`, 'success');
+                } catch (error) {
+                    showNotification(`Erro ao limpar ${estado}: ${error.message}`, 'error');
+                } finally {
+                    // Restaurar botão se ainda existir (pode ter sido removido pela renderização)
+                    if (clearButton && clearButton.parentNode) {
+                        const btnText = clearButton.querySelector('.btn-text');
+                        const loading = clearButton.querySelector('.loading');
+                        if (btnText) btnText.style.display = 'inline-block';
+                        if (loading) loading.style.display = 'none';
+                        clearButton.style.pointerEvents = 'auto';
+                    }
+                }
             }
         }
 
@@ -1038,30 +1220,39 @@
         function getDownloadLink(estado, history) {
             // Se não há status (nenhum download realizado), mostrar botão "Requisitar"
             if (!history.status || history.status === '') {
-                return `<button class="btn btn-download btn-sm" onclick="downloadEstado('${estado}')" id="btn-${estado}">
-                            <span class="btn-text">
-                                <i class="bi bi-cloud-download me-1"></i>
-                                Requisitar
-                            </span>
-                            <span class="loading">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                return `<a class="icon-link" href="#" onclick="downloadEstado('${estado}'); return false;" id="btn-${estado}" 
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Clique para requisitar o download dos dados do estado ${estado}. Esta operação pode levar alguns minutos.">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                            </svg>
+                            <span class="btn-text">Requisitar</span>
+                            <span class="loading" style="display: none;">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
                                 Processando...
                             </span>
-                        </button>`;
+                        </a>`;
             }
             
             // Se o download foi bem-sucedido e o arquivo está pronto, mostrar link de download
             if (history.status === 'success' && history.fileReady) {
-                return `<a href="#" class="download-link" onclick="downloadFile('${estado}'); return false;">
+                return `<a href="#" class="download-link" onclick="downloadFile('${estado}'); return false;"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Clique para baixar o arquivo ZIP com os dados do estado ${estado}. O arquivo contém todos os imóveis rurais.">
                             <i class="bi bi-download"></i>
                             Download ${estado}
                         </a>`;
             } else if (history.status === 'success') {
-                return `<span class="text-muted small">Processado</span>`;
+                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Download processado com sucesso. Clique em Download para baixar o arquivo.">Processado</span>`;
             } else if (history.status === 'error') {
-                return `<span class="text-muted small">Erro</span>`;
+                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Erro no download. Verifique a conexão e tente novamente.">Erro</span>`;
             } else if (history.status === 'pending') {
-                return `<button class="btn btn-download btn-sm" disabled id="btn-${estado}">
+                return `<button class="btn btn-download btn-sm" disabled id="btn-${estado}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Download em andamento. Aguarde a conclusão.">
                             <span class="btn-text">
                                 <i class="bi bi-clock me-1"></i>
                                 Processando...
@@ -1072,7 +1263,8 @@
                             </span>
                         </button>`;
             } else {
-                return `<span class="text-muted small">N/A</span>`;
+                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Nenhum download realizado. Clique em Requisitar para iniciar.">N/A</span>`;
             }
         }
 
@@ -1081,7 +1273,9 @@
             if (history.status === 'success') {
                 // Se já foi feita a busca da propriedade, mostrar apenas o link de download
                 if (history.propertySearched && history.car && history.car.trim() !== '') {
-                    return `<a href="#" class="download-link" onclick="downloadProperty('${estado}', '${history.car}'); return false;">
+                    return `<a href="#" class="download-link" onclick="downloadProperty('${estado}', '${history.car}'); return false;"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Clique para baixar o arquivo ZIP com os dados da propriedade ${history.car}. O arquivo contém apenas este imóvel específico.">
                                 <i class="bi bi-house"></i>
                                 Download propriedade ${history.car}
                             </a>`;
@@ -1095,12 +1289,17 @@
                                        value="${history.car || ''}" 
                                        onchange="updateCar('${estado}', this.value)"
                                        onkeypress="handleCarKeyPress(event, '${estado}')"
-                                       id="car-input-${estado}">
-                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')">
+                                       id="car-input-${estado}"
+                                       data-bs-toggle="tooltip" data-bs-placement="top" 
+                                       data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
+                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
                                     <i class="bi bi-search"></i>
                                 </button>
                             </div>
-                            <span class="text-muted small">Informe CAR</span>
+                            <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                  data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
                         </div>`;
             } else if (history.status === 'error') {
                 // Se houve erro, mostrar o campo com botão de lupa
@@ -1111,15 +1310,21 @@
                                        value="${history.car || ''}" 
                                        onchange="updateCar('${estado}', this.value)"
                                        onkeypress="handleCarKeyPress(event, '${estado}')"
-                                       id="car-input-${estado}">
-                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')">
+                                       id="car-input-${estado}"
+                                       data-bs-toggle="tooltip" data-bs-placement="top" 
+                                       data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
+                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
                                     <i class="bi bi-search"></i>
                                 </button>
                             </div>
-                            <span class="text-muted small">Informe CAR</span>
+                            <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                  data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
                         </div>`;
             } else {
-                return `<span class="text-muted small">N/A</span>`;
+                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Nenhum download realizado. Requisite um download primeiro para buscar propriedades.">N/A</span>`;
             }
         }
 
@@ -1127,46 +1332,50 @@
         function getActionButton(estado, history) {
             // Se o download foi bem-sucedido, mostrar botão "Limpar"
             if (history.status === 'success') {
-                return `<button class="btn btn-success btn-sm" onclick="clearEstado('${estado}')" id="btn-clear-${estado}">
-                            <span class="btn-text">
-                                <i class="bi bi-trash me-1"></i>
-                                Limpar
+                return `<a class="icon-link" href="#" onclick="clearEstado('${estado}'); return false;" id="btn-clear-${estado}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Clique para limpar o download de ${estado}. Isso removerá o arquivo baixado e permitirá uma nova requisição.">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                            </svg>
+                            <span class="btn-text">Limpar</span>
+                            <span class="loading" style="display: none;">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                                Limpando...
                             </span>
-                        </button>`;
+                        </a>`;
             }
             
             // Se está em andamento, mostrar botão desabilitado
             if (history.status === 'pending') {
-                return `<button class="btn btn-success btn-sm" disabled id="btn-clear-${estado}">
-                            <span class="btn-text">
-                                <i class="bi bi-clock me-1"></i>
-                                Processando...
-                            </span>
-                        </button>`;
+                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Download em andamento. Aguarde a conclusão para limpar.">
+                            <i class="bi bi-clock me-1"></i>
+                            Processando...
+                        </span>`;
             }
             
             // Se não há status, erro ou nenhum download foi realizado, não mostrar botão
-            return `<span class="text-muted small">-</span>`;
+            return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Nenhum download realizado ainda. Requisite um download primeiro.">-</span>`;
         }
 
         // Obter ícone de status com Bootstrap Icons
         function getStatusIcon(status, errorMessage = null) {
             switch(status) {
                 case 'success':
-                    return '<i class="bi bi-check-circle-fill status-success" title="Download realizado com sucesso"></i>';
+                    return '<i class="bi bi-check-circle-fill status-success" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download realizado com sucesso! O arquivo está pronto para download."></i>';
                 case 'error':
                     if (errorMessage) {
-                        return `<div class="status-tooltip">
-                                    <i class="bi bi-x-circle-fill status-error" title="Erro no download"></i>
-                                    <span class="tooltip-text">${escapeHtml(errorMessage)}</span>
-                                </div>`;
+                        return `<i class="bi bi-x-circle-fill status-error" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Erro no download: ${escapeHtml(errorMessage)}"></i>`;
                     } else {
-                        return '<i class="bi bi-x-circle-fill status-error" title="Erro no download"></i>';
+                        return '<i class="bi bi-x-circle-fill status-error" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Erro no download. Verifique a conexão e tente novamente."></i>';
                     }
                 case 'pending':
-                    return '<i class="bi bi-clock-fill status-warning" title="Download em andamento"></i>';
+                    return '<i class="bi bi-clock-fill status-warning" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download em andamento. Aguarde a conclusão."></i>';
                 default:
-                    return '<i class="bi bi-dash-circle status-pending" title="Nenhum download realizado"></i>';
+                    return '<i class="bi bi-dash-circle status-pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Nenhum download realizado. Clique em Requisitar para iniciar."></i>';
             }
         }
 
@@ -1245,8 +1454,8 @@
                 
                 // Atualizar estado do botão
                 button.disabled = true;
-                btnText.style.display = 'none';
-                loading.style.display = 'inline-block';
+                if (btnText) btnText.style.display = 'none';
+                if (loading) loading.style.display = 'inline-block';
             }
             
             // Atualizar status
@@ -1314,8 +1523,8 @@
                     const loading = button.querySelector('.loading');
                     
                     button.disabled = false;
-                    btnText.style.display = 'inline-block';
-                    loading.style.display = 'none';
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
                 }
                 
                 // Atualizar tabela
