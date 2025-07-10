@@ -649,9 +649,9 @@
                                 <i class="bi bi-link-45deg me-1"></i>
                                 URL do Endpoint
                             </label>
-                            <input type="url" class="form-control" id="apiUrl" placeholder="http://192.168.5.179:8787/api"
+                            <input type="url" class="form-control" id="apiUrl" placeholder="http://192.168.5.179:8787"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                   data-bs-title="URL completa do endpoint da API. Ex: http://servidor:porta/api">
+                                   data-bs-title="URL completa do endpoint da API. Ex: http://servidor:porta/">
                         </div>
                         <div class="col-md-6 d-flex align-items-end gap-2">
                             <button type="button" class="btn btn-outline-primary" onclick="testConnection()"
@@ -665,6 +665,18 @@
                                     data-bs-title="Testar as notificações toast do sistema">
                                 <i class="bi bi-bell me-2"></i>
                                 Testar Toasts
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" onclick="clearAllEstados()"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Limpar todos os downloads e arquivos do servidor">
+                                <i class="bi bi-trash me-2"></i>
+                                Limpar Todos
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="checkAllEstadosStatus()"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Verificar status de todos os estados novamente">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Verificar Status
                             </button>
                         </div>
                     </div>
@@ -725,9 +737,40 @@
     
     <script>
         // Configuração inicial
-        const DEFAULT_API_URL = 'http://192.168.5.179:8787/api';
-        const DEFAULT_TIMEOUT = 60000; // 1 minuto
+        const DEFAULT_API_URL = 'http://192.168.5.179:8787';
+        const DEFAULT_TIMEOUT = 800000; // 800 segundos (13.3 minutos)
         const TIMEOUT_INCREMENT = 10000; // 10 segundos
+        
+        // Timeouts específicos por estado baseados em medições reais (arredondados para minutos)
+        const STATE_TIMEOUTS = {
+            'AC': 60000,   // 1 min
+            'AL': 120000,  // 2 min
+            'AM': 60000,   // 1 min
+            'AP': 60000,   // 1 min
+            'BA': 600000,  // 10 min
+            'CE': 240000,  // 4 min
+            'DF': 60000,   // 1 min
+            'ES': 120000,  // 2 min
+            'GO': 300000,  // 5 min
+            'MA': 180000,  // 3 min
+            'MG': 300000,  // 5 min
+            'MS': 60000,   // 1 min
+            'MT': 60000,   // 1 min
+            'PA': 120000,  // 2 min
+            'PB': 60000,   // 1 min
+            'PE': 180000,  // 3 min
+            'PI': 60000,   // 1 min
+            'PR': 120000,  // 2 min
+            'RJ': 120000,  // 2 min
+            'RN': 60000,   // 1 min
+            'RO': 120000,  // 2 min
+            'RR': 60000,   // 1 min
+            'RS': 180000,  // 3 min
+            'SC': 180000,  // 3 min
+            'SE': 60000,   // 1 min
+            'SP': 840000,  // 14 min
+            'TO': 600000   // 10 min
+        };
         const MIN_TIMEOUT = 10000; // 10 segundos
         const MAX_TIMEOUT = 300000; // 5 minutos
         const DEFAULT_POLYGON = 'AREA_PROPERTY'; // Polígono padrão
@@ -780,6 +823,13 @@
             // Definir URL padrão
             document.getElementById('apiUrl').value = DEFAULT_API_URL;
             
+            // Definir timeouts específicos por estado
+            Object.keys(STATE_TIMEOUTS).forEach(state => {
+                if (!downloadHistory[state]) downloadHistory[state] = {};
+                downloadHistory[state].timeout = STATE_TIMEOUTS[state];
+            });
+            saveDownloadHistory();
+            
             // Renderizar tabela
             renderEstadosTable();
             
@@ -815,7 +865,57 @@
             if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
                 const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                 tooltipTriggerList.map(function (tooltipTriggerEl) {
-                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                    return new bootstrap.Tooltip(tooltipTriggerEl, {
+                        trigger: 'hover',
+                        delay: { show: 200, hide: 100 }
+                    });
+                });
+                
+                // Adicionar listener para ocultar tooltips ao mover o mouse
+                let tooltipHideTimeout;
+                document.addEventListener('mousemove', function() {
+                    // Limpar timeout anterior
+                    if (tooltipHideTimeout) {
+                        clearTimeout(tooltipHideTimeout);
+                    }
+                    
+                    // Definir timeout para ocultar tooltips após 100ms
+                    tooltipHideTimeout = setTimeout(function() {
+                        hideAllTooltips();
+                    }, 100);
+                });
+                
+                // Adicionar listener para ocultar tooltips ao clicar em qualquer lugar
+                document.addEventListener('click', function(event) {
+                    // Verificar se o clique não foi em um elemento com tooltip
+                    const clickedElement = event.target;
+                    const hasTooltip = clickedElement.closest('[data-bs-toggle="tooltip"]');
+                    
+                    if (!hasTooltip) {
+                        hideAllTooltips();
+                    }
+                });
+                
+                // Adicionar listener para ocultar tooltips ao pressionar Enter
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        hideAllTooltips();
+                    }
+                });
+            }
+        }
+        
+        // Função para ocultar todos os tooltips
+        function hideAllTooltips() {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                const tooltipElements = document.querySelectorAll('.tooltip');
+                tooltipElements.forEach(function(tooltip) {
+                    if (tooltip.style.display !== 'none' && tooltip.style.opacity !== '0') {
+                        const tooltipInstance = bootstrap.Tooltip.getInstance(tooltip);
+                        if (tooltipInstance) {
+                            tooltipInstance.hide();
+                        }
+                    }
                 });
             }
         }
@@ -883,7 +983,7 @@
                 formData.append('polygon', history.polygon || DEFAULT_POLYGON);
                 formData.append('folder', 'temp'); // Pasta temporária
                 formData.append('tries', '25'); // Número de tentativas
-                formData.append('timeout', Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)); // Converter de milissegundos para minutos
+                formData.append('timeout', Math.floor((history.timeout || STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT) / 1000)); // Converter de milissegundos para segundos
                 formData.append('max_retries', history.maxRetries || 5);
                 formData.append('debug', 'false');
 
@@ -945,7 +1045,7 @@
                 formData.append('folder', 'PROPERTY');
                 formData.append('tries', '25');
                 formData.append('debug', 'false');
-                formData.append('timeout', '1'); // 1 minuto
+                formData.append('timeout', '60'); // 60 segundos (1 minuto)
                 formData.append('max_retries', '5');
 
                 const response = await fetch(`${apiUrl}/download-property`, {
@@ -982,37 +1082,7 @@
             }
         }
 
-        // Resetar timeout para valor padrão
-        async function resetTimeout(estado) {
-            // Encontrar o botão de reset e mostrar spinner
-            const resetButton = event.target.closest('button');
-            let originalButtonContent = '';
-            
-            if (resetButton) {
-                originalButtonContent = resetButton.innerHTML;
-                resetButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></span>';
-                resetButton.disabled = true;
-            }
 
-            try {
-                // Simular um pequeno delay para mostrar o spinner
-                await new Promise(resolve => setTimeout(resolve, 300));
-                
-                if (!downloadHistory[estado]) downloadHistory[estado] = {};
-                downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
-                saveDownloadHistory();
-                renderEstadosTable();
-                showNotification(`Timeout de ${estado} resetado para ${DEFAULT_TIMEOUT/1000}s`, 'info');
-            } catch (error) {
-                showNotification(`Erro ao resetar timeout de ${estado}: ${error.message}`, 'error');
-            } finally {
-                // Restaurar botão
-                if (resetButton) {
-                    resetButton.innerHTML = originalButtonContent;
-                    resetButton.disabled = false;
-                }
-            }
-        }
 
         // Renderizar tabela de estados
         function renderEstadosTable() {
@@ -1032,17 +1102,11 @@
                     <td>
                         <div class="d-flex align-items-center gap-1">
                             <span class="form-control-plaintext form-control-sm clickable-field" 
-                                  onclick="makeEditable(this, 'timeout', '${estado.sigla}', ${Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)})"
+                                  onclick="makeEditable(this, 'timeout', '${estado.sigla}', ${Math.floor((history.timeout || STATE_TIMEOUTS[estado.sigla] || DEFAULT_TIMEOUT) / 60000)})"
                                   data-bs-toggle="tooltip" data-bs-placement="top" 
                                   data-bs-title="Clique para editar o timeout (em minutos)">
-                                ${Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)} min
+                                ${Math.floor((history.timeout || STATE_TIMEOUTS[estado.sigla] || DEFAULT_TIMEOUT) / 60000)} min
                             </span>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" 
-                                    onclick="resetTimeout('${estado.sigla}')" 
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Resetar timeout para o valor padrão (${Math.floor(DEFAULT_TIMEOUT/60000)} min)">
-                                <i class="bi bi-arrow-clockwise"></i>
-                            </button>
                         </div>
                     </td>
                     <td>
@@ -1154,7 +1218,7 @@
                 formData.append('folder', 'PROPERTY');
                 formData.append('tries', '25');
                 formData.append('debug', 'false');
-                formData.append('timeout', '1'); // 1 minuto
+                formData.append('timeout', '60'); // 60 segundos (1 minuto)
                 formData.append('max_retries', '5');
 
                 const response = await fetch(`${apiUrl}/download-property`, {
@@ -1189,7 +1253,7 @@
 
         // Limpar estado (apagar último download)
         async function clearEstado(estado) {
-            if (confirm(`Tem certeza que deseja limpar o download de ${estado}?`)) {
+            if (confirm(`Tem certeza que deseja limpar o download de ${estado}? Isso também excluirá os arquivos do servidor.`)) {
                 // Encontrar o botão de limpar e mostrar spinner
                 const clearButton = document.getElementById(`btn-clear-${estado}`);
                 
@@ -1203,18 +1267,36 @@
                 }
 
                 try {
-                    // Simular um pequeno delay para mostrar o spinner
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    
-                    // Remover completamente o histórico do estado
-                    delete downloadHistory[estado];
-                    saveDownloadHistory();
-                    
-                    // Atualizar a tabela
-                    renderEstadosTable();
-                    
-                    showNotification(`Download de ${estado} foi limpo. O botão "Requisitar" e o campo "Informe CAR" foram re-exibidos.`, 'success');
+                    // Chamar o endpoint DELETE /delete_state para excluir arquivos do servidor
+                    const apiUrl = document.getElementById('apiUrl').value;
+                    const formData = new FormData();
+                    formData.append('state', estado);
+                    formData.append('folder', 'temp');
+                    formData.append('include_properties', 'true');
+
+                    const response = await fetch(`${apiUrl}/delete_state`, {
+                        method: 'DELETE',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('Arquivos excluídos do servidor:', result);
+                        
+                        // Remover completamente o histórico do estado
+                        delete downloadHistory[estado];
+                        saveDownloadHistory();
+                        
+                        // Atualizar a tabela
+                        renderEstadosTable();
+                        
+                        showNotification(`Download de ${estado} foi limpo. Arquivos excluídos do servidor e histórico limpo.`, 'success');
+                    } else {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
+                    }
                 } catch (error) {
+                    console.error('Erro ao limpar estado:', error);
                     showNotification(`Erro ao limpar ${estado}: ${error.message}`, 'error');
                 } finally {
                     // Restaurar botão se ainda existir (pode ter sido removido pela renderização)
@@ -1229,6 +1311,88 @@
             }
         }
 
+        // Limpar todos os estados
+        async function clearAllEstados() {
+            const estadosComDownload = Object.keys(downloadHistory).filter(estado => 
+                downloadHistory[estado] && downloadHistory[estado].status
+            );
+            
+            if (estadosComDownload.length === 0) {
+                showNotification('Nenhum download encontrado para limpar.', 'info');
+                return;
+            }
+            
+            if (confirm(`Tem certeza que deseja limpar TODOS os downloads (${estadosComDownload.length} estados)? Isso excluirá todos os arquivos do servidor.`)) {
+                const clearButton = document.querySelector('button[onclick="clearAllEstados()"]');
+                let originalContent = '';
+                
+                if (clearButton) {
+                    originalContent = clearButton.innerHTML;
+                    clearButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></span>Limpando...';
+                    clearButton.disabled = true;
+                }
+
+                try {
+                    const apiUrl = document.getElementById('apiUrl').value;
+                    let successCount = 0;
+                    let errorCount = 0;
+                    const errors = [];
+
+                    // Limpar cada estado individualmente
+                    for (const estado of estadosComDownload) {
+                        try {
+                            const formData = new FormData();
+                            formData.append('state', estado);
+                            formData.append('folder', 'temp');
+                            formData.append('include_properties', 'true');
+
+                            const response = await fetch(`${apiUrl}/delete_state`, {
+                                method: 'DELETE',
+                                body: formData
+                            });
+
+                            if (response.ok) {
+                                successCount++;
+                                console.log(`Estado ${estado} limpo com sucesso`);
+                            } else {
+                                errorCount++;
+                                const errorData = await response.json().catch(() => ({}));
+                                errors.push(`${estado}: ${errorData.error || response.statusText}`);
+                            }
+                        } catch (error) {
+                            errorCount++;
+                            errors.push(`${estado}: ${error.message}`);
+                        }
+                    }
+
+                    // Limpar histórico local
+                    downloadHistory = {};
+                    saveDownloadHistory();
+                    renderEstadosTable();
+
+                    // Mostrar resultado
+                    if (successCount > 0) {
+                        showNotification(`Limpeza concluída! ${successCount} estados limpos com sucesso.${errorCount > 0 ? ` ${errorCount} erros.` : ''}`, 'success');
+                    }
+                    
+                    if (errorCount > 0) {
+                        console.error('Erros durante a limpeza:', errors);
+                        showNotification(`Limpeza parcial: ${successCount} sucessos, ${errorCount} erros. Verifique o console para detalhes.`, 'warning');
+                    }
+
+                } catch (error) {
+                    console.error('Erro geral na limpeza:', error);
+                    showNotification(`Erro ao limpar todos os estados: ${error.message}`, 'error');
+                } finally {
+                    // Restaurar botão
+                    if (clearButton) {
+                        clearButton.innerHTML = originalContent;
+                        clearButton.disabled = false;
+                    }
+                }
+            }
+        }
+
         // Escapar HTML para segurança
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -1238,123 +1402,120 @@
 
         // Obter link de download
         function getDownloadLink(estado, history) {
-            // Se não há status (nenhum download realizado), mostrar botão "Requisitar"
-            if (!history.status || history.status === '') {
-                return `<a class="icon-link" href="#" onclick="downloadEstado('${estado}'); return false;" id="btn-${estado}" 
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Clique para requisitar o download dos dados do estado ${estado}. Esta operação pode levar alguns minutos.">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                            </svg>
-                            <span class="btn-text">Requisitar</span>
-                            <span class="loading" style="display: none;">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
-                                Processando...
-                            </span>
-                        </a>`;
+            if (history.status === 'loading') {
+                return '<span class="spinner-border spinner-border-sm text-primary" role="status" title="Verificando arquivos..."></span>';
             }
-            // Se o download está em andamento, mostrar o mesmo botão, mas só com spinner
-            if (history.status === 'pending') {
-                return `<a class="icon-link" href="#" id="btn-${estado}" style="pointer-events: none; opacity: 0.7;"
+            if ((history.status === 'ready' || history.status === 'success') && Array.isArray(history.downloadFiles) && history.downloadFiles.length > 0) {
+                const filesHtml = history.downloadFiles.map(f => {
+                    const polygonLabel = f.polygon_type.replace(/_/g, ' ');
+                    const sizeText = f.size_mb ? ` (${f.size_mb.toFixed(1)} MB)` : '';
+                    return `<a href="${f.download_url}" class="download-link" download 
                                 data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Download em andamento. Aguarde a conclusão.">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                            </svg>
-                            <span class="loading" style="display: inline-flex; align-items: center;">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
-                            </span>
-                        </a>`;
+                                data-bs-title="Baixar arquivo ${polygonLabel}${sizeText}">
+                                <i class="bi bi-download me-1"></i>${polygonLabel}${sizeText}
+                            </a>`;
+                }).join(' ');
+                
+                const totalInfo = history.totalSizeMB ? 
+                    `<div class="small text-muted mt-1">Total: ${history.totalFiles || history.downloadFiles.length} arquivo(s), ${history.totalSizeMB.toFixed(1)} MB</div>` : '';
+                
+                return `<div>${filesHtml}${totalInfo}</div>`;
             }
-            // Se o download foi bem-sucedido e o arquivo está pronto, mostrar link de download
-            if (history.status === 'success' && history.fileReady) {
-                return `<a href="#" class="download-link" onclick="downloadFile('${estado}'); return false;"
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Clique para baixar o arquivo ZIP com os dados do estado ${estado}. O arquivo contém todos os imóveis rurais.">
-                            <i class="bi bi-download"></i>
-                            Download ${estado}
-                        </a>`;
-            } else if (history.status === 'success') {
-                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Download processado com sucesso. Clique em Download para baixar o arquivo.">Processado</span>`;
-            } else if (history.status === 'error') {
-                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Erro no download. Verifique a conexão e tente novamente.">Erro</span>`;
-            } else {
-                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Nenhum download realizado. Clique em Requisitar para iniciar.">N/A</span>`;
+            // Se o status é 'success' mas não há downloadFiles, tentar buscar novamente
+            if (history.status === 'success' && (!history.downloadFiles || history.downloadFiles.length === 0)) {
+                // Tentar buscar status novamente
+                setTimeout(() => fetchEstadoStatus(estado), 1000);
+                return '<span class="spinner-border spinner-border-sm text-primary" role="status" title="Verificando arquivos..."></span>';
             }
+            if (history.status === 'notfound') {
+                // Quando não há arquivo, mostrar botão para requisitar download (formato original)
+                return `<a class="icon-link" href="#" onclick="downloadEstado('${estado}'); return false;" id="btn-${estado}"
+                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                            data-bs-title="Clique para requisitar o download dos dados do estado ${estado}. Esta operação pode levar alguns minutos.">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                        </svg>
+                        <span class="btn-text">Requisitar</span>
+                        <span class="loading" style="display: none;">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                            Processando...
+                        </span>
+                    </a>`;
+            }
+            if (history.status === 'error') {
+                // Quando há erro, mostrar botão para tentar novamente (formato original)
+                return `<a class="icon-link" href="#" onclick="downloadEstado('${estado}'); return false;" id="btn-${estado}"
+                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                            data-bs-title="Tentar novamente o download dos dados do estado ${estado}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                        </svg>
+                        <span class="btn-text">Tentar Novamente</span>
+                        <span class="loading" style="display: none;">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                            Processando...
+                        </span>
+                    </a>`;
+            }
+            // Status inicial ou não verificado - mostrar botão para requisitar (formato original)
+            return `<a class="icon-link" href="#" onclick="downloadEstado('${estado}'); return false;" id="btn-${estado}"
+                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                        data-bs-title="Clique para requisitar o download dos dados do estado ${estado}. Esta operação pode levar alguns minutos.">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                    </svg>
+                    <span class="btn-text">Requisitar</span>
+                    <span class="loading" style="display: none;">
+                        <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                        Processando...
+                    </span>
+                </a>`;
         }
 
         // Obter link de propriedade
         function getPropertyLink(estado, history) {
-            if (history.status === 'success') {
-                // Se já foi feita a busca da propriedade, mostrar apenas o link de download
-                if (history.propertySearched && history.car && history.car.trim() !== '') {
-                    return `<a href="#" class="download-link" onclick="downloadProperty('${estado}', '${history.car}'); return false;"
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Clique para baixar o arquivo ZIP com os dados da propriedade ${history.car}. O arquivo contém apenas este imóvel específico.">
-                                <i class="bi bi-house"></i>
-                                Download propriedade ${history.car}
-                            </a>`;
-                }
-                
-                // Se ainda não foi feita a busca, mostrar o campo com botão de lupa
-                return `<div class="d-flex flex-column gap-1">
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control" 
-                                       placeholder="Código CAR" 
-                                       value="${history.car || ''}" 
-                                       onchange="updateCar('${estado}', this.value)"
-                                       onkeypress="handleCarKeyPress(event, '${estado}')"
-                                       id="car-input-${estado}"
-                                       data-bs-toggle="tooltip" data-bs-placement="top" 
-                                       data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
-                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" 
-                                        data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
-                                    <i class="bi bi-search"></i>
-                                </button>
-                            </div>
-                            <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                  data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
-                        </div>`;
-            } else if (history.status === 'error') {
-                // Se houve erro, mostrar o campo com botão de lupa
-                return `<div class="d-flex flex-column gap-1">
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control" 
-                                       placeholder="Código CAR" 
-                                       value="${history.car || ''}" 
-                                       onchange="updateCar('${estado}', this.value)"
-                                       onkeypress="handleCarKeyPress(event, '${estado}')"
-                                       id="car-input-${estado}"
-                                       data-bs-toggle="tooltip" data-bs-placement="top" 
-                                       data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
-                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" 
-                                        data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
-                                    <i class="bi bi-search"></i>
-                                </button>
-                            </div>
-                            <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                  data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
-                        </div>`;
-            } else {
-                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Nenhum download realizado. Requisite um download primeiro para buscar propriedades.">N/A</span>`;
+            // Se já foi feita a busca da propriedade, mostrar apenas o link de download
+            if (history.propertySearched && history.car && history.car.trim() !== '') {
+                return `<a href="#" class="download-link" onclick="downloadProperty('${estado}', '${history.car}'); return false;"
+                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                            data-bs-title="Clique para baixar o arquivo ZIP com os dados da propriedade ${history.car}. O arquivo contém apenas este imóvel específico.">
+                            <i class="bi bi-house"></i>
+                            Download propriedade ${history.car}
+                        </a>`;
             }
+            
+            // Para todos os outros casos, mostrar o campo com botão de lupa
+            return `<div class="d-flex flex-column gap-1">
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" 
+                                   placeholder="Código CAR" 
+                                   value="${history.car || ''}" 
+                                   onchange="updateCar('${estado}', this.value)"
+                                   onkeypress="handleCarKeyPress(event, '${estado}')"
+                                   id="car-input-${estado}"
+                                   data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
+                            <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                              data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
+                    </div>`;
         }
 
         // Obter botão de ação (Limpar)
         function getActionButton(estado, history) {
-            // Se o download foi bem-sucedido, mostrar botão "Limpar"
-            if (history.status === 'success') {
-                return `<a class="icon-link" href="#" onclick="clearEstado('${estado}'); return false;" id="btn-clear-${estado}"
+            // Se o download foi bem-sucedido ou há arquivos prontos, mostrar botão "Limpar"
+            if (history.status === 'success' || history.status === 'ready') {
+                return `<a class="icon-link text-danger" href="#" onclick="clearEstado('${estado}'); return false;" id="btn-clear-${estado}"
                                 data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Clique para limpar o download de ${estado}. Isso removerá o arquivo baixado e permitirá uma nova requisição.">
+                                data-bs-title="Clique para limpar o download de ${estado}. Isso excluirá os arquivos do servidor e permitirá uma nova requisição.">
                             <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 1 0v6a.5.5 0 0 0 1 0V6z"/>
                                 <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
@@ -1387,20 +1548,19 @@
 
         // Obter ícone de status com Bootstrap Icons
         function getStatusIcon(status, errorMessage = null) {
-            switch(status) {
-                case 'success':
-                    return '<i class="bi bi-check-circle-fill status-success" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download realizado com sucesso! O arquivo está pronto para download."></i>';
-                case 'error':
-                    if (errorMessage) {
-                        return `<i class="bi bi-x-circle-fill status-error" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Erro no download: ${escapeHtml(errorMessage)}"></i>`;
-                    } else {
-                        return '<i class="bi bi-x-circle-fill status-error" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Erro no download. Verifique a conexão e tente novamente."></i>';
-                    }
-                case 'pending':
-                    return '<i class="bi bi-clock-fill status-warning" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download em andamento. Aguarde a conclusão."></i>';
-                default:
-                    return '<i class="bi bi-dash-circle status-pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Nenhum download realizado. Clique em Requisitar para iniciar."></i>';
+            if (status === 'loading') {
+                return '<span class="spinner-border spinner-border-sm text-primary" role="status" title="Verificando arquivos..."></span>';
             }
+            if (status === 'ready') {
+                return '<i class="bi bi-check-circle-fill text-success" title="Arquivos disponíveis para download"></i>';
+            }
+            if (status === 'notfound') {
+                return '<i class="bi bi-dash-circle text-secondary" title="Nenhum arquivo encontrado"></i>';
+            }
+            if (status === 'error') {
+                return `<i class="bi bi-exclamation-triangle text-danger" title="${errorMessage || 'Erro ao verificar arquivos'}"></i>`;
+            }
+            return '<i class="bi bi-question-circle text-muted" title="Status não verificado"></i>';
         }
 
         // Formatar data/hora
@@ -1453,7 +1613,7 @@
         async function downloadEstado(estado) {
             const apiUrl = document.getElementById('apiUrl').value;
             const history = downloadHistory[estado] || {};
-            let timeout = history.timeout || DEFAULT_TIMEOUT;
+            let timeout = history.timeout || STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
             const maxRetries = history.maxRetries || 5;
             
             // Se o último download falhou, incrementar timeout automaticamente
@@ -1477,9 +1637,9 @@
                 const loading = button.querySelector('.loading');
                 
                 // Atualizar estado do botão
-                button.disabled = true;
+                button.style.pointerEvents = 'none';
                 if (btnText) btnText.style.display = 'none';
-                if (loading) loading.style.display = 'inline-block';
+                if (loading) loading.style.display = 'inline-flex';
             }
             
             // Atualizar status
@@ -1496,7 +1656,7 @@
                 formData.append('polygon', history.polygon || DEFAULT_POLYGON); // Usar polígono selecionado ou padrão
                 formData.append('folder', 'temp'); // Pasta temporária
                 formData.append('tries', '25'); // Número de tentativas
-                formData.append('timeout', Math.floor(timeout / 60000)); // Converter de milissegundos para minutos
+                formData.append('timeout', Math.floor(timeout / 1000)); // Converter de milissegundos para segundos
                 formData.append('max_retries', maxRetries);
                 formData.append('debug', 'false');
 
@@ -1509,13 +1669,44 @@
                     // Verificar se a resposta contém dados válidos
                     const contentType = response.headers.get('content-type');
                     if (contentType && contentType.includes('application/zip')) {
-                        // Arquivo processado com sucesso
-                        downloadHistory[estado].status = 'success';
-                        downloadHistory[estado].errorMessage = null; // Limpar erro anterior
-                        downloadHistory[estado].fileReady = true; // Marcar arquivo como pronto
-                        // Resetar timeout para o valor padrão após sucesso
-                        downloadHistory[estado].timeout = DEFAULT_TIMEOUT;
-                        showNotification(`Arquivo de ${estado} processado com sucesso! Clique em Download para baixar.`, 'success');
+                        // Arquivo processado com sucesso - verificar se existe no servidor
+                        try {
+                            // Verificar status do arquivo no servidor
+                            const statusResponse = await fetch(`${apiUrl}/state_status/${estado}`);
+                            if (statusResponse.ok) {
+                                const statusData = await statusResponse.json();
+                                if (statusData.has_files && statusData.available_files && statusData.available_files.length > 0) {
+                                    downloadHistory[estado].status = 'ready';
+                                    downloadHistory[estado].downloadFiles = statusData.available_files;
+                                    downloadHistory[estado].totalFiles = statusData.total_files;
+                                    downloadHistory[estado].totalSizeMB = statusData.total_size_mb;
+                                    downloadHistory[estado].errorMessage = null; // Limpar erro anterior
+                                    downloadHistory[estado].fileReady = true; // Marcar arquivo como pronto
+                                    // Resetar timeout para o valor padrão após sucesso
+                                    downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
+                                    showNotification(`Arquivo de ${estado} processado com sucesso! Links de download disponíveis.`, 'success');
+                                } else {
+                                    downloadHistory[estado].status = 'success';
+                                    downloadHistory[estado].errorMessage = null;
+                                    downloadHistory[estado].fileReady = true;
+                                    downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
+                                    showNotification(`Arquivo de ${estado} processado com sucesso! Verificando disponibilidade...`, 'success');
+                                }
+                            } else {
+                                downloadHistory[estado].status = 'success';
+                                downloadHistory[estado].errorMessage = null;
+                                downloadHistory[estado].fileReady = true;
+                                downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
+                                showNotification(`Arquivo de ${estado} processado com sucesso!`, 'success');
+                            }
+                        } catch (statusError) {
+                            console.warn(`Erro ao verificar status após download de ${estado}:`, statusError);
+                            downloadHistory[estado].status = 'success';
+                            downloadHistory[estado].errorMessage = null;
+                            downloadHistory[estado].fileReady = true;
+                            downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
+                            showNotification(`Arquivo de ${estado} processado com sucesso!`, 'success');
+                        }
                     } else {
                         // Verificar se é uma resposta de erro em JSON
                         const text = await response.text();
@@ -1546,7 +1737,7 @@
                     const btnText = button.querySelector('.btn-text');
                     const loading = button.querySelector('.loading');
                     
-                    button.disabled = false;
+                    button.style.pointerEvents = 'auto';
                     if (btnText) btnText.style.display = 'inline-block';
                     if (loading) loading.style.display = 'none';
                 }
@@ -1708,6 +1899,97 @@
                 }
             });
         }
+
+        // Função para buscar status do estado na API
+        async function fetchEstadoStatus(estado) {
+            const apiUrl = document.getElementById('apiUrl').value;
+            console.log(`[Status] Iniciando busca de status para ${estado} em ${apiUrl}/state_status/${estado}`);
+            
+            try {
+                // Marcar como carregando
+                if (!downloadHistory[estado]) downloadHistory[estado] = {};
+                downloadHistory[estado].status = 'loading';
+                downloadHistory[estado].lastStatusCheck = new Date().toISOString();
+                renderEstadosTable();
+                
+                const startTime = Date.now();
+                const response = await fetch(`${apiUrl}/state_status/${estado}`);
+                const responseTime = Date.now() - startTime;
+                
+                console.log(`[Status] ${estado} - Resposta recebida em ${responseTime}ms - Status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(`[Status] ${estado} - Dados recebidos:`, data);
+                    
+                    if (data.has_files && data.available_files && data.available_files.length > 0) {
+                        downloadHistory[estado].status = 'ready';
+                        downloadHistory[estado].downloadFiles = data.available_files;
+                        downloadHistory[estado].totalFiles = data.total_files;
+                        downloadHistory[estado].totalSizeMB = data.total_size_mb;
+                        console.log(`[Status] ${estado} - Arquivos encontrados: ${data.available_files.length} arquivos, ${data.total_size_mb}MB total`);
+                    } else {
+                        downloadHistory[estado].status = 'notfound';
+                        downloadHistory[estado].downloadFiles = [];
+                        downloadHistory[estado].message = data.message || 'Nenhum arquivo encontrado';
+                        console.log(`[Status] ${estado} - Nenhum arquivo encontrado: ${data.message}`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error(`[Status] ${estado} - Erro HTTP ${response.status}: ${errorText}`);
+                    downloadHistory[estado].status = 'error';
+                    downloadHistory[estado].downloadFiles = [];
+                    downloadHistory[estado].errorMessage = `Erro HTTP ${response.status}: ${response.statusText}`;
+                }
+            } catch (error) {
+                console.error(`[Status] ${estado} - Erro de rede:`, error);
+                downloadHistory[estado].status = 'error';
+                downloadHistory[estado].downloadFiles = [];
+                downloadHistory[estado].errorMessage = `Erro de rede: ${error.message}`;
+            }
+            
+            saveDownloadHistory();
+            renderEstadosTable();
+            console.log(`[Status] ${estado} - Status final: ${downloadHistory[estado].status}`);
+        }
+
+        // Função para verificar status de todos os estados
+        async function checkAllEstadosStatus() {
+            console.log('[Status] Iniciando verificação de status para todos os estados...');
+            const startTime = Date.now();
+            let successCount = 0;
+            let errorCount = 0;
+            
+            // Fazer requisições em paralelo para melhor performance
+            const promises = estados.map(async (estado) => {
+                try {
+                    await fetchEstadoStatus(estado.sigla);
+                    successCount++;
+                } catch (error) {
+                    console.error(`[Status] Erro ao verificar ${estado.sigla}:`, error);
+                    errorCount++;
+                }
+            });
+            
+            await Promise.allSettled(promises);
+            const totalTime = Date.now() - startTime;
+            
+            console.log(`[Status] Verificação concluída em ${totalTime}ms - Sucessos: ${successCount}, Erros: ${errorCount}`);
+            
+            if (errorCount > 0) {
+                showNotification(`Verificação de status concluída com ${errorCount} erro(s). Verifique o console para detalhes.`, 'warning');
+            } else {
+                showNotification(`Status de todos os estados verificado com sucesso em ${totalTime}ms!`, 'success');
+            }
+        }
+
+        // Chamar busca de status para cada estado ao carregar a página
+        window.addEventListener('DOMContentLoaded', () => {
+            // Aguardar um pouco para garantir que a página carregou completamente
+            setTimeout(() => {
+                checkAllEstadosStatus();
+            }, 500);
+        });
     </script>
 </body>
 </html> 

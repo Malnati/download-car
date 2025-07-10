@@ -2,7 +2,6 @@
 DOCKER_CONFIG  ?= /tmp/docker-config-noauth
 IMAGE          ?= download-car
 API_IMAGE      ?= download-car-api
-DOCKERFILE     ?= Dockerfile
 API_DOCKERFILE ?= Dockerfile.api
 
 api-up:
@@ -10,8 +9,6 @@ api-up:
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up api -d
 
 build:
-	@echo "🛠️  Buildando imagem $(IMAGE):latest via $(DOCKERFILE)..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker build -t $(IMAGE):latest -f $(DOCKERFILE) .
 	@$(MAKE) build-base build-download build-api
 
 build-api:
@@ -72,6 +69,13 @@ search-car:
 download-property:
 	@echo "🏠  Baixando propriedade do CAR: $(car)"
 	curl -X GET "http://localhost:8000/property?car=$(car)" --output property_$(car).zip
+
+delete-state:
+	@echo "🗑️  Excluindo arquivos do estado: $(state)"
+	curl -X DELETE "http://localhost:8000/delete_state" \
+		-F "state=$(state)" \
+		-F "folder=$(folder)" \
+		-F "include_properties=$(include_properties)"
 
 download-up:
 	@echo "🚀  Iniciando serviço download-car..."
@@ -162,6 +166,7 @@ help:
 	@echo "  download state=X polygon=Y folder=Z debug=W timeout=T max_retries=R"
 	@echo "  search-car car=X - Busca estado do CAR"
 	@echo "  download-property car=X - Baixa propriedade do CAR"
+	@echo "  delete-state state=X folder=Y include_properties=Z - Exclui arquivos de um estado"
 	@echo ""
 	@echo "🔄  Comandos de manutenção:"
 	@echo "  git-update      - Atualiza repositório Git"

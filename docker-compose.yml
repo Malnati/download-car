@@ -20,7 +20,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - API_URL=http://192.168.5.179:8787/api
+      - API_URL=http://192.168.5.179:8787
       - CORS_ALLOW_ORIGINS=*
       - CORS_ALLOW_CREDENTIALS=true
       - CORS_ALLOW_METHODS=GET,POST,OPTIONS
@@ -43,4 +43,4 @@ services:
       - download-car-api
       - download-car-download
     environment:
-      - DEFAULT_API_URL=http://192.168.5.179:8787/api
+      - DEFAULT_API_URL=http://192.168.5.179:8787

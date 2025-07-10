@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, Path
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -9,10 +9,11 @@ import tempfile
 import shutil
 import os
 import zipfile
-from pathlib import Path
+from pathlib import Path as FilePath
 from typing import Optional
 import subprocess
 import sys
+from datetime import datetime
 
 from download_car import DownloadCar, State, Polygon
 from download_car.drivers import Tesseract
@@ -751,6 +752,184 @@ async def buscar_propriedade_por_car(
 
 
 @app.get(
+    "/state_status/{state}",
+    summary="Verificar status de arquivo de estado",
+    description="""
+    Verifica se existe arquivo baixado para um estado específico e retorna informações para download.
+    
+    Este endpoint verifica se há arquivos ZIP disponíveis para o estado informado e retorna
+    informações sobre os arquivos encontrados, incluindo links para download.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X GET "http://localhost:8000/state_status/SP"
+    ```
+    
+    **Retorno:**
+    - JSON com informações sobre os arquivos disponíveis para o estado
+    - Links para download dos arquivos encontrados
+    """,
+    response_description="Informações sobre arquivos disponíveis para o estado",
+    tags=["Status de Estados"]
+)
+async def get_state_status(
+    state: str = Path(...),
+    folder: str = Query(
+        "temp",
+        description="Pasta onde buscar os arquivos do estado",
+        example="temp"
+    )
+):
+    """
+    Verifica se existe arquivo baixado para um estado específico.
+    """
+    try:
+        # Lista de possíveis arquivos para o estado
+        state_files_patterns = [
+            f"{state}_AREA_IMOVEL.zip",
+            f"{state}_APPS.zip",
+            f"{state}_NATIVE_VEGETATION.zip",
+            f"{state}_CONSOLIDATED_AREA.zip",
+            f"{state}_AREA_FALL.zip",
+            f"{state}_HYDROGRAPHY.zip",
+            f"{state}_RESTRICTED_USE.zip",
+            f"{state}_ADMINISTRATIVE_SERVICE.zip",
+            f"{state}_LEGAL_RESERVE.zip"
+        ]
+        
+        available_files = []
+        total_size = 0
+        
+        for pattern in state_files_patterns:
+            file_path = os.path.join(folder, pattern)
+            if os.path.exists(file_path):
+                try:
+                    file_size = os.path.getsize(file_path)
+                    file_mtime = os.path.getmtime(file_path)
+                    
+                    # Extrair tipo de polígono do nome do arquivo
+                    polygon_type = pattern.replace(f"{state}_", "").replace(".zip", "")
+                    
+                    available_files.append({
+                        "filename": pattern,
+                        "file_path": file_path,
+                        "size_bytes": file_size,
+                        "size_mb": round(file_size / (1024 * 1024), 2),
+                        "modified": datetime.fromtimestamp(file_mtime).isoformat(),
+                        "polygon_type": polygon_type,
+                        "download_url": f"/download_state_file/{state}/{polygon_type}"
+                    })
+                    
+                    total_size += file_size
+                except Exception as e:
+                    continue
+        
+        # Verificar se há arquivos do estado em ZIPs nacionais
+        national_files_containing_state = []
+        national_zip_patterns = [
+            "brazil_AREA_IMOVEL.zip",
+            "brazil_APPS.zip",
+            "brazil_NATIVE_VEGETATION.zip",
+            "brazil_CONSOLIDATED_AREA.zip",
+            "brazil_AREA_FALL.zip",
+            "brazil_HYDROGRAPHY.zip",
+            "brazil_RESTRICTED_USE.zip",
+            "brazil_ADMINISTRATIVE_SERVICE.zip",
+            "brazil_LEGAL_RESERVE.zip"
+        ]
+        
+        for pattern in national_zip_patterns:
+            zip_path = os.path.join(folder, pattern)
+            if os.path.exists(zip_path):
+                try:
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        state_files_in_zip = [f for f in zip_ref.namelist() if f.startswith(f"{state}_")]
+                        if state_files_in_zip:
+                            national_files_containing_state.append({
+                                "national_zip": pattern,
+                                "state_files": state_files_in_zip
+                            })
+                except Exception as e:
+                    continue
+        
+        return {
+            "state": state,
+            "has_files": len(available_files) > 0,
+            "available_files": available_files,
+            "total_files": len(available_files),
+            "total_size_mb": round(total_size / (1024 * 1024), 2),
+            "national_files_containing_state": national_files_containing_state,
+            "folder": folder,
+            "message": f"Encontrados {len(available_files)} arquivo(s) para o estado {state}" if available_files else f"Nenhum arquivo encontrado para o estado {state}"
+        }
+        
+    except Exception as e:
+        return {
+            "state": state,
+            "has_files": False,
+            "error": str(e),
+            "message": f"Erro ao verificar arquivos do estado {state}"
+        }
+
+
+@app.get(
+    "/download_state_file/{state}/{polygon_type}",
+    summary="Download de arquivo específico de estado",
+    description="""
+    Faz download de um arquivo específico de um estado e tipo de polígono.
+    
+    Este endpoint permite baixar um arquivo ZIP específico de um estado e tipo de polígono
+    que já foi baixado anteriormente.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X GET "http://localhost:8000/download_state_file/SP/AREA_IMOVEL" --output SP_AREA_IMOVEL.zip
+    ```
+    
+    **Retorno:**
+    - Arquivo ZIP do estado solicitado
+    """,
+    response_description="Arquivo ZIP do estado solicitado",
+    tags=["Download por Estado"]
+)
+async def download_state_file(
+    state: str = Path(...),
+    polygon_type: str = Path(...),
+    folder: str = Query(
+        "temp",
+        description="Pasta onde buscar o arquivo",
+        example="temp"
+    )
+):
+    """
+    Faz download de um arquivo específico de um estado.
+    """
+    try:
+        filename = f"{state}_{polygon_type}.zip"
+        file_path = os.path.join(folder, filename)
+        
+        if not os.path.exists(file_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Arquivo {filename} não encontrado para o estado {state}"
+            )
+        
+        return FileResponse(
+            path=file_path,
+            filename=filename,
+            media_type="application/zip"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao baixar arquivo: {str(e)}"
+        )
+
+
+@app.get(
     "/",
     summary="Informações da API",
     description="""
@@ -771,6 +950,7 @@ async def root():
             "download_state": "/download_state - Download de dados por estado",
             "download_country": "/download_country - Download de dados para todo o Brasil",
             "download_property": "/download-property - Download de propriedade pelo CAR",
+            "delete_state": "/delete_state - Excluir downloads de um estado",
             "states": "/states - Lista de estados disponíveis",
             "polygons": "/polygons - Lista de polígonos disponíveis",
             "state": "/state - Buscar estado de um imóvel pelo CAR",
@@ -780,3 +960,182 @@ async def root():
         "repository": "https://github.com/Malnati/download-car",
         "license": "MIT License"
     }
+
+
+@app.delete(
+    "/delete_state",
+    summary="Excluir downloads de um estado",
+    description="""
+    Exclui todos os arquivos relacionados a um estado específico.
+    
+    Este endpoint remove:
+    - Arquivos de download do estado (shapefiles baixados do sistema CAR)
+    - Arquivos de propriedades extraídas do estado
+    - Arquivos temporários relacionados ao estado
+    
+    **⚠️ Atenção:** Esta operação é irreversível e excluirá permanentemente todos os dados do estado.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X DELETE "http://localhost:8000/delete_state" \\
+         -F "state=SP" \\
+         -F "folder=temp" \\
+         -F "include_properties=true"
+    ```
+    
+    **Parâmetros:**
+    - `state`: Sigla do estado a ser excluído (obrigatório)
+    - `folder`: Pasta onde estão os arquivos do estado (opcional, padrão: "temp")
+    - `include_properties`: Se deve excluir também arquivos de propriedades (opcional, padrão: true)
+    
+    **Retorno:**
+    - JSON com informações sobre os arquivos excluídos
+    """,
+    response_description="Informações sobre os arquivos excluídos",
+    tags=["Gerenciamento de Arquivos"]
+)
+async def delete_state_endpoint(
+    state: str = Form(
+        ...,
+        description="Sigla do estado brasileiro a ser excluído (2 letras maiúsculas)",
+        example="SP",
+        min_length=2,
+        max_length=2,
+        regex="^[A-Z]{2}$"
+    ),
+    folder: str = Form(
+        "temp",
+        description="Pasta onde estão os arquivos do estado (opcional)",
+        example="temp"
+    ),
+    include_properties: bool = Form(
+        True,
+        description="Se deve excluir também arquivos de propriedades extraídas do estado",
+        example=True
+    ),
+):
+    """
+    Exclui todos os arquivos relacionados a um estado específico.
+    """
+    try:
+        deleted_files = []
+        deleted_dirs = []
+        errors = []
+        
+        # 1. Excluir arquivos de download do estado
+        state_files_patterns = [
+            f"{state}_AREA_IMOVEL.zip",
+            f"{state}_APPS.zip",
+            f"{state}_NATIVE_VEGETATION.zip",
+            f"{state}_CONSOLIDATED_AREA.zip",
+            f"{state}_AREA_FALL.zip",
+            f"{state}_HYDROGRAPHY.zip",
+            f"{state}_RESTRICTED_USE.zip",
+            f"{state}_ADMINISTRATIVE_SERVICE.zip",
+            f"{state}_LEGAL_RESERVE.zip"
+        ]
+        
+        for pattern in state_files_patterns:
+            file_path = os.path.join(folder, pattern)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    deleted_files.append(file_path)
+                except Exception as e:
+                    errors.append(f"Erro ao excluir {file_path}: {str(e)}")
+        
+        # 2. Excluir arquivos de propriedades do estado (se solicitado)
+        if include_properties:
+            # Buscar em pastas comuns onde propriedades podem estar
+            property_folders = [
+                "PROPERTY",
+                "properties",
+                "temp",
+                folder
+            ]
+            
+            for prop_folder in property_folders:
+                if os.path.exists(prop_folder):
+                    try:
+                        # Buscar arquivos de propriedade que contenham o estado no nome
+                        for root, dirs, files in os.walk(prop_folder):
+                            for file in files:
+                                if file.startswith("property_") and state in file:
+                                    file_path = os.path.join(root, file)
+                                    try:
+                                        os.remove(file_path)
+                                        deleted_files.append(file_path)
+                                    except Exception as e:
+                                        errors.append(f"Erro ao excluir propriedade {file_path}: {str(e)}")
+                    except Exception as e:
+                        errors.append(f"Erro ao buscar propriedades em {prop_folder}: {str(e)}")
+        
+        # 3. Excluir diretórios temporários vazios relacionados ao estado
+        temp_dirs_to_check = [
+            os.path.join(folder, state),
+            os.path.join("temp", state),
+            os.path.join("PROPERTY", state)
+        ]
+        
+        for temp_dir in temp_dirs_to_check:
+            if os.path.exists(temp_dir) and os.path.isdir(temp_dir):
+                try:
+                    # Verificar se o diretório está vazio
+                    if not os.listdir(temp_dir):
+                        os.rmdir(temp_dir)
+                        deleted_dirs.append(temp_dir)
+                except Exception as e:
+                    errors.append(f"Erro ao excluir diretório {temp_dir}: {str(e)}")
+        
+        # 4. Verificar se há arquivos do estado em ZIPs nacionais
+        national_zip_patterns = [
+            "brazil_AREA_IMOVEL.zip",
+            "brazil_APPS.zip",
+            "brazil_NATIVE_VEGETATION.zip",
+            "brazil_CONSOLIDATED_AREA.zip",
+            "brazil_AREA_FALL.zip",
+            "brazil_HYDROGRAPHY.zip",
+            "brazil_RESTRICTED_USE.zip",
+            "brazil_ADMINISTRATIVE_SERVICE.zip",
+            "brazil_LEGAL_RESERVE.zip"
+        ]
+        
+        national_files_containing_state = []
+        for pattern in national_zip_patterns:
+            zip_path = os.path.join(folder, pattern)
+            if os.path.exists(zip_path):
+                try:
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        state_files_in_zip = [f for f in zip_ref.namelist() if f.startswith(f"{state}_")]
+                        if state_files_in_zip:
+                            national_files_containing_state.append({
+                                "zip_file": zip_path,
+                                "state_files": state_files_in_zip
+                            })
+                except Exception as e:
+                    errors.append(f"Erro ao verificar ZIP nacional {zip_path}: {str(e)}")
+        
+        return {
+            "success": True,
+            "state": state,
+            "message": f"Exclusão de arquivos do estado {state} concluída",
+            "deleted_files": deleted_files,
+            "deleted_directories": deleted_dirs,
+            "total_files_deleted": len(deleted_files),
+            "total_dirs_deleted": len(deleted_dirs),
+            "include_properties": include_properties,
+            "national_files_containing_state": national_files_containing_state,
+            "warnings": [
+                "Arquivos em ZIPs nacionais não foram excluídos automaticamente",
+                "Para excluir completamente, recrie os ZIPs nacionais sem o estado"
+            ] if national_files_containing_state else [],
+            "errors": errors if errors else None
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "state": state,
+            "error": str(e),
+            "message": f"Erro ao excluir arquivos do estado {state}"
+        }, 500
