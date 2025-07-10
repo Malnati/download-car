@@ -1380,7 +1380,7 @@
             if (history.status === 'loading') {
                 return '<span class="spinner-border spinner-border-sm text-primary" role="status" title="Verificando arquivos..."></span>';
             }
-            if (history.status === 'ready' && Array.isArray(history.downloadFiles) && history.downloadFiles.length > 0) {
+            if ((history.status === 'ready' || history.status === 'success') && Array.isArray(history.downloadFiles) && history.downloadFiles.length > 0) {
                 const filesHtml = history.downloadFiles.map(f => {
                     const polygonLabel = f.polygon_type.replace(/_/g, ' ');
                     const sizeText = f.size_mb ? ` (${f.size_mb.toFixed(1)} MB)` : '';
@@ -1395,6 +1395,12 @@
                     `<div class="small text-muted mt-1">Total: ${history.totalFiles || history.downloadFiles.length} arquivo(s), ${history.totalSizeMB.toFixed(1)} MB</div>` : '';
                 
                 return `<div>${filesHtml}${totalInfo}</div>`;
+            }
+            // Se o status é 'success' mas não há downloadFiles, tentar buscar novamente
+            if (history.status === 'success' && (!history.downloadFiles || history.downloadFiles.length === 0)) {
+                // Tentar buscar status novamente
+                setTimeout(() => fetchEstadoStatus(estado), 1000);
+                return '<span class="spinner-border spinner-border-sm text-primary" role="status" title="Verificando arquivos..."></span>';
             }
             if (history.status === 'notfound') {
                 // Quando não há arquivo, mostrar botão para requisitar download (formato original)
@@ -1638,13 +1644,44 @@
                     // Verificar se a resposta contém dados válidos
                     const contentType = response.headers.get('content-type');
                     if (contentType && contentType.includes('application/zip')) {
-                        // Arquivo processado com sucesso
-                        downloadHistory[estado].status = 'success';
-                        downloadHistory[estado].errorMessage = null; // Limpar erro anterior
-                        downloadHistory[estado].fileReady = true; // Marcar arquivo como pronto
-                        // Resetar timeout para o valor padrão após sucesso
-                        downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
-                        showNotification(`Arquivo de ${estado} processado com sucesso! Clique em Download para baixar.`, 'success');
+                        // Arquivo processado com sucesso - verificar se existe no servidor
+                        try {
+                            // Verificar status do arquivo no servidor
+                            const statusResponse = await fetch(`${apiUrl}/state_status/${estado}`);
+                            if (statusResponse.ok) {
+                                const statusData = await statusResponse.json();
+                                if (statusData.has_files && statusData.available_files && statusData.available_files.length > 0) {
+                                    downloadHistory[estado].status = 'ready';
+                                    downloadHistory[estado].downloadFiles = statusData.available_files;
+                                    downloadHistory[estado].totalFiles = statusData.total_files;
+                                    downloadHistory[estado].totalSizeMB = statusData.total_size_mb;
+                                    downloadHistory[estado].errorMessage = null; // Limpar erro anterior
+                                    downloadHistory[estado].fileReady = true; // Marcar arquivo como pronto
+                                    // Resetar timeout para o valor padrão após sucesso
+                                    downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
+                                    showNotification(`Arquivo de ${estado} processado com sucesso! Links de download disponíveis.`, 'success');
+                                } else {
+                                    downloadHistory[estado].status = 'success';
+                                    downloadHistory[estado].errorMessage = null;
+                                    downloadHistory[estado].fileReady = true;
+                                    downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
+                                    showNotification(`Arquivo de ${estado} processado com sucesso! Verificando disponibilidade...`, 'success');
+                                }
+                            } else {
+                                downloadHistory[estado].status = 'success';
+                                downloadHistory[estado].errorMessage = null;
+                                downloadHistory[estado].fileReady = true;
+                                downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
+                                showNotification(`Arquivo de ${estado} processado com sucesso!`, 'success');
+                            }
+                        } catch (statusError) {
+                            console.warn(`Erro ao verificar status após download de ${estado}:`, statusError);
+                            downloadHistory[estado].status = 'success';
+                            downloadHistory[estado].errorMessage = null;
+                            downloadHistory[estado].fileReady = true;
+                            downloadHistory[estado].timeout = STATE_TIMEOUTS[estado] || DEFAULT_TIMEOUT;
+                            showNotification(`Arquivo de ${estado} processado com sucesso!`, 'success');
+                        }
                     } else {
                         // Verificar se é uma resposta de erro em JSON
                         const text = await response.text();
