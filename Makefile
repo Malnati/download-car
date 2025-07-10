@@ -73,6 +73,13 @@ download-property:
 	@echo "🏠  Baixando propriedade do CAR: $(car)"
 	curl -X GET "http://localhost:8000/property?car=$(car)" --output property_$(car).zip
 
+delete-state:
+	@echo "🗑️  Excluindo arquivos do estado: $(state)"
+	curl -X DELETE "http://localhost:8000/delete_state" \
+		-F "state=$(state)" \
+		-F "folder=$(folder)" \
+		-F "include_properties=$(include_properties)"
+
 download-up:
 	@echo "🚀  Iniciando serviço download-car..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up download-car -d
@@ -159,9 +166,10 @@ help:
 	@echo "  integration-test - Executa testes de integração"
 	@echo ""
 	@echo "📥  Comandos de download:"
-	@echo "  download state=X polygon=Y folder=Z debug=W timeout=T max_retries=R"
-	@echo "  search-car car=X - Busca estado do CAR"
-	@echo "  download-property car=X - Baixa propriedade do CAR"
+@echo "  download state=X polygon=Y folder=Z debug=W timeout=T max_retries=R"
+@echo "  search-car car=X - Busca estado do CAR"
+@echo "  download-property car=X - Baixa propriedade do CAR"
+@echo "  delete-state state=X folder=Y include_properties=Z - Exclui arquivos de um estado"
 	@echo ""
 	@echo "🔄  Comandos de manutenção:"
 	@echo "  git-update      - Atualiza repositório Git"

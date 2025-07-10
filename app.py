@@ -771,6 +771,7 @@ async def root():
             "download_state": "/download_state - Download de dados por estado",
             "download_country": "/download_country - Download de dados para todo o Brasil",
             "download_property": "/download-property - Download de propriedade pelo CAR",
+            "delete_state": "/delete_state - Excluir downloads de um estado",
             "states": "/states - Lista de estados disponíveis",
             "polygons": "/polygons - Lista de polígonos disponíveis",
             "state": "/state - Buscar estado de um imóvel pelo CAR",
@@ -780,3 +781,182 @@ async def root():
         "repository": "https://github.com/Malnati/download-car",
         "license": "MIT License"
     }
+
+
+@app.delete(
+    "/delete_state",
+    summary="Excluir downloads de um estado",
+    description="""
+    Exclui todos os arquivos relacionados a um estado específico.
+    
+    Este endpoint remove:
+    - Arquivos de download do estado (shapefiles baixados do sistema CAR)
+    - Arquivos de propriedades extraídas do estado
+    - Arquivos temporários relacionados ao estado
+    
+    **⚠️ Atenção:** Esta operação é irreversível e excluirá permanentemente todos os dados do estado.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X DELETE "http://localhost:8000/delete_state" \\
+         -F "state=SP" \\
+         -F "folder=temp" \\
+         -F "include_properties=true"
+    ```
+    
+    **Parâmetros:**
+    - `state`: Sigla do estado a ser excluído (obrigatório)
+    - `folder`: Pasta onde estão os arquivos do estado (opcional, padrão: "temp")
+    - `include_properties`: Se deve excluir também arquivos de propriedades (opcional, padrão: true)
+    
+    **Retorno:**
+    - JSON com informações sobre os arquivos excluídos
+    """,
+    response_description="Informações sobre os arquivos excluídos",
+    tags=["Gerenciamento de Arquivos"]
+)
+async def delete_state_endpoint(
+    state: str = Form(
+        ...,
+        description="Sigla do estado brasileiro a ser excluído (2 letras maiúsculas)",
+        example="SP",
+        min_length=2,
+        max_length=2,
+        regex="^[A-Z]{2}$"
+    ),
+    folder: str = Form(
+        "temp",
+        description="Pasta onde estão os arquivos do estado (opcional)",
+        example="temp"
+    ),
+    include_properties: bool = Form(
+        True,
+        description="Se deve excluir também arquivos de propriedades extraídas do estado",
+        example=True
+    ),
+):
+    """
+    Exclui todos os arquivos relacionados a um estado específico.
+    """
+    try:
+        deleted_files = []
+        deleted_dirs = []
+        errors = []
+        
+        # 1. Excluir arquivos de download do estado
+        state_files_patterns = [
+            f"{state}_AREA_IMOVEL.zip",
+            f"{state}_APPS.zip",
+            f"{state}_NATIVE_VEGETATION.zip",
+            f"{state}_CONSOLIDATED_AREA.zip",
+            f"{state}_AREA_FALL.zip",
+            f"{state}_HYDROGRAPHY.zip",
+            f"{state}_RESTRICTED_USE.zip",
+            f"{state}_ADMINISTRATIVE_SERVICE.zip",
+            f"{state}_LEGAL_RESERVE.zip"
+        ]
+        
+        for pattern in state_files_patterns:
+            file_path = os.path.join(folder, pattern)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    deleted_files.append(file_path)
+                except Exception as e:
+                    errors.append(f"Erro ao excluir {file_path}: {str(e)}")
+        
+        # 2. Excluir arquivos de propriedades do estado (se solicitado)
+        if include_properties:
+            # Buscar em pastas comuns onde propriedades podem estar
+            property_folders = [
+                "PROPERTY",
+                "properties",
+                "temp",
+                folder
+            ]
+            
+            for prop_folder in property_folders:
+                if os.path.exists(prop_folder):
+                    try:
+                        # Buscar arquivos de propriedade que contenham o estado no nome
+                        for root, dirs, files in os.walk(prop_folder):
+                            for file in files:
+                                if file.startswith("property_") and state in file:
+                                    file_path = os.path.join(root, file)
+                                    try:
+                                        os.remove(file_path)
+                                        deleted_files.append(file_path)
+                                    except Exception as e:
+                                        errors.append(f"Erro ao excluir propriedade {file_path}: {str(e)}")
+                    except Exception as e:
+                        errors.append(f"Erro ao buscar propriedades em {prop_folder}: {str(e)}")
+        
+        # 3. Excluir diretórios temporários vazios relacionados ao estado
+        temp_dirs_to_check = [
+            os.path.join(folder, state),
+            os.path.join("temp", state),
+            os.path.join("PROPERTY", state)
+        ]
+        
+        for temp_dir in temp_dirs_to_check:
+            if os.path.exists(temp_dir) and os.path.isdir(temp_dir):
+                try:
+                    # Verificar se o diretório está vazio
+                    if not os.listdir(temp_dir):
+                        os.rmdir(temp_dir)
+                        deleted_dirs.append(temp_dir)
+                except Exception as e:
+                    errors.append(f"Erro ao excluir diretório {temp_dir}: {str(e)}")
+        
+        # 4. Verificar se há arquivos do estado em ZIPs nacionais
+        national_zip_patterns = [
+            "brazil_AREA_IMOVEL.zip",
+            "brazil_APPS.zip",
+            "brazil_NATIVE_VEGETATION.zip",
+            "brazil_CONSOLIDATED_AREA.zip",
+            "brazil_AREA_FALL.zip",
+            "brazil_HYDROGRAPHY.zip",
+            "brazil_RESTRICTED_USE.zip",
+            "brazil_ADMINISTRATIVE_SERVICE.zip",
+            "brazil_LEGAL_RESERVE.zip"
+        ]
+        
+        national_files_containing_state = []
+        for pattern in national_zip_patterns:
+            zip_path = os.path.join(folder, pattern)
+            if os.path.exists(zip_path):
+                try:
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        state_files_in_zip = [f for f in zip_ref.namelist() if f.startswith(f"{state}_")]
+                        if state_files_in_zip:
+                            national_files_containing_state.append({
+                                "zip_file": zip_path,
+                                "state_files": state_files_in_zip
+                            })
+                except Exception as e:
+                    errors.append(f"Erro ao verificar ZIP nacional {zip_path}: {str(e)}")
+        
+        return {
+            "success": True,
+            "state": state,
+            "message": f"Exclusão de arquivos do estado {state} concluída",
+            "deleted_files": deleted_files,
+            "deleted_directories": deleted_dirs,
+            "total_files_deleted": len(deleted_files),
+            "total_dirs_deleted": len(deleted_dirs),
+            "include_properties": include_properties,
+            "national_files_containing_state": national_files_containing_state,
+            "warnings": [
+                "Arquivos em ZIPs nacionais não foram excluídos automaticamente",
+                "Para excluir completamente, recrie os ZIPs nacionais sem o estado"
+            ] if national_files_containing_state else [],
+            "errors": errors if errors else None
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "state": state,
+            "error": str(e),
+            "message": f"Erro ao excluir arquivos do estado {state}"
+        }, 500

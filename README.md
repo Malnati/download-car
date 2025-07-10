@@ -192,22 +192,63 @@ O notebook permite baixar os shapefiles diretamente no navegador sem instalar na
 
 ## 5️⃣ Execução via API
 
-Uma API pública de demonstração está disponível em [GitHub.com/Malnati/download-car-api](https://GitHub.com/Malnati/download-car-api/). O endpoint `/download` aceita requisições `POST` contendo o estado e o tipo de polígono desejado.
+A API FastAPI está disponível em `http://localhost:8000` e oferece os seguintes endpoints:
+
+- `POST /download_state` &ndash; recebe `state` e `polygon` (além dos
+  parâmetros opcionais) e retorna um arquivo ZIP com o shapefile do estado.
+- `POST /download_country` &ndash; recebe apenas `polygon` e retorna um ZIP
+  contendo os arquivos de todos os estados.
+- `DELETE /delete_state` &ndash; exclui todos os arquivos relacionados a um estado específico.
 
 ### Campos esperados (multipart/form)
 
-| Campo    | Tipo  | Obrigatório | Descrição                                           |
-|----------|-------|-------------|-----------------------------------------------------|
-| `state`  | str   | ✅          | Sigla do estado (ex.: `SP`).                         |
-| `polygon`| str   | ✅          | Tipo de camada (`APPS`, `AREA_PROPERTY`, etc.).      |
+#### POST /download_state
+- `state` (obrigatório): Sigla do estado (ex: "SP", "RJ", "MG")
+- `polygon` (opcional): Tipo de polígono (padrão: "AREA_PROPERTY")
+- `folder` (opcional): Pasta de destino (padrão: "temp")
+- `tries` (opcional): Número de tentativas (padrão: 25)
+- `debug` (opcional): Modo debug (padrão: false)
+- `timeout` (opcional): Timeout em segundos (padrão: 30)
+- `max_retries` (opcional): Máximo de retry (padrão: 5)
+
+#### POST /download_country
+- `polygon` (opcional): Tipo de polígono (padrão: "AREA_PROPERTY")
+- `folder` (opcional): Pasta de destino (padrão: "brazil")
+- `tries` (opcional): Número de tentativas (padrão: 25)
+- `debug` (opcional): Modo debug (padrão: false)
+- `timeout` (opcional): Timeout em segundos (padrão: 30)
+- `max_retries` (opcional): Máximo de retry (padrão: 5)
+
+#### DELETE /delete_state
+- `state` (obrigatório): Sigla do estado a ser excluído (ex: "SP", "RJ", "MG")
+- `folder` (opcional): Pasta onde estão os arquivos (padrão: "temp")
+- `include_properties` (opcional): Se deve excluir também arquivos de propriedades (padrão: true)
 
 ### Exemplo via curl
 
 ```bash
-curl -X POST https://GitHub.com/Malnati/download-car-api/download \
-  -F "state=SP" \
-  -F "polygon=APPS" \
-  --output SP_APPS.zip
+# Download de um estado
+curl -X POST "http://localhost:8000/download_state" \
+     -F "state=SP" \
+     -F "polygon=APPS" \
+     -F "folder=temp" \
+     -F "tries=25" \
+     -F "debug=false" \
+     --output SP_APPS.zip
+
+# Download de todo o país
+curl -X POST "http://localhost:8000/download_country" \
+     -F "polygon=AREA_PROPERTY" \
+     -F "folder=brazil" \
+     -F "tries=25" \
+     -F "debug=false" \
+     --output brazil_AREA_PROPERTY.zip
+
+# Excluir arquivos de um estado
+curl -X DELETE "http://localhost:8000/delete_state" \
+     -F "state=SP" \
+     -F "folder=temp" \
+     -F "include_properties=true"
 ```
 
 ### Rodando localmente com FastAPI
