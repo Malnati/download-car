@@ -1370,78 +1370,61 @@
                 return `<div>${filesHtml}${totalInfo}</div>`;
             }
             if (history.status === 'notfound') {
-                return `<span class="text-muted" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="${history.message || 'Nenhum arquivo encontrado para este estado'}">
-                            <i class="bi bi-dash-circle me-1"></i>Nenhum arquivo
-                        </span>`;
+                // Quando não há arquivo, mostrar botão para requisitar download
+                return `<a href="#" class="btn btn-sm btn-primary" onclick="downloadEstado('${estado}'); return false;"
+                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                            data-bs-title="Clique para requisitar o download dos dados do estado ${estado}">
+                            <i class="bi bi-cloud-download me-1"></i>Requisitar
+                        </a>`;
             }
             if (history.status === 'error') {
-                return `<span class="text-danger" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="${history.errorMessage || 'Erro ao verificar arquivos'}">
-                            <i class="bi bi-exclamation-triangle me-1"></i>Erro
-                        </span>`;
+                // Quando há erro, também mostrar botão para tentar novamente
+                return `<a href="#" class="btn btn-sm btn-warning" onclick="downloadEstado('${estado}'); return false;"
+                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                            data-bs-title="Tentar novamente o download dos dados do estado ${estado}">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Tentar Novamente
+                        </a>`;
             }
-            return '<span class="text-muted">-</span>';
+            // Status inicial ou não verificado - mostrar botão para requisitar
+            return `<a href="#" class="btn btn-sm btn-primary" onclick="downloadEstado('${estado}'); return false;"
+                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                        data-bs-title="Clique para requisitar o download dos dados do estado ${estado}">
+                        <i class="bi bi-cloud-download me-1"></i>Requisitar
+                    </a>`;
         }
 
         // Obter link de propriedade
         function getPropertyLink(estado, history) {
-            if (history.status === 'success') {
-                // Se já foi feita a busca da propriedade, mostrar apenas o link de download
-                if (history.propertySearched && history.car && history.car.trim() !== '') {
-                    return `<a href="#" class="download-link" onclick="downloadProperty('${estado}', '${history.car}'); return false;"
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Clique para baixar o arquivo ZIP com os dados da propriedade ${history.car}. O arquivo contém apenas este imóvel específico.">
-                                <i class="bi bi-house"></i>
-                                Download propriedade ${history.car}
-                            </a>`;
-                }
-                
-                // Se ainda não foi feita a busca, mostrar o campo com botão de lupa
-                return `<div class="d-flex flex-column gap-1">
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control" 
-                                       placeholder="Código CAR" 
-                                       value="${history.car || ''}" 
-                                       onchange="updateCar('${estado}', this.value)"
-                                       onkeypress="handleCarKeyPress(event, '${estado}')"
-                                       id="car-input-${estado}"
-                                       data-bs-toggle="tooltip" data-bs-placement="top" 
-                                       data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
-                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" 
-                                        data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
-                                    <i class="bi bi-search"></i>
-                                </button>
-                            </div>
-                            <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                  data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
-                        </div>`;
-            } else if (history.status === 'error') {
-                // Se houve erro, mostrar o campo com botão de lupa
-                return `<div class="d-flex flex-column gap-1">
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control" 
-                                       placeholder="Código CAR" 
-                                       value="${history.car || ''}" 
-                                       onchange="updateCar('${estado}', this.value)"
-                                       onkeypress="handleCarKeyPress(event, '${estado}')"
-                                       id="car-input-${estado}"
-                                       data-bs-toggle="tooltip" data-bs-placement="top" 
-                                       data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
-                                <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" 
-                                        data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
-                                    <i class="bi bi-search"></i>
-                                </button>
-                            </div>
-                            <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                  data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
-                        </div>`;
-            } else {
-                return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Nenhum download realizado. Requisite um download primeiro para buscar propriedades.">N/A</span>`;
+            // Se já foi feita a busca da propriedade, mostrar apenas o link de download
+            if (history.propertySearched && history.car && history.car.trim() !== '') {
+                return `<a href="#" class="download-link" onclick="downloadProperty('${estado}', '${history.car}'); return false;"
+                            data-bs-toggle="tooltip" data-bs-placement="top" 
+                            data-bs-title="Clique para baixar o arquivo ZIP com os dados da propriedade ${history.car}. O arquivo contém apenas este imóvel específico.">
+                            <i class="bi bi-house"></i>
+                            Download propriedade ${history.car}
+                        </a>`;
             }
+            
+            // Para todos os outros casos, mostrar o campo com botão de lupa
+            return `<div class="d-flex flex-column gap-1">
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" 
+                                   placeholder="Código CAR" 
+                                   value="${history.car || ''}" 
+                                   onchange="updateCar('${estado}', this.value)"
+                                   onkeypress="handleCarKeyPress(event, '${estado}')"
+                                   id="car-input-${estado}"
+                                   data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
+                            <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                              data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
+                    </div>`;
         }
 
         // Obter botão de ação (Limpar)
@@ -1565,16 +1548,13 @@
             }
             
             // Determinar qual botão está sendo usado (Requisitar)
-            let button = document.getElementById(`btn-${estado}`);
+            let button = document.querySelector(`a[onclick*="downloadEstado('${estado}')"]`);
             
             if (button) {
-                const btnText = button.querySelector('.btn-text');
-                const loading = button.querySelector('.loading');
-                
-                // Atualizar estado do botão
-                button.disabled = true;
-                if (btnText) btnText.style.display = 'none';
-                if (loading) loading.style.display = 'inline-block';
+                const originalContent = button.innerHTML;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>Requisitando...';
+                button.style.pointerEvents = 'none';
+                button.setAttribute('data-original-content', originalContent);
             }
             
             // Atualizar status
@@ -1638,12 +1618,11 @@
             } finally {
                 // Restaurar botão se existir
                 if (button) {
-                    const btnText = button.querySelector('.btn-text');
-                    const loading = button.querySelector('.loading');
-                    
-                    button.disabled = false;
-                    if (btnText) btnText.style.display = 'inline-block';
-                    if (loading) loading.style.display = 'none';
+                    const originalContent = button.getAttribute('data-original-content');
+                    if (originalContent) {
+                        button.innerHTML = originalContent;
+                    }
+                    button.style.pointerEvents = 'auto';
                 }
                 
                 // Atualizar tabela
