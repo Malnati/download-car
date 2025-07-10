@@ -40,13 +40,13 @@ clean-volumes:
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker volume prune -f
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker system prune -f --volumes
 	@echo "🗑️  Limpando arquivos locais em temp/"
-	rm -rf temp/*
+	rm -rf temp/* || true
 	@echo "🗑️  Limpando arquivos locais em data/"
-	rm -rf data/*
+	rm -rf data/* || true
 	@echo "🗑️  Limpando arquivos locais em __pycache__/"
-	rm -rf __pycache__/*
+	rm -rf __pycache__/* || true
 	@echo "🗑️  Limpando arquivos locais em download_car.egg-info/"
-	rm -rf download_car.egg-info/*
+	rm -rf download_car.egg-info/* || true
 
 clean-api:
 	@echo "🗑️  Removendo imagem $(API_IMAGE):latest..."
