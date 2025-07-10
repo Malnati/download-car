@@ -589,6 +589,27 @@
         .icon-link .loading {
             display: none;
         }
+
+        /* Estilos para campos editáveis */
+        .clickable-field {
+            cursor: pointer;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .clickable-field:hover {
+            background-color: #e9ecef;
+            border-color: #ced4da;
+        }
+
+        .clickable-field:focus {
+            background-color: white;
+            border-color: var(--system-green);
+            box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.15);
+        }
     </style>
 </head>
 <body>
@@ -667,7 +688,7 @@
                                     <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Número máximo de tentativas em caso de falha na requisição"><i class="bi bi-arrow-repeat"></i></th>
                                     <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Data e hora do último download realizado"><i class="bi bi-calendar-event"></i></th>
                                     <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Status atual do download: sucesso, erro, em andamento ou nenhum"><i class="bi bi-info-circle"></i></th>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tipo de polígono para extração: área do imóvel, vegetação nativa, etc."><i class="bi bi-shapes"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tipo de polígono para extração: área do imóvel, vegetação nativa, etc."><i class="bi bi-geo-alt"></i></th>
                                     <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download do arquivo ZIP com todos os imóveis do estado"><i class="bi bi-link-45deg"></i></th>
                                     <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Busca e download de propriedades específicas pelo código CAR"><i class="bi bi-house"></i></th>
                                     <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Limpar histórico e permitir nova requisição"><i class="bi bi-trash"></i></th>
@@ -1010,11 +1031,12 @@
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-1">
-                            <input type="number" class="form-control form-control-sm" 
-                                   value="${Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)}" min="1" max="5" 
-                                   onchange="updateTimeout('${estado.sigla}', this.value * 60000)"
-                                   data-bs-toggle="tooltip" data-bs-placement="top" 
-                                   data-bs-title="Timeout em minutos para a requisição. Valores maiores podem ajudar em conexões lentas.">
+                            <span class="form-control-plaintext form-control-sm clickable-field" 
+                                  onclick="makeEditable(this, 'timeout', '${estado.sigla}', ${Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)})"
+                                  data-bs-toggle="tooltip" data-bs-placement="top" 
+                                  data-bs-title="Clique para editar o timeout (em minutos)">
+                                ${Math.floor((history.timeout || DEFAULT_TIMEOUT) / 60000)} min
+                            </span>
                             <button type="button" class="btn btn-outline-secondary btn-sm" 
                                     onclick="resetTimeout('${estado.sigla}')" 
                                     data-bs-toggle="tooltip" data-bs-placement="top" 
@@ -1024,11 +1046,12 @@
                         </div>
                     </td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" 
-                               value="${history.maxRetries || 5}" min="1" max="99" 
-                               onchange="updateMaxRetries('${estado.sigla}', this.value)"
-                               data-bs-toggle="tooltip" data-bs-placement="top" 
-                               data-bs-title="Número máximo de tentativas em caso de falha na requisição.">
+                        <span class="form-control-plaintext form-control-sm clickable-field" 
+                              onclick="makeEditable(this, 'retries', '${estado.sigla}', ${history.maxRetries || 5})"
+                              data-bs-toggle="tooltip" data-bs-placement="top" 
+                              data-bs-title="Clique para editar o número de tentativas">
+                            ${history.maxRetries || 5}
+                        </span>
                     </td>
                     <td>
                         <small class="text-muted" data-bs-toggle="tooltip" data-bs-placement="top" 
@@ -1040,15 +1063,12 @@
                         ${getStatusIcon(history.status, history.errorMessage)}
                     </td>
                     <td>
-                        <select class="form-select form-select-sm" onchange="updatePolygon('${estado.sigla}', this.value)"
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Tipo de polígono para extração dos dados. AREA_IMOVEL inclui todos os imóveis, PERIMETRO_IMOVEL apenas o perímetro.">
-                            ${POLYGONS.map(polygon => 
-                                `<option value="${polygon.value}" ${(history.polygon || DEFAULT_POLYGON) === polygon.value ? 'selected' : ''}>
-                                    ${polygon.label}
-                                </option>`
-                            ).join('')}
-                        </select>
+                        <span class="form-control-plaintext form-control-sm clickable-field" 
+                              onclick="makeEditable(this, 'polygon', '${estado.sigla}', '${history.polygon || DEFAULT_POLYGON}')"
+                              data-bs-toggle="tooltip" data-bs-placement="top" 
+                              data-bs-title="Clique para editar o tipo de polígono">
+                            ${POLYGONS.find(p => p.value === (history.polygon || DEFAULT_POLYGON))?.label || 'Área do Imóvel'}
+                        </span>
                     </td>
                     <td>
                         ${getDownloadLink(estado.sigla, history)}
@@ -1611,6 +1631,82 @@
                     }
                 }, 300);
             }, delay);
+        }
+
+        // Função para tornar campo editável
+        function makeEditable(element, fieldType, estado, currentValue) {
+            const parent = element.parentElement;
+            const originalContent = element.innerHTML;
+            const originalClass = element.className;
+            
+            // Criar input baseado no tipo de campo
+            let input;
+            if (fieldType === 'polygon') {
+                input = document.createElement('select');
+                input.className = 'form-select form-select-sm';
+                POLYGONS.forEach(polygon => {
+                    const option = document.createElement('option');
+                    option.value = polygon.value;
+                    option.textContent = polygon.label;
+                    if (polygon.value === currentValue) {
+                        option.selected = true;
+                    }
+                    input.appendChild(option);
+                });
+            } else {
+                input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'form-control form-control-sm';
+                input.value = currentValue;
+                if (fieldType === 'timeout') {
+                    input.min = '1';
+                    input.max = '5';
+                } else if (fieldType === 'retries') {
+                    input.min = '1';
+                    input.max = '99';
+                }
+            }
+            
+            // Substituir elemento
+            element.style.display = 'none';
+            parent.insertBefore(input, element);
+            input.focus();
+            
+            // Função para salvar e restaurar
+            function saveAndRestore() {
+                let newValue;
+                if (fieldType === 'polygon') {
+                    newValue = input.value;
+                    updatePolygon(estado, newValue);
+                    element.innerHTML = POLYGONS.find(p => p.value === newValue)?.label || 'Área do Imóvel';
+                } else if (fieldType === 'timeout') {
+                    newValue = parseInt(input.value) * 60000; // Converter para milissegundos
+                    updateTimeout(estado, newValue);
+                    element.innerHTML = `${Math.floor(newValue / 60000)} min`;
+                } else if (fieldType === 'retries') {
+                    newValue = parseInt(input.value);
+                    updateMaxRetries(estado, newValue);
+                    element.innerHTML = newValue;
+                }
+                
+                // Restaurar elemento original
+                input.remove();
+                element.style.display = 'block';
+                initializeTooltips();
+            }
+            
+            // Event listeners
+            input.addEventListener('blur', saveAndRestore);
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    saveAndRestore();
+                } else if (e.key === 'Escape') {
+                    // Cancelar edição
+                    input.remove();
+                    element.style.display = 'block';
+                    initializeTooltips();
+                }
+            });
         }
     </script>
 </body>
