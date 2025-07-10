@@ -662,15 +662,15 @@
                         <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Sigla do estado brasileiro"><i class="bi bi-flag me-1"></i>&nbsp;Estado</th>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tempo limite em minutos para a requisição. Valores maiores podem ajudar em conexões lentas."><i class="bi bi-clock me-1"></i>&nbsp;Timeout (min)</th>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Número máximo de tentativas em caso de falha na requisição"><i class="bi bi-arrow-repeat me-1"></i>&nbsp;Tentativas</th>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Data e hora do último download realizado"><i class="bi bi-calendar-event me-1"></i>&nbsp;Última</th>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Status atual do download: sucesso, erro, em andamento ou nenhum"><i class="bi bi-info-circle me-1"></i>&nbsp;Status</th>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tipo de polígono para extração: área do imóvel, vegetação nativa, etc."><i class="bi bi-shapes me-1"></i>&nbsp;Polígono</th>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download do arquivo ZIP com todos os imóveis do estado"><i class="bi bi-link-45deg me-1"></i>&nbsp;Download estado</th>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Busca e download de propriedades específicas pelo código CAR"><i class="bi bi-house me-1"></i>&nbsp;Download propriedade</th>
-                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Limpar histórico e permitir nova requisição"><i class="bi bi-trash me-1"></i>&nbsp;Limpar</th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Sigla do estado brasileiro"><i class="bi bi-flag"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tempo limite em minutos para a requisição. Valores maiores podem ajudar em conexões lentas."><i class="bi bi-clock"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Número máximo de tentativas em caso de falha na requisição"><i class="bi bi-arrow-repeat"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Data e hora do último download realizado"><i class="bi bi-calendar-event"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Status atual do download: sucesso, erro, em andamento ou nenhum"><i class="bi bi-info-circle"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tipo de polígono para extração: área do imóvel, vegetação nativa, etc."><i class="bi bi-shapes"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Download do arquivo ZIP com todos os imóveis do estado"><i class="bi bi-link-45deg"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Busca e download de propriedades específicas pelo código CAR"><i class="bi bi-house"></i></th>
+                                    <th data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Limpar histórico e permitir nova requisição"><i class="bi bi-trash"></i></th>
                                 </tr>
                             </thead>
                             <tbody id="estadosTable">
@@ -705,7 +705,7 @@
     <script>
         // Configuração inicial
         const DEFAULT_API_URL = 'http://192.168.5.179:8787/api';
-        const DEFAULT_TIMEOUT = 30000; // 30 segundos
+        const DEFAULT_TIMEOUT = 60000; // 1 minuto
         const TIMEOUT_INCREMENT = 10000; // 10 segundos
         const MIN_TIMEOUT = 10000; // 10 segundos
         const MAX_TIMEOUT = 300000; // 5 minutos
