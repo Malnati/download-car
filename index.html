@@ -649,9 +649,9 @@
                                 <i class="bi bi-link-45deg me-1"></i>
                                 URL do Endpoint
                             </label>
-                            <input type="url" class="form-control" id="apiUrl" placeholder="http://192.168.5.179:8787/api"
+                            <input type="url" class="form-control" id="apiUrl" placeholder="http://192.168.5.179:8787"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                   data-bs-title="URL completa do endpoint da API. Ex: http://servidor:porta/api">
+                                   data-bs-title="URL completa do endpoint da API. Ex: http://servidor:porta/">
                         </div>
                         <div class="col-md-6 d-flex align-items-end gap-2">
                             <button type="button" class="btn btn-outline-primary" onclick="testConnection()"
@@ -731,7 +731,7 @@
     
     <script>
         // Configuração inicial
-        const DEFAULT_API_URL = 'http://192.168.5.179:8787/api';
+        const DEFAULT_API_URL = 'http://192.168.5.179:8787';
         const DEFAULT_TIMEOUT = 60000; // 1 minuto
         const TIMEOUT_INCREMENT = 10000; // 10 segundos
         const MIN_TIMEOUT = 10000; // 10 segundos
