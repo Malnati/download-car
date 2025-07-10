@@ -5,6 +5,7 @@ FROM download-car-base:latest
 WORKDIR /download-car
 
 COPY app.py /download-car/
+COPY download_car/ /download-car/download_car/
 
 # Instalar dependências adicionais necessárias para a API
 RUN pip install fastapi uvicorn httpx Pillow tqdm python-multipart geopandas fiona

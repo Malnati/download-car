@@ -825,7 +825,19 @@
 
             try {
                 const apiUrl = document.getElementById('apiUrl').value;
-                const response = await fetch(`${apiUrl}/state?car=${encodeURIComponent(car)}&state=${estado}`);
+                const formData = new FormData();
+                formData.append('car', car);
+                formData.append('state', estado);
+                formData.append('folder', 'PROPERTY');
+                formData.append('tries', '25');
+                formData.append('debug', 'false');
+                formData.append('timeout', '30');
+                formData.append('max_retries', '5');
+
+                const response = await fetch(`${apiUrl}/download-property`, {
+                    method: 'POST',
+                    body: formData
+                });
 
                 if (response.ok) {
                     const blob = await response.blob();
@@ -840,7 +852,7 @@
                     showNotification(`Download da propriedade ${car} realizado com sucesso!`, 'success');
                 } else {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erro ao baixar propriedade');
+                    throw new Error(errorData.detail || errorData.error || 'Erro ao baixar propriedade');
                 }
             } catch (error) {
                 showNotification(`Erro ao baixar propriedade ${car}: ${error.message}`, 'error');
@@ -968,7 +980,19 @@
 
             try {
                 const apiUrl = document.getElementById('apiUrl').value;
-                const response = await fetch(`${apiUrl}/state?car=${encodeURIComponent(car)}&state=${estado}`);
+                const formData = new FormData();
+                formData.append('car', car);
+                formData.append('state', estado);
+                formData.append('folder', 'PROPERTY');
+                formData.append('tries', '25');
+                formData.append('debug', 'false');
+                formData.append('timeout', '30');
+                formData.append('max_retries', '5');
+
+                const response = await fetch(`${apiUrl}/download-property`, {
+                    method: 'POST',
+                    body: formData
+                });
 
                 if (response.ok) {
                     // Marcar que a propriedade foi buscada com sucesso
@@ -982,7 +1006,7 @@
                     showNotification(`Propriedade ${car} encontrada! Clique em Download propriedade para baixar.`, 'success');
                 } else {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Propriedade não encontrada');
+                    throw new Error(errorData.detail || errorData.error || 'Propriedade não encontrada');
                 }
             } catch (error) {
                 showNotification(`Erro ao buscar propriedade ${car}: ${error.message}`, 'error');

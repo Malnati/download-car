@@ -1,6 +1,10 @@
-from fastapi import FastAPI, UploadFile, File, Form, Query
+from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import os
+import tempfile
+import zipfile
+import shutil
 import tempfile
 import shutil
 import os
@@ -442,6 +446,182 @@ async def get_polygons():
     }
 
 
+@app.post(
+    "/download-property",
+    summary="Download de propriedade pelo número do CAR",
+    description="""
+    Baixa dados de uma propriedade específica pelo seu número do CAR.
+    
+    Este endpoint busca uma propriedade pelo número do CAR nos shapefiles
+    já baixados dos estados e retorna os dados da propriedade em formato ZIP.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X POST "http://localhost:8000/download-property" \\
+         -F "car=MA-2114007-FFFE73B6633D4199ACB914F4DFCCEEE4" \\
+         -F "state=MA" \\
+         -F "folder=PROPERTY" \\
+         -F "tries=25" \\
+         -F "debug=false" \\
+         --output property_MA-2114007-FFFE73B6633D4199ACB914F4DFCCEEE4.zip
+    ```
+    
+    **Arquivo de retorno:**
+    - Formato: ZIP contendo shapefile da propriedade
+    - Nome: `property_{car}.zip`
+    """,
+    response_description="Arquivo ZIP contendo os dados da propriedade",
+    tags=["Download por Propriedade"]
+)
+async def download_property_endpoint(
+    car: str = Form(
+        ...,
+        description="Número do CAR da propriedade a ser baixada",
+        example="MA-2114007-FFFE73B6633D4199ACB914F4DFCCEEE4",
+        min_length=10,
+        max_length=50
+    ),
+    state: Optional[str] = Form(
+        None,
+        description="Sigla do estado para limitar a busca (opcional)",
+        example="MA",
+        min_length=2,
+        max_length=2,
+        regex="^[A-Z]{2}$"
+    ),
+    folder: str = Form(
+        os.getenv("PROPERTY_FOLDER", "PROPERTY"),
+        description="Pasta para armazenamento dos arquivos da propriedade",
+        example="PROPERTY"
+    ),
+    tries: int = Form(
+        int(os.getenv("PROPERTY_TRIES", "25")),
+        description="Número máximo de tentativas em caso de falha no download",
+        example=25,
+        ge=1,
+        le=100
+    ),
+    debug: bool = Form(
+        os.getenv("PROPERTY_DEBUG", "false").lower() == "true",
+        description="Ativa modo debug com mensagens detalhadas de progresso",
+        example=False
+    ),
+    timeout: int = Form(
+        int(os.getenv("PROPERTY_TIMEOUT", "30")),
+        description="Timeout em segundos para cada tentativa de download",
+        example=30,
+        ge=10,
+        le=300
+    ),
+    max_retries: int = Form(
+        int(os.getenv("PROPERTY_MAX_RETRIES", "5")),
+        description="Número máximo de tentativas para download de cada arquivo",
+        example=5,
+        ge=1,
+        le=20
+    ),
+):
+    """
+    Baixa dados de uma propriedade pelo número do CAR.
+    """
+    try:
+        # Verificar se o estado foi informado
+        if not state:
+            raise HTTPException(
+                status_code=400,
+                detail="Estado deve ser informado para busca de propriedade"
+            )
+
+        # 1. Caminho do ZIP do estado
+        polygon = "AREA_IMOVEL"  # Padrão usado no download
+        zip_path = os.path.join("temp", f"{state}_{polygon}.zip")
+        
+        if not os.path.exists(zip_path):
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Arquivo do estado {state} não encontrado. Baixe primeiro via /download_state."
+            )
+
+        # 2. Extrair o ZIP para um diretório temporário
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with zipfile.ZipFile(zip_path, "r") as zip_ref:
+                zip_ref.extractall(tmpdir)
+
+            # 3. Encontrar o arquivo .shp extraído
+            shp_files = [f for f in os.listdir(tmpdir) if f.endswith(".shp")]
+            if not shp_files:
+                raise HTTPException(
+                    status_code=500, 
+                    detail="Shapefile não encontrado no ZIP do estado."
+                )
+            shp_path = os.path.join(tmpdir, shp_files[0])
+
+            # 4. Ler o shapefile com geopandas
+            try:
+                import geopandas as gpd
+                gdf = gpd.read_file(shp_path)
+            except ImportError:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Geopandas não disponível. Instale com: pip install geopandas"
+                )
+
+            # 5. Procurar o CAR (tentar diferentes nomes de campo)
+            car_fields = ["CAR", "cod_imovel", "COD_IMOVEL", "car", "codigo_car"]
+            car_field = None
+            
+            for field in car_fields:
+                if field in gdf.columns:
+                    car_field = field
+                    break
+            
+            if car_field is None:
+                # Se não encontrar, mostrar as colunas disponíveis para debug
+                available_columns = list(gdf.columns)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Campo do CAR não encontrado. Colunas disponíveis: {available_columns}"
+                )
+
+            # 6. Buscar o CAR (case insensitive)
+            result_gdf = gdf[gdf[car_field].astype(str).str.upper() == car.upper()]
+            
+            if result_gdf.empty:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"CAR {car} não encontrado no estado {state}."
+                )
+
+            # 7. Salvar o resultado em um novo shapefile temporário
+            out_dir = tempfile.mkdtemp()
+            out_shp = os.path.join(out_dir, f"property_{car}.shp")
+            result_gdf.to_file(out_shp)
+
+            # 8. Empacotar o shapefile em um ZIP
+            zip_filename = os.path.join(out_dir, f"property_{car}.zip")
+            with zipfile.ZipFile(zip_filename, "w") as zipf:
+                for ext in [".shp", ".shx", ".dbf", ".prj", ".cpg"]:
+                    f = out_shp.replace(".shp", ext)
+                    if os.path.exists(f):
+                        zipf.write(f, arcname=os.path.basename(f))
+
+            # 9. Retornar o arquivo ZIP como download
+            return FileResponse(
+                path=zip_filename,
+                filename=f"property_{car}.zip",
+                media_type="application/zip"
+            )
+            
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao processar propriedade {car}: {str(e)}"
+        )
+
+
 @app.get(
     "/state",
     summary="Buscar estado de um imóvel pelo número do CAR",
@@ -590,6 +770,7 @@ async def root():
         "endpoints": {
             "download_state": "/download_state - Download de dados por estado",
             "download_country": "/download_country - Download de dados para todo o Brasil",
+            "download_property": "/download-property - Download de propriedade pelo CAR",
             "states": "/states - Lista de estados disponíveis",
             "polygons": "/polygons - Lista de polígonos disponíveis",
             "state": "/state - Buscar estado de um imóvel pelo CAR",

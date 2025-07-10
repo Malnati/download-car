@@ -25,6 +25,11 @@ services:
       - CORS_ALLOW_CREDENTIALS=true
       - CORS_ALLOW_METHODS=GET,POST,OPTIONS
       - CORS_ALLOW_HEADERS=*
+      - PROPERTY_FOLDER=PROPERTY
+      - PROPERTY_TRIES=25
+      - PROPERTY_DEBUG=false
+      - PROPERTY_TIMEOUT=30
+      - PROPERTY_MAX_RETRIES=5
 
   nginx:
     image: nginx:alpine
