@@ -11,7 +11,7 @@ services:
       - .:/download-car
     entrypoint: ./entrypoint.download.sh
     environment:
-      - POLYGON=AREA_PROPERTY
+      - POLYGON
 
   download-car-api:
     build:
@@ -22,16 +22,16 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - API_URL=http://192.168.5.179:8787
-      - CORS_ALLOW_ORIGINS=*
-      - CORS_ALLOW_CREDENTIALS=true
-      - CORS_ALLOW_METHODS=GET,POST,OPTIONS
-      - CORS_ALLOW_HEADERS=*
-      - PROPERTY_FOLDER=PROPERTY
-      - PROPERTY_TRIES=25
-      - PROPERTY_DEBUG=false
-      - PROPERTY_TIMEOUT=30
-      - PROPERTY_MAX_RETRIES=5
+      - API_URL
+      - CORS_ALLOW_ORIGINS
+      - CORS_ALLOW_CREDENTIALS
+      - CORS_ALLOW_METHODS
+      - CORS_ALLOW_HEADERS
+      - PROPERTY_FOLDER
+      - PROPERTY_TRIES
+      - PROPERTY_DEBUG
+      - PROPERTY_TIMEOUT
+      - PROPERTY_MAX_RETRIES
 
   nginx:
     build:
