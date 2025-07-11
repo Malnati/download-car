@@ -35,5 +35,3 @@ RUN pip install --upgrade pip
 RUN pip install httpx urllib3 pytesseract opencv-python numpy tqdm matplotlib beautifulsoup4
 
 WORKDIR /download-car
-
-ENTRYPOINT ["python"]

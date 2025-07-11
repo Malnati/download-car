@@ -4,6 +4,8 @@
 
 set -e
 
+cd ..
+
 echo "🧪 Testando otimizações dos Dockerfiles..."
 
 # Cores para output
@@ -93,7 +95,7 @@ print_status "Teste 7: Verificando dependências nas imagens..."
 
 # Verificar imagem de produção
 print_status "Verificando imagem de produção..."
-if docker run --rm download-car-pro:latest python -c "import httpx, PIL, beautifulsoup4, tqdm, pytesseract, opencv, numpy, matplotlib; print('✅ Dependências core OK')"; then
+if docker run --rm download-car-pro:latest python -c "import httpx; import urllib3; import pytesseract; import cv2; import numpy; import tqdm; import matplotlib; import bs4; print('✅ Dependências core OK')"; then
     print_success "Imagem de produção tem dependências core"
 else
     print_error "Imagem de produção está faltando dependências core"
@@ -108,14 +110,14 @@ fi
 
 # Verificar imagem de desenvolvimento
 print_status "Verificando imagem de desenvolvimento..."
-if docker run --rm download-car-dev:latest python -c "import httpx, PIL, beautifulsoup4, tqdm, pytesseract, opencv, numpy, matplotlib, paddleocr; print('✅ Todas as dependências OK')"; then
+if docker run --rm download-car-dev:latest python -c "import httpx; import urllib3; import pytesseract; import cv2; import numpy; import tqdm; import matplotlib; import bs4; import paddleocr; print('✅ Todas as dependências OK')"; then
     print_success "Imagem de desenvolvimento tem todas as dependências"
 else
     print_error "Imagem de desenvolvimento está faltando dependências"
 fi
 
 # Verificar ferramentas de desenvolvimento
-if docker run --rm download-car-dev:latest bash -c "command -v git && command -v curl && command -v wget"; then
+if docker run --rm download-car-dev:latest bash -c "which git && which curl && which wget"; then
     print_success "Ferramentas de debug (git, curl, wget) estão na imagem de desenvolvimento"
 else
     print_error "Ferramentas de debug não estão na imagem de desenvolvimento"
