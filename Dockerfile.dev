@@ -9,11 +9,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Instalar Poetry
 RUN pip install poetry
 
+# Configurar Poetry para não criar ambiente virtual (já estamos no container)
+RUN poetry config virtualenvs.create false
+
 WORKDIR /download-car
 
 # Copiar dependências do projeto
 COPY pyproject.toml ./
 COPY poetry.lock* ./
+COPY LICENSE ./
 
 # Instalar todas as dependências (incluindo dev)
 RUN if [ -f poetry.lock ]; then \
