@@ -16,6 +16,25 @@ Ferramenta que automatiza o download de arquivos do [Cadastro Ambiental Rural (S
 
 Permitir o download programático dos dados públicos do SICAR. O projeto inclui drivers para reconhecimento de captcha via **Tesseract** (padrão) ou **PaddleOCR**.
 
+## 🆕 Nova Arquitetura Docker
+
+O projeto foi reestruturado com uma arquitetura Docker modular e otimizada:
+
+### 🏗️ Melhorias da Nova Estrutura
+- **Imagem Base Otimizada**: `python:3.11-slim` com dependências core
+- **Builds Separados**: Desenvolvimento e produção com dependências específicas
+- **Arquitetura Modular**: Cada serviço tem seu próprio Dockerfile
+- **Configuração Dinâmica**: Nginx com Node.js para configuração em tempo real
+- **Geração Automática**: `requirements.txt` gerado do `pyproject.toml`
+- **Tamanhos Otimizados**: Imagens menores e mais eficientes
+
+### 🚀 Benefícios
+- **Desenvolvimento**: Imagem completa com todas as ferramentas
+- **Produção**: Imagem otimizada sem dependências desnecessárias
+- **Flexibilidade**: Escolha entre dev/pro via variável de ambiente
+- **Manutenibilidade**: Estrutura clara e organizada
+- **Performance**: Builds mais rápidos e imagens menores
+
 > :globe_with_meridians: **Looking for this README in English?**
 >
 > Use [Google Translate version](https://translate.google.com/translate?hl=en&sl=pt&tl=en&u=https://github.com/Malnati/download-car/blob/main/README.md) (auto-generated).
@@ -194,9 +213,10 @@ O projeto utiliza diversas variáveis de ambiente para configurar diferentes asp
 | Variável | Tipo | Padrão | Descrição | Exemplo |
 |----------|------|--------|-----------|---------|
 | `BASE_IMAGE` | string | `"download-car-pro:latest"` | Imagem base para containers (dev/pro) | `BASE_IMAGE=download-car-dev:latest` |
-| `PRELOAD_MODELS` | boolean | - | Habilita pré-carregamento dos modelos do PaddleOCR durante build | `PRELOAD_MODELS=1` |
 | `DOCKER_CONFIG` | string | `/tmp/docker-config-noauth` | Configuração do Docker para builds | `DOCKER_CONFIG=/path/to/docker/config` |
-| `PYTHON_VERSION` | string | `"3.11.9"` | Versão do Python utilizada no container | `PYTHON_VERSION=3.11.9` |
+| `PYTHON_VERSION` | string | `"3.11"` | Versão do Python utilizada no container | `PYTHON_VERSION=3.11` |
+| `BUILD_TARGET` | string | `"pro"` | Target de build (dev/pro) | `BUILD_TARGET=dev` |
+| `DOCKER_BUILDKIT` | boolean | `"1"` | Habilita BuildKit para builds otimizados | `DOCKER_BUILDKIT=1` |
 
 ## 📷 Variáveis de Configuração OCR
 
@@ -264,8 +284,9 @@ STATE=SP POLYGON=APPS docker compose up
 # Makefile com variáveis
 make download state=SP polygon=APPS folder=temp/SP debug=true
 
-# Build com pré-carregamento de modelos
-PRELOAD_MODELS=1 make build
+# Build com configuração específica
+BASE_IMAGE=download-car-dev:latest make build-dev
+BUILD_TARGET=dev make build
 ```
 
 ### 3. Docker Compose
@@ -274,10 +295,16 @@ PRELOAD_MODELS=1 make build
 version: '3.8'
 services:
   download-car-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-download-car-pro:latest}
     environment:
       - CORS_ALLOW_ORIGINS=http://localhost:3000
       - PROPERTY_FOLDER=properties
       - PROPERTY_TIMEOUT=60
+      - API_URL=http://localhost:8000
 ```
 
 ### 4. Configuração de Timeouts por Estado
@@ -357,14 +384,17 @@ ambiente apropriadas.
 
 ## 3️⃣ Execução via Docker Compose
 
-O repositório possui um `docker-compose.yml` configurado com três serviços e suporte a imagens otimizadas:
+O repositório possui um `docker-compose.yml` configurado com três serviços e suporte a imagens otimizadas com arquitetura modular:
+
+### 🏗️ Arquitetura Docker
 
 #### Estrutura dos Dockerfiles:
-- **Dockerfile.base** - Imagem base com dependências mínimas
-- **Dockerfile.dev** - Desenvolvimento (base + PaddleOCR + ferramentas)
-- **Dockerfile.pro** - Produção (base + apenas download-car)
-- **Dockerfile.api** - API (estende dev ou pro conforme BASE_IMAGE)
-- **Dockerfile.download-car** - Download (estende dev ou pro conforme BASE_IMAGE)
+- **Dockerfile.base** - Imagem base com Python 3.11-slim e dependências core (Tesseract OCR, OpenCV)
+- **Dockerfile.dev** - Desenvolvimento (base + Poetry + PaddleOCR + ferramentas de debug)
+- **Dockerfile.pro** - Produção (base + requirements.txt otimizado)
+- **Dockerfile.api** - API FastAPI (estende dev ou pro conforme BASE_IMAGE)
+- **Dockerfile.download-car** - Serviço de download (estende dev ou pro conforme BASE_IMAGE)
+- **Dockerfile.nginx** - Frontend Nginx com Node.js para configuração dinâmica
 
 #### Configuração via Variável de Ambiente:
 ```bash
@@ -379,35 +409,104 @@ echo "BASE_IMAGE=download-car-pro:latest" > .env
 docker compose up
 ```
 
-#### Build das Imagens:
+### 🛠️ Build das Imagens
 
+#### Comandos Makefile para Build:
 ```bash
-# Build de desenvolvimento (com todas as ferramentas)
+# Build completo de desenvolvimento
 make build-dev
 
-# Build de produção (otimizado)
+# Build completo de produção
 make build-pro
 
 # Build apenas da imagem base
 make build-base
+
+# Build específico da API
+make build-api-dev    # API com base de desenvolvimento
+make build-api-pro    # API com base de produção
+
+# Build específico do download
+make build-download-dev    # Download com base de desenvolvimento
+make build-download-pro    # Download com base de produção
 ```
 
-#### Serviços:
-* **download-car-download** – roda o script `entrypoint.download.sh` para baixar os arquivos
-  desejados. Defina as variáveis `STATE`, `POLYGON` e `FOLDER` conforme a
-  necessidade.
-* **download-car-api** – executa o `uvicorn` servindo a aplicação FastAPI em
-  `http://localhost:8000`.
-* **nginx** – expõe a porta `8787` e redireciona requisições para a API.
+#### Geração de Requirements:
+O sistema automaticamente gera `requirements.txt` a partir do `pyproject.toml`:
+```bash
+# Geração manual (se necessário)
+make requirements.txt
+```
 
-#### Tamanhos Estimados:
-- **Base**: ~800MB (Python + dependências core)
-- **Dev**: ~2.5GB (base + PaddleOCR + ferramentas)
-- **Pro**: ~900MB (base + apenas download-car)
-- **API Dev**: ~3GB (dev + FastAPI + geopandas)
-- **API Pro**: ~1.5GB (pro + FastAPI + geopandas)
+### 🚀 Serviços Disponíveis
 
-A API poderá ser acessada em `http://localhost:8787` via Nginx.
+#### **download-car-download**
+- **Função**: Executa downloads via script `entrypoint.download.sh`
+- **Configuração**: Variáveis `STATE`, `POLYGON`, `FOLDER`
+- **Volume**: Monta o diretório atual em `/download-car`
+
+#### **download-car-api**
+- **Função**: Servidor FastAPI na porta 8000
+- **Configuração**: Variáveis de CORS, propriedades e timeouts
+- **Volume**: Monta o diretório atual em `/download-car`
+- **Dependências**: FastAPI, Uvicorn, httpx, Pillow, tqdm
+
+#### **nginx**
+- **Função**: Frontend e proxy reverso na porta 8787
+- **Configuração**: Template dinâmico com Node.js
+- **Assets**: Bandeiras dos estados e interface web
+- **Dependências**: download-car-api, download-car-download
+
+### 📊 Tamanhos Estimados das Imagens
+
+| Imagem | Tamanho | Descrição |
+|--------|---------|-----------|
+| **Base** | ~800MB | Python 3.11-slim + Tesseract OCR + OpenCV |
+| **Dev** | ~2.5GB | Base + Poetry + PaddleOCR + ferramentas |
+| **Pro** | ~900MB | Base + requirements.txt otimizado |
+| **API Dev** | ~3GB | Dev + FastAPI + geopandas |
+| **API Pro** | ~1.5GB | Pro + FastAPI + geopandas |
+| **Download Dev** | ~2.5GB | Dev + scripts de download |
+| **Download Pro** | ~900MB | Pro + scripts de download |
+| **Nginx** | ~50MB | Alpine + Node.js + frontend |
+
+### 🔧 Configuração Avançada
+
+#### Variáveis de Ambiente por Serviço:
+```yaml
+# download-car-download
+environment:
+  - POLYGON
+
+# download-car-api  
+environment:
+  - API_URL
+  - CORS_ALLOW_ORIGINS
+  - PROPERTY_FOLDER
+  - PROPERTY_TIMEOUT
+
+# nginx
+environment:
+  - API_ENDPOINT_URL
+  - DEFAULT_POLYGON
+  - STATE_TIMEOUT_*  # Timeouts específicos por estado
+```
+
+#### Volumes e Persistência:
+```yaml
+volumes:
+  - .:/download-car                    # Código fonte
+  - ./nginx.conf.template:/etc/nginx/conf.d/default.conf.template:ro
+  - ./index.html:/usr/share/nginx/html/index.html:rw
+  - ./assets:/usr/share/nginx/html/assets:ro
+```
+
+### 🌐 Acesso aos Serviços
+
+- **Frontend**: `http://localhost:8787` (via Nginx)
+- **API Direta**: `http://localhost:8000` (FastAPI)
+- **Logs**: `docker compose logs -f [serviço]`
+- **Shell**: `make shell-api` ou `make shell`
 
 ## 4️⃣ Execução via API
 
@@ -547,18 +646,22 @@ pip install "download-car[all]"
 
 ## 6️⃣ Comandos Makefile
 
-O projeto inclui um Makefile com diversos comandos úteis para facilitar o desenvolvimento e uso:
+O projeto inclui um Makefile abrangente com comandos para facilitar o desenvolvimento, build e operação:
 
-### 🚀 Comandos de inicialização:
-- `make up` - Inicia todos os serviços
+### 🚀 Comandos de Inicialização
+- `make up` - Inicia todos os serviços (API, download, nginx)
 - `make api-up` - Inicia apenas o serviço API
 - `make download-up` - Inicia apenas o serviço download-car
 
-### 🛠️ Comandos de build:
+### 🛠️ Comandos de Build
+
+#### Builds Completos:
 - `make build` - Builda todas as imagens (produção)
 - `make build-dev` - Builda todas as imagens (desenvolvimento)
 - `make build-pro` - Builda todas as imagens (produção)
-- `make build-base` - Builda a imagem base
+
+#### Builds Específicos:
+- `make build-base` - Builda a imagem base (Python + dependências core)
 - `make build-api` - Builda apenas a imagem da API (produção)
 - `make build-api-dev` - Builda apenas a imagem da API (desenvolvimento)
 - `make build-api-pro` - Builda apenas a imagem da API (produção)
@@ -566,46 +669,69 @@ O projeto inclui um Makefile com diversos comandos úteis para facilitar o desen
 - `make build-download-dev` - Builda apenas a imagem de download (desenvolvimento)
 - `make build-download-pro` - Builda apenas a imagem de download (produção)
 
-### 🗑️ Comandos de limpeza:
+#### Geração de Dependências:
+- `make requirements.txt` - Gera requirements.txt a partir do pyproject.toml
+
+### 🗑️ Comandos de Limpeza
 - `make clean` - Remove imagens, volumes e containers órfãos
 - `make clean-volumes` - Remove volumes Docker, incluindo arquivos montados
 - `make clean-api` - Remove apenas a imagem da API
 - `make clean-image` - Remove apenas a imagem principal
 
-### 🛑 Comandos de controle:
+### 🛑 Comandos de Controle
 - `make down` - Para e remove containers
 - `make ps` - Lista containers e serviços
 - `make logs service=X` - Exibe logs do serviço especificado
 
-### 🔗 Comandos de acesso:
+### 🔗 Comandos de Acesso
 - `make shell` - Entra no container principal
 - `make shell-api` - Entra no container da API
 - `make run CMD=X` - Executa comando no container
 - `make run-api` - Executa container da API
 
-### 🧪 Comandos de teste:
-- `make test` - Executa todos os testes
+### 🧪 Comandos de Teste
+- `make test` - Executa todos os testes (unitários + integração)
 - `make unit-test` - Executa testes unitários
 - `make integration-test` - Executa testes de integração
 
-### 📥 Comandos de download:
+### 📥 Comandos de Download
 - `make download state=X polygon=Y folder=Z debug=W timeout=T max_retries=R` - Executa download com parâmetros específicos
-- `make search-car car=X` - Busca estado do CAR
-- `make download-property car=X` - Baixa propriedade do CAR
+- `make search-car car=X` - Busca estado do CAR via API
+- `make download-property car=X` - Baixa propriedade do CAR via API
+- `make delete-state state=X folder=Y include_properties=Z` - Exclui arquivos de um estado
 
-### 🔄 Comandos de manutenção:
+### 🔄 Comandos de Manutenção
 - `make git-update` - Atualiza repositório Git
 
-### 🛠️ Comandos de desenvolvimento:
+### 🛠️ Comandos de Desenvolvimento
 - `make format` - Formata código com Black
 - `make lint` - Verifica estilo do código
 - `make docs` - Gera documentação com Interrogate
 - `make coverage` - Executa testes com cobertura
 
-Para ver todos os comandos disponíveis:
+### 📋 Ajuda
+- `make help` - Exibe todos os comandos disponíveis com descrições
+
+### 💡 Exemplos de Uso
 
 ```bash
-make help
+# Build completo para desenvolvimento
+make build-dev
+
+# Iniciar apenas a API
+make api-up
+
+# Executar download específico
+make download state=SP polygon=APPS folder=temp/SP debug=true
+
+# Ver logs da API
+make logs service=download-car-api
+
+# Entrar no container da API
+make shell-api
+
+# Limpar tudo e recomeçar
+make clean && make build && make up
 ```
 
 ---
@@ -715,27 +841,63 @@ assets/
 
 ## 🐳 Configurações Docker Específicas
 
-### Dockerfile.nginx
-- Base: `nginx:alpine`
-- Instala Node.js para geração dinâmica de configuração
-- Scripts: `entrypoint.nginx.sh`, `generate-config.nginx.js`
+### Dockerfile.base
+- **Base**: `python:3.11-slim`
+- **Python**: 3.11 nativo (sem pyenv)
+- **Dependências**: Tesseract OCR, OpenCV, build-essential
+- **Pacotes Python**: httpx, urllib3, pytesseract, opencv-python, numpy, tqdm, matplotlib, beautifulsoup4
+- **Tamanho**: ~800MB
+
+### Dockerfile.dev
+- **Base**: `download-car-base:latest`
+- **Ferramentas**: Poetry, curl, wget
+- **Dependências**: Todas as dependências de desenvolvimento
+- **PaddleOCR**: Instalado automaticamente
+- **Tamanho**: ~2.5GB
+
+### Dockerfile.pro
+- **Base**: `download-car-base:latest`
+- **Dependências**: Apenas requirements.txt (otimizado)
+- **Sem**: PaddleOCR, ferramentas de desenvolvimento
+- **Tamanho**: ~900MB
 
 ### Dockerfile.api
-- Base: `download-car-base:latest`
-- Dependências: FastAPI, Uvicorn, httpx, Pillow, tqdm, python-multipart
-- Entrypoint: `entrypoint.api.sh`
+- **Base**: Configurável via `BASE_IMAGE` (dev ou pro)
+- **Dependências**: FastAPI, Uvicorn, python-multipart
+- **Entrypoint**: Uvicorn direto (sem script)
+- **Porta**: 8000
 
-### Dockerfile.base
-- Base: `ubuntu:22.04`
-- Python: 3.11.9 via pyenv
-- Dependências: Tesseract OCR, OpenCV
-- Instalação: `download_car[paddle]`
+### Dockerfile.download-car
+- **Base**: Configurável via `BASE_IMAGE` (dev ou pro)
+- **Entrypoint**: `entrypoint.download.sh`
+- **Volume**: Monta código fonte
+
+### Dockerfile.nginx
+- **Base**: `nginx:alpine`
+- **Node.js**: Instalado para configuração dinâmica
+- **Scripts**: `entrypoint.nginx.sh`, `generate-config.nginx.js`
+- **Porta**: 80 (mapeada para 8787)
+- **Tamanho**: ~50MB
 
 ### Arquivos de Configuração
-- `.dockerignore`: Exclui `.git`, `__pycache__`, `.venv*`, `tests`
-- `entrypoint.nginx.sh`: Substitui variáveis de ambiente no nginx.conf
-- `entrypoint.api.sh`: Configura ambiente Python e inicia API
-- `generate-config.nginx.js`: Gera configuração do frontend dinamicamente
+- **`.dockerignore`**: Exclui `.git`, `__pycache__`, `.venv*`, `tests`
+- **`entrypoint.nginx.sh`**: Substitui variáveis de ambiente no nginx.conf
+- **`generate-config.nginx.js`**: Gera configuração do frontend dinamicamente
+- **`nginx.conf.template`**: Template com variáveis de ambiente
+- **`requirements.txt`**: Gerado automaticamente do pyproject.toml
+
+### Estratégia de Build
+```bash
+# 1. Build da imagem base
+make build-base
+
+# 2. Build das imagens específicas (dev ou pro)
+make build-dev    # ou make build-pro
+
+# 3. Build dos serviços (API e download)
+make build-api-dev    # ou make build-api-pro
+make build-download-dev    # ou make build-download-pro
+```
 
 ## 📊 Configurações de Teste
 
@@ -785,13 +947,21 @@ download-car/
 ├── verify_property.py            # Script de verificação
 ├── test_delete_state.py          # Script de teste
 ├── docker-compose.yml            # Configuração Docker Compose
-├── Dockerfile.*                  # Dockerfiles específicos
-├── entrypoint.*.sh               # Scripts de entrada
-├── generate-config.nginx.js      # Geração de configuração
+├── Dockerfile.base               # Imagem base (Python + dependências core)
+├── Dockerfile.dev                # Imagem de desenvolvimento
+├── Dockerfile.pro                # Imagem de produção
+├── Dockerfile.api                # Imagem da API FastAPI
+├── Dockerfile.download-car       # Imagem do serviço de download
+├── Dockerfile.nginx              # Imagem do frontend Nginx
+├── entrypoint.download.sh        # Script de entrada do download
+├── entrypoint.nginx.sh           # Script de entrada do Nginx
+├── generate-config.nginx.js      # Geração de configuração dinâmica
 ├── nginx.conf.template           # Template do Nginx
 ├── index.html                    # Frontend
 ├── Makefile                      # Comandos de automação
 ├── pyproject.toml                # Configuração do projeto
+├── requirements.txt              # Dependências de produção (gerado)
+├── .config.env                   # Configurações de exemplo
 └── README.md                     # Esta documentação
 ```
 
@@ -802,9 +972,21 @@ download-car/
 | `pyproject.toml` | Configuração do projeto Python, dependências, ferramentas |
 | `docker-compose.yml` | Orquestração dos serviços Docker |
 | `Makefile` | Automação de comandos comuns |
+| `.config.env` | Configurações de exemplo (copiar para .env) |
 | `.env` | Variáveis de ambiente (criar localmente) |
 | `.gitignore` | Arquivos ignorados pelo Git |
 | `.dockerignore` | Arquivos ignorados pelo Docker |
+
+### Estrutura Docker
+
+| Dockerfile | Base | Propósito | Tamanho |
+|------------|------|-----------|---------|
+| `Dockerfile.base` | `python:3.11-slim` | Dependências core | ~800MB |
+| `Dockerfile.dev` | `download-car-base` | Desenvolvimento + PaddleOCR | ~2.5GB |
+| `Dockerfile.pro` | `download-car-base` | Produção otimizada | ~900MB |
+| `Dockerfile.api` | Configurável | API FastAPI | ~1.5-3GB |
+| `Dockerfile.download-car` | Configurável | Serviço de download | ~900MB-2.5GB |
+| `Dockerfile.nginx` | `nginx:alpine` | Frontend + proxy | ~50MB |
 
 ---
 
@@ -877,6 +1059,17 @@ If you have any feedback, please reach me at ricardomalnati@gmail.com
 - Ative o modo debug: `DEBUG=true`
 - Verifique logs do container: `docker compose logs download-car-download`
 - Use o script de verificação: `./verify_features.sh`
+
+**Como resolver problemas de build Docker?**
+- Limpe imagens antigas: `make clean`
+- Use BuildKit: `DOCKER_BUILDKIT=1 make build`
+- Verifique dependências: `make requirements.txt`
+- Build específico: `make build-base && make build-dev`
+
+**Como alternar entre desenvolvimento e produção?**
+- Desenvolvimento: `BASE_IMAGE=download-car-dev:latest docker compose up`
+- Produção: `BASE_IMAGE=download-car-pro:latest docker compose up`
+- Ou via arquivo .env: `echo "BASE_IMAGE=download-car-dev:latest" > .env`
 
 **Como configurar para produção?**
 - Use variáveis de ambiente específicas para produção

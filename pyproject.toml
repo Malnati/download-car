@@ -16,7 +16,10 @@ dependencies = [
     "matplotlib>=3.10.0",
     "beautifulsoup4>=4.13.4",
     "geopandas>=0.14.0",
-    "fiona>=1.9.0"
+    "fiona>=1.9.0",
+    "fastapi",
+    "uvicorn",
+    "python-multipart"
 ]
 
 [project.optional-dependencies]

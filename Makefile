@@ -64,14 +64,22 @@ build-download-pro:
 build-api: build-api-pro
 build-download: build-download-pro
 
+# Gerar requirements.txt para produção
+requirements.txt: pyproject.toml
+	@if [ -f poetry.lock ]; then \
+		poetry export --only main --format=requirements.txt > requirements.txt; \
+	else \
+		echo "poetry.lock não encontrado, usando requirements.txt existente"; \
+	fi
+
 # Build all images
-build: build-base build-pro build-download build-api
+build: requirements.txt build-base build-pro build-download build-api
 
 # Build development images
 build-dev: build-base build-dev build-download-dev build-api-dev
 
 # Build production images
-build-pro: build-base build-pro build-download-pro build-api-pro
+build-pro: requirements.txt build-base build-pro build-download-pro build-api-pro
 
 api-up:
 	@echo "🚀  Executando container API $(API_IMAGE):latest..."

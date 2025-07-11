@@ -1,5 +1,11 @@
 # Dockerfile.pro
 FROM download-car-base:latest
 
-# Instalar o download-car sem paddle (mais leve)
-RUN pip install 'download_car@git+https://github.com/Malnati/download-car'
+WORKDIR /download-car
+
+# Copiar requirements.txt (gerado previamente pelo poetry export)
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
