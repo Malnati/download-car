@@ -1,3 +1,4 @@
+# Dockerfile.nginx
 FROM nginx:alpine
 
 # Instalar Node.js

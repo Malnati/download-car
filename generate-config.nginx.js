@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// generate-config.nginx.js
 
 const fs = require('fs');
 const path = require('path');

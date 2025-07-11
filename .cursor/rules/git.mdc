@@ -1,0 +1,7 @@
+---
+description: Nunca submeter arquivos automaticamente
+globs:
+alwaysApply: true
+---
+
+Do not run `git add`, `git commit` or `git push` unless inside a container. Use the Dockerfile instead.

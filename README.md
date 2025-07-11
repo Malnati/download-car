@@ -193,6 +193,7 @@ O projeto utiliza diversas variáveis de ambiente para configurar diferentes asp
 
 | Variável | Tipo | Padrão | Descrição | Exemplo |
 |----------|------|--------|-----------|---------|
+| `BASE_IMAGE` | string | `"download-car-pro:latest"` | Imagem base para containers (dev/pro) | `BASE_IMAGE=download-car-dev:latest` |
 | `PRELOAD_MODELS` | boolean | - | Habilita pré-carregamento dos modelos do PaddleOCR durante build | `PRELOAD_MODELS=1` |
 | `DOCKER_CONFIG` | string | `/tmp/docker-config-noauth` | Configuração do Docker para builds | `DOCKER_CONFIG=/path/to/docker/config` |
 | `PYTHON_VERSION` | string | `"3.11.9"` | Versão do Python utilizada no container | `PYTHON_VERSION=3.11.9` |
@@ -356,73 +357,57 @@ ambiente apropriadas.
 
 ## 3️⃣ Execução via Docker Compose
 
-O repositório já possui um `docker-compose.yml` configurado com três serviços:
+O repositório possui um `docker-compose.yml` configurado com três serviços e suporte a imagens otimizadas:
 
-```yaml
-version: "3.8"
-services:
-  download-car-download:
-    build:
-      context: .
-      dockerfile: Dockerfile.download-car
-    volumes:
-      - .:/download-car
-    entrypoint: ./entrypoint.download.sh
-  download-car-api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    volumes:
-      - .:/download-car
-    ports:
-      - "8000:8000"
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - download-car-api
-      - download-car-download
+#### Estrutura dos Dockerfiles:
+- **Dockerfile.base** - Imagem base com dependências mínimas
+- **Dockerfile.dev** - Desenvolvimento (base + PaddleOCR + ferramentas)
+- **Dockerfile.pro** - Produção (base + apenas download-car)
+- **Dockerfile.api** - API (estende dev ou pro conforme BASE_IMAGE)
+- **Dockerfile.download-car** - Download (estende dev ou pro conforme BASE_IMAGE)
+
+#### Configuração via Variável de Ambiente:
+```bash
+# Para desenvolvimento (com PaddleOCR e ferramentas)
+BASE_IMAGE=download-car-dev:latest docker compose up
+
+# Para produção (otimizado, sem PaddleOCR)
+BASE_IMAGE=download-car-pro:latest docker compose up
+
+# Ou via arquivo .env
+echo "BASE_IMAGE=download-car-pro:latest" > .env
+docker compose up
 ```
 
+#### Build das Imagens:
+
+```bash
+# Build de desenvolvimento (com todas as ferramentas)
+make build-dev
+
+# Build de produção (otimizado)
+make build-pro
+
+# Build apenas da imagem base
+make build-base
+```
+
+#### Serviços:
 * **download-car-download** – roda o script `entrypoint.download.sh` para baixar os arquivos
   desejados. Defina as variáveis `STATE`, `POLYGON` e `FOLDER` conforme a
   necessidade.
 * **download-car-api** – executa o `uvicorn` servindo a aplicação FastAPI em
   `http://localhost:8000`.
-* **nginx** – expõe a porta `80` e redireciona `/download` para o serviço de download,
-  encaminhando o restante para a API.
+* **nginx** – expõe a porta `8787` e redireciona requisições para a API.
 
-Assim, requisições para `http://localhost/download` são atendidas pelo
-container `download-car-download`, enquanto os demais caminhos passam para
-`download-car-api`.
+#### Tamanhos Estimados:
+- **Base**: ~800MB (Python + dependências core)
+- **Dev**: ~2.5GB (base + PaddleOCR + ferramentas)
+- **Pro**: ~900MB (base + apenas download-car)
+- **API Dev**: ~3GB (dev + FastAPI + geopandas)
+- **API Pro**: ~1.5GB (pro + FastAPI + geopandas)
 
-Primeiro, construa a imagem base:
-
-```bash
-make build
-```
-
-Se desejar baixar os modelos do PaddleOCR durante a construção,
-habilite a variável `PRELOAD_MODELS`:
-
-```bash
-PRELOAD_MODELS=1 make build
-```
-
-Alguns processadores não possuem suporte a AVX, o que pode causar falha
-na instalação desses modelos. Deixe a opção desabilitada nesses casos.
-
-Em seguida, suba os serviços:
-
-```bash
-docker compose up
-```
-
-Os logs do container de download indicarão o progresso do script, enquanto a
-API poderá ser acessada em `http://localhost` via Nginx (porta `80`).
+A API poderá ser acessada em `http://localhost:8787` via Nginx.
 
 ## 4️⃣ Execução via API
 
@@ -570,10 +555,16 @@ O projeto inclui um Makefile com diversos comandos úteis para facilitar o desen
 - `make download-up` - Inicia apenas o serviço download-car
 
 ### 🛠️ Comandos de build:
-- `make build` - Builda todas as imagens
-- `make build-api` - Builda apenas a imagem da API
+- `make build` - Builda todas as imagens (produção)
+- `make build-dev` - Builda todas as imagens (desenvolvimento)
+- `make build-pro` - Builda todas as imagens (produção)
 - `make build-base` - Builda a imagem base
-- `make build-download` - Builda a imagem de download
+- `make build-api` - Builda apenas a imagem da API (produção)
+- `make build-api-dev` - Builda apenas a imagem da API (desenvolvimento)
+- `make build-api-pro` - Builda apenas a imagem da API (produção)
+- `make build-download` - Builda apenas a imagem de download (produção)
+- `make build-download-dev` - Builda apenas a imagem de download (desenvolvimento)
+- `make build-download-pro` - Builda apenas a imagem de download (produção)
 
 ### 🗑️ Comandos de limpeza:
 - `make clean` - Remove imagens, volumes e containers órfãos

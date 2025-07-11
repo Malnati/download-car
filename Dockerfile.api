@@ -1,14 +1,14 @@
 # Dockerfile.api
-
-FROM download-car-base:latest
+ARG BASE_IMAGE=download-car-pro:latest
+FROM ${BASE_IMAGE}
 
 WORKDIR /download-car
 
 COPY app.py /download-car/
 COPY download_car/ /download-car/download_car/
 
-# Instalar dependências adicionais necessárias para a API
-RUN pip install fastapi uvicorn httpx Pillow tqdm python-multipart geopandas fiona
+# Instalar dependências específicas da API
+RUN pip install fastapi uvicorn python-multipart geopandas fiona
 
 ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 

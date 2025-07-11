@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# dev/verify_property.py
 """
 Script para testar e comparar os arquivos ZIP com verificações rigorosas:
 - Arquivo do estado completo (ex: data/MA_AREA_PROPERTY.zip)

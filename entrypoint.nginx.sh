@@ -1,4 +1,5 @@
 #!/bin/sh
+# entrypoint.nginx.sh
 
 # Script para substituir variáveis de ambiente no nginx.conf e gerar configuração do frontend
 # Este script é executado antes de iniciar o nginx

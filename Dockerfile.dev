@@ -1,0 +1,16 @@
+# Dockerfile.dev
+FROM download-car-base:latest
+
+# Instalar ferramentas de debug e desenvolvimento
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git curl wget ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Instalar PaddleOCR (mais pesado, apenas para desenvolvimento)
+RUN pip install paddlepaddle paddleocr
+
+# Instalar ferramentas de desenvolvimento
+RUN pip install coverage interrogate black coveralls
+
+# Instalar o download-car com todas as dependências
+RUN pip install 'download_car[paddle]@git+https://github.com/Malnati/download-car'
