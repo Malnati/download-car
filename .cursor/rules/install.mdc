@@ -1,0 +1,8 @@
+---
+description: Evitar comandos de instalação automaticamente.
+globs:
+alwaysApply: true
+---
+
+
+Never run install commands like `npm`, `pip`, `yarn`, `apt`, `apt-get`, or other install commands outside a container. Use the Dockerfile instead.
