@@ -1,0 +1,7 @@
+---
+description: Nunca submeter arquivos automaticamente
+globs:
+alwaysApply: true
+---
+
+Do never run `git add`, `git commit` or `git push` if it is not in a container.
