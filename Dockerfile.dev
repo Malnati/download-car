@@ -20,7 +20,7 @@ COPY poetry.lock* ./
 COPY LICENSE ./
 
 # Instalar todas as dependências (incluindo dev)
-RUN poetry install --with dev
+RUN poetry install --extras dev
 
 # Copiar o restante do projeto
 COPY . .
