@@ -1,4 +1,5 @@
 #!/bin/bash
+# dev/verify_features.sh
 
 # Script de teste para as novas funcionalidades
 # Testa os novos endpoints e funcionalidades implementadas

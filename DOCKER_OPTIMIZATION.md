@@ -1,3 +1,4 @@
+<!-- DOCKER_OPTIMIZATION.md -->
 # Otimização dos Dockerfiles
 
 ## Visão Geral

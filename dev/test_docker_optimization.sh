@@ -1,4 +1,5 @@
 #!/bin/bash
+# dev/test_docker_optimization.sh
 # test_docker_optimization.sh
 # Script para testar as otimizações dos Dockerfiles
 
