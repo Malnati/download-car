@@ -4,28 +4,77 @@ IMAGE          ?= download-car
 API_IMAGE      ?= download-car-api
 API_DOCKERFILE ?= Dockerfile.api
 
-api-up:
-	@echo "🚀  Executando container API $(API_IMAGE):latest..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up api -d
-
-build:
-	@$(MAKE) build-base build-download build-api
-
-build-api:
-	@echo "🗑️  Removendo imagem $(API_IMAGE):latest..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker rmi $(API_IMAGE):latest || true
-	@echo "🛠️  Buildando imagem $(API_IMAGE):latest via $(API_DOCKERFILE)..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker build -t $(API_IMAGE):latest -f $(API_DOCKERFILE) .
-
+# Build base image
 build-base:
 	@echo "🛠️  Building base image..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker build -t download-car-base:latest -f Dockerfile.base .
 
-build-download:
-	@echo "🗑️  Removendo imagem download-car-download:latest..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker rmi download-car-download:latest || true
-	@echo "🛠️  Building download image..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker build -t download-car-download:latest -f Dockerfile.download-car .
+# Build development image
+build-dev:
+	@echo "🛠️  Building development image..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker build -t download-car-dev:latest -f Dockerfile.dev .
+
+# Build production image
+build-pro:
+	@echo "🛠️  Building production image..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker build -t download-car-pro:latest -f Dockerfile.pro .
+
+# Build API with development base
+build-api-dev:
+	@echo "🗑️  Removendo imagem $(API_IMAGE):dev..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker rmi $(API_IMAGE):dev || true
+	@echo "🛠️  Buildando imagem $(API_IMAGE):dev..."
+	DOCKER_BUILDKIT=1 DOCKER_CONFIG=$(DOCKER_CONFIG) docker build \
+		--build-arg BASE_IMAGE=download-car-dev:latest \
+		-t $(API_IMAGE):dev \
+		-f $(API_DOCKERFILE) .
+
+# Build API with production base
+build-api-pro:
+	@echo "🗑️  Removendo imagem $(API_IMAGE):pro..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker rmi $(API_IMAGE):pro || true
+	@echo "🛠️  Buildando imagem $(API_IMAGE):pro..."
+	DOCKER_BUILDKIT=1 DOCKER_CONFIG=$(DOCKER_CONFIG) docker build \
+		--build-arg BASE_IMAGE=download-car-pro:latest \
+		-t $(API_IMAGE):pro \
+		-f $(API_DOCKERFILE) .
+
+# Build download-car with development base
+build-download-dev:
+	@echo "🗑️  Removendo imagem download-car-download:dev..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker rmi download-car-download:dev || true
+	@echo "🛠️  Building download development image..."
+	DOCKER_BUILDKIT=1 DOCKER_CONFIG=$(DOCKER_CONFIG) docker build \
+		--build-arg BASE_IMAGE=download-car-dev:latest \
+		-t download-car-download:dev \
+		-f Dockerfile.download-car .
+
+# Build download-car with production base
+build-download-pro:
+	@echo "🗑️  Removendo imagem download-car-download:pro..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker rmi download-car-download:pro || true
+	@echo "🛠️  Building download production image..."
+	DOCKER_BUILDKIT=1 DOCKER_CONFIG=$(DOCKER_CONFIG) docker build \
+		--build-arg BASE_IMAGE=download-car-pro:latest \
+		-t download-car-download:pro \
+		-f Dockerfile.download-car .
+
+# Default builds (production)
+build-api: build-api-pro
+build-download: build-download-pro
+
+# Build all images
+build: build-base build-pro build-download build-api
+
+# Build development images
+build-dev: build-base build-dev build-download-dev build-api-dev
+
+# Build production images
+build-pro: build-base build-pro build-download-pro build-api-pro
+
+api-up:
+	@echo "🚀  Executando container API $(API_IMAGE):latest..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up api -d
 
 clean:
 	@echo "🗑️  Removendo imagens, volumes e containers órfãos..."
@@ -135,10 +184,16 @@ help:
 	@echo "  download-up     - Inicia apenas o serviço download-car"
 	@echo ""
 	@echo "🛠️  Comandos de build:"
-	@echo "  build           - Builda todas as imagens"
-	@echo "  build-api       - Builda apenas a imagem da API"
+	@echo "  build           - Builda todas as imagens (produção)"
+	@echo "  build-dev       - Builda todas as imagens (desenvolvimento)"
+	@echo "  build-pro       - Builda todas as imagens (produção)"
 	@echo "  build-base      - Builda a imagem base"
-	@echo "  build-download  - Builda a imagem de download"
+	@echo "  build-api       - Builda apenas a imagem da API (produção)"
+	@echo "  build-api-dev   - Builda apenas a imagem da API (desenvolvimento)"
+	@echo "  build-api-pro   - Builda apenas a imagem da API (produção)"
+	@echo "  build-download  - Builda apenas a imagem de download (produção)"
+	@echo "  build-download-dev - Builda apenas a imagem de download (desenvolvimento)"
+	@echo "  build-download-pro - Builda apenas a imagem de download (produção)"
 	@echo ""
 	@echo "🗑️  Comandos de limpeza:"
 	@echo "  clean           - Remove imagens, volumes e containers órfãos"

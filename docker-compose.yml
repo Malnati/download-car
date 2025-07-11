@@ -7,6 +7,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.download-car
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-download-car-pro:latest}
     volumes:
       - .:/download-car
     entrypoint: ./entrypoint.download.sh
@@ -17,6 +19,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-download-car-pro:latest}
     volumes:
       - .:/download-car
     ports:

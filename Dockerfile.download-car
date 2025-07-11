@@ -1,5 +1,8 @@
 # Dockerfile.download-car
-FROM download-car-base:latest
-WORKDIR /download-car-car
+ARG BASE_IMAGE=download-car-pro:latest
+FROM ${BASE_IMAGE}
+
+WORKDIR /download-car
 COPY . .
-ENTRYPOINT ["./entrypoint.download-car.sh"]
+
+ENTRYPOINT ["./entrypoint.download.sh"]
