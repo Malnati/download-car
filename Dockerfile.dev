@@ -1,0 +1,32 @@
+# Dockerfile.base
+FROM ubuntu:22.04
+
+ARG PYTHON_VERSION=3.11.9
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYENV_ROOT=/opt/pyenv \
+    PATH="/opt/pyenv/bin:/opt/pyenv/shims:${PATH}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential curl git ca-certificates \
+        libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+        libffi-dev liblzma-dev libncursesw5-dev xz-utils tk-dev libgdbm-dev \
+        uuid-dev wget && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 https://github.com/pyenv/pyenv.git ${PYENV_ROOT} && \
+    pyenv install ${PYTHON_VERSION} && \
+    pyenv global ${PYTHON_VERSION}
+    
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install tesseract-ocr python3-opencv \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --upgrade pip
+
+# Instalar o download-car com todas as dependências
+RUN pip install 'download_car[paddle]@git+https://github.com/Malnati/download-car'
+
+WORKDIR /download-car
+
+ENTRYPOINT ["python"]
