@@ -32,7 +32,7 @@ all = ["download-car[paddle,dev]"]
 packages = ["download_car", "download_car.drivers"]
 
 [tool.interrogate]
-exclude = ["download_car/tests*", "examples/*"]
+exclude = ["download_car/tests*"]
 verbose = 2
 generate-badge = ".github"
 

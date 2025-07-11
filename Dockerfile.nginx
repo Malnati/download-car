@@ -1,0 +1,18 @@
+FROM nginx:alpine
+
+# Instalar Node.js
+RUN apk add --no-cache nodejs npm
+
+# Copiar scripts
+COPY entrypoint.nginx.sh /entrypoint.sh
+COPY generate-config.nginx.js /usr/share/nginx/html/generate-config.js
+
+# Tornar scripts executáveis
+RUN chmod +x /entrypoint.sh
+RUN chmod +x /usr/share/nginx/html/generate-config.js
+
+# Expor porta 80
+EXPOSE 80
+
+# Usar entrypoint customizado
+ENTRYPOINT ["/entrypoint.sh"] 

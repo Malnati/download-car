@@ -28,6 +28,15 @@ Permitir o download programático dos dados públicos do SICAR. O projeto inclui
 
 - [⚙️ Funções principais](#️-funções-principais)
 - [📥 Parâmetros disponíveis](#-parâmetros-disponíveis)
+- [🔧 Variáveis de Ambiente](#-variáveis-de-ambiente)
+  - [📋 Variáveis de Download](#-variáveis-de-download)
+  - [🌐 Variáveis da API](#-variáveis-da-api)
+  - [🏠 Variáveis de Propriedades](#-variáveis-de-propriedades)
+  - [🌍 Variáveis do Frontend (Nginx)](#-variáveis-do-frontend-nginx)
+  - [⏱️ Timeouts por Estado](#️-timeouts-por-estado)
+  - [🔧 Variáveis de Configuração do Sistema](#-variáveis-de-configuração-do-sistema)
+  - [📷 Variáveis de Configuração OCR](#-variáveis-de-configuração-ocr)
+  - [📝 Como Usar as Variáveis de Ambiente](#-como-usar-as-variáveis-de-ambiente)
 - [🚀 Como usar](#-como-usar)
   - [1️⃣ Execução via Python (direto)](#1️⃣-execução-via-python-direto)
   - [2️⃣ Execução via Shell Script](#2️⃣-execução-via-shell-script)
@@ -38,6 +47,15 @@ Permitir o download programático dos dados públicos do SICAR. O projeto inclui
     - [Rodando localmente com FastAPI](#rodando-localmente-com-fastapi)
   - [5️⃣ Importação como módulo Python](#5️⃣-importação-como-módulo-python)
   - [6️⃣ Comandos Makefile](#6️⃣-comandos-makefile)
+  - [📓 Suporte ao Jupyter Notebook](#-suporte-ao-jupyter-notebook)
+- [🛠️ Ferramentas de Desenvolvimento](#️-ferramentas-de-desenvolvimento)
+  - [📋 Scripts de Teste e Verificação](#-scripts-de-teste-e-verificação)
+  - [🔧 Ferramentas de Qualidade de Código](#-ferramentas-de-qualidade-de-código)
+  - [📦 Dependências Opcionais](#-dependências-opcionais)
+  - [🎨 Assets e Recursos](#-assets-e-recursos)
+  - [🐳 Configurações Docker Específicas](#-configurações-docker-específicas)
+  - [📊 Configurações de Teste](#-configurações-de-teste)
+  - [📁 Estrutura do Projeto](#-estrutura-do-projeto)
 - [📦 Resultados e arquivos de saída](#-resultados-e-arquivos-de-saída)
 - [📊 Data dictionary](#data-dictionary)
 - [📝 Licença](#license)
@@ -85,6 +103,229 @@ A classe central deste pacote é `DownloadCar`, que disponibiliza três métodos
 | `timeout`   | int         | ❌          | `30`    | Tempo máximo em segundos para cada tentativa de download.                         | `timeout=60`                     |
 
 Esses parâmetros se aplicam principalmente ao método `download_state`. O método `download_country` utiliza a mesma assinatura (exceto pelo parâmetro `state`).
+
+---
+
+# 🔧 Variáveis de Ambiente
+
+O projeto utiliza diversas variáveis de ambiente para configurar diferentes aspectos da aplicação. Estas variáveis podem ser definidas em arquivos `.env`, passadas diretamente nos comandos Docker ou configuradas no sistema.
+
+## 📋 Variáveis de Download
+
+| Variável | Tipo | Padrão | Descrição | Exemplo |
+|----------|------|--------|-----------|---------|
+| `STATE` | string | `"DF"` | Sigla do estado a ser baixado | `STATE=SP` |
+| `POLYGON` | string | `"AREA_PROPERTY"` | Tipo de polígono para download | `POLYGON=APPS` |
+| `FOLDER` | string | `"data/DF"` | Diretório de saída dos arquivos | `FOLDER=temp/SP` |
+| `TRIES` | integer | `25` | Número máximo de tentativas em caso de falha | `TRIES=10` |
+| `DEBUG` | boolean | `"False"` | Ativa modo debug com mensagens detalhadas | `DEBUG=true` |
+| `TIMEOUT` | integer | `30` | Timeout em segundos para cada tentativa | `TIMEOUT=60` |
+| `MAX_RETRIES` | integer | `5` | Número máximo de tentativas para download de cada arquivo | `MAX_RETRIES=10` |
+
+## 🌐 Variáveis da API
+
+| Variável | Tipo | Padrão | Descrição | Exemplo |
+|----------|------|--------|-----------|---------|
+| `API_URL` | string | - | URL base da API | `API_URL=http://localhost:8000` |
+| `CORS_ALLOW_ORIGINS` | string | `"*"` | Origens permitidas para CORS (separadas por vírgula) | `CORS_ALLOW_ORIGINS=http://localhost:3000,https://example.com` |
+| `CORS_ALLOW_CREDENTIALS` | boolean | `"true"` | Permite credenciais em requisições CORS | `CORS_ALLOW_CREDENTIALS=true` |
+| `CORS_ALLOW_METHODS` | string | `"GET,POST,OPTIONS"` | Métodos HTTP permitidos para CORS | `CORS_ALLOW_METHODS=GET,POST,PUT,DELETE,OPTIONS` |
+| `CORS_ALLOW_HEADERS` | string | `"*"` | Headers permitidos para CORS | `CORS_ALLOW_HEADERS=Content-Type,Authorization` |
+
+## 🏠 Variáveis de Propriedades
+
+| Variável | Tipo | Padrão | Descrição | Exemplo |
+|----------|------|--------|-----------|---------|
+| `PROPERTY_FOLDER` | string | `"PROPERTY"` | Pasta para armazenamento de arquivos de propriedades | `PROPERTY_FOLDER=properties` |
+| `PROPERTY_TRIES` | integer | `25` | Número máximo de tentativas para download de propriedades | `PROPERTY_TRIES=10` |
+| `PROPERTY_DEBUG` | boolean | `"false"` | Ativa modo debug para downloads de propriedades | `PROPERTY_DEBUG=true` |
+| `PROPERTY_TIMEOUT` | integer | `30` | Timeout em segundos para downloads de propriedades | `PROPERTY_TIMEOUT=60` |
+| `PROPERTY_MAX_RETRIES` | integer | `5` | Número máximo de tentativas para cada propriedade | `PROPERTY_MAX_RETRIES=10` |
+
+## 🌍 Variáveis do Frontend (Nginx)
+
+| Variável | Tipo | Padrão | Descrição | Exemplo |
+|----------|------|--------|-----------|---------|
+| `API_ENDPOINT_URL` | string | `"http://192.168.5.179:8787"` | URL do endpoint da API | `API_ENDPOINT_URL=http://localhost:8000` |
+| `DEFAULT_POLYGON` | string | `"AREA_PROPERTY"` | Polígono padrão selecionado no frontend | `DEFAULT_POLYGON=APPS` |
+| `DEFAULT_TIMEOUT` | integer | `800000` | Timeout padrão em milissegundos | `DEFAULT_TIMEOUT=600000` |
+| `TIMEOUT_INCREMENT` | integer | `10000` | Incremento do timeout em milissegundos | `TIMEOUT_INCREMENT=5000` |
+| `MIN_TIMEOUT` | integer | `10000` | Timeout mínimo em milissegundos | `MIN_TIMEOUT=5000` |
+| `MAX_TIMEOUT` | integer | `300000` | Timeout máximo em milissegundos | `MAX_TIMEOUT=600000` |
+| `API_HOST` | string | - | Host da API | `API_HOST=localhost` |
+| `API_PORT` | string | - | Porta da API | `API_PORT=8000` |
+| `API_PATH` | string | - | Caminho base da API | `API_PATH=/api` |
+| `NETWORK_TIMEOUT` | integer | - | Timeout de rede em milissegundos | `NETWORK_TIMEOUT=30000` |
+
+## ⏱️ Timeouts por Estado
+
+| Variável | Tipo | Padrão | Descrição | Exemplo |
+|----------|------|--------|-----------|---------|
+| `STATE_TIMEOUT_AC` | integer | `60000` | Timeout específico para Acre | `STATE_TIMEOUT_AC=120000` |
+| `STATE_TIMEOUT_AL` | integer | `60000` | Timeout específico para Alagoas | `STATE_TIMEOUT_AL=90000` |
+| `STATE_TIMEOUT_AM` | integer | `60000` | Timeout específico para Amazonas | `STATE_TIMEOUT_AM=180000` |
+| `STATE_TIMEOUT_AP` | integer | `60000` | Timeout específico para Amapá | `STATE_TIMEOUT_AP=120000` |
+| `STATE_TIMEOUT_BA` | integer | `60000` | Timeout específico para Bahia | `STATE_TIMEOUT_BA=150000` |
+| `STATE_TIMEOUT_CE` | integer | `60000` | Timeout específico para Ceará | `STATE_TIMEOUT_CE=120000` |
+| `STATE_TIMEOUT_DF` | integer | `60000` | Timeout específico para Distrito Federal | `STATE_TIMEOUT_DF=60000` |
+| `STATE_TIMEOUT_ES` | integer | `60000` | Timeout específico para Espírito Santo | `STATE_TIMEOUT_ES=90000` |
+| `STATE_TIMEOUT_GO` | integer | `60000` | Timeout específico para Goiás | `STATE_TIMEOUT_GO=120000` |
+| `STATE_TIMEOUT_MA` | integer | `60000` | Timeout específico para Maranhão | `STATE_TIMEOUT_MA=150000` |
+| `STATE_TIMEOUT_MG` | integer | `60000` | Timeout específico para Minas Gerais | `STATE_TIMEOUT_MG=180000` |
+| `STATE_TIMEOUT_MS` | integer | `60000` | Timeout específico para Mato Grosso do Sul | `STATE_TIMEOUT_MS=120000` |
+| `STATE_TIMEOUT_MT` | integer | `60000` | Timeout específico para Mato Grosso | `STATE_TIMEOUT_MT=180000` |
+| `STATE_TIMEOUT_PA` | integer | `60000` | Timeout específico para Pará | `STATE_TIMEOUT_PA=240000` |
+| `STATE_TIMEOUT_PB` | integer | `60000` | Timeout específico para Paraíba | `STATE_TIMEOUT_PB=90000` |
+| `STATE_TIMEOUT_PE` | integer | `60000` | Timeout específico para Pernambuco | `STATE_TIMEOUT_PE=120000` |
+| `STATE_TIMEOUT_PI` | integer | `60000` | Timeout específico para Piauí | `STATE_TIMEOUT_PI=120000` |
+| `STATE_TIMEOUT_PR` | integer | `60000` | Timeout específico para Paraná | `STATE_TIMEOUT_PR=150000` |
+| `STATE_TIMEOUT_RJ` | integer | `60000` | Timeout específico para Rio de Janeiro | `STATE_TIMEOUT_RJ=120000` |
+| `STATE_TIMEOUT_RN` | integer | `60000` | Timeout específico para Rio Grande do Norte | `STATE_TIMEOUT_RN=90000` |
+| `STATE_TIMEOUT_RO` | integer | `60000` | Timeout específico para Rondônia | `STATE_TIMEOUT_RO=120000` |
+| `STATE_TIMEOUT_RR` | integer | `60000` | Timeout específico para Roraima | `STATE_TIMEOUT_RR=120000` |
+| `STATE_TIMEOUT_RS` | integer | `60000` | Timeout específico para Rio Grande do Sul | `STATE_TIMEOUT_RS=150000` |
+| `STATE_TIMEOUT_SC` | integer | `60000` | Timeout específico para Santa Catarina | `STATE_TIMEOUT_SC=120000` |
+| `STATE_TIMEOUT_SE` | integer | `60000` | Timeout específico para Sergipe | `STATE_TIMEOUT_SE=90000` |
+| `STATE_TIMEOUT_SP` | integer | `60000` | Timeout específico para São Paulo | `STATE_TIMEOUT_SP=180000` |
+| `STATE_TIMEOUT_TO` | integer | `60000` | Timeout específico para Tocantins | `STATE_TIMEOUT_TO=120000` |
+
+## 🔧 Variáveis de Configuração do Sistema
+
+| Variável | Tipo | Padrão | Descrição | Exemplo |
+|----------|------|--------|-----------|---------|
+| `PRELOAD_MODELS` | boolean | - | Habilita pré-carregamento dos modelos do PaddleOCR durante build | `PRELOAD_MODELS=1` |
+| `DOCKER_CONFIG` | string | `/tmp/docker-config-noauth` | Configuração do Docker para builds | `DOCKER_CONFIG=/path/to/docker/config` |
+| `PYTHON_VERSION` | string | `"3.11.9"` | Versão do Python utilizada no container | `PYTHON_VERSION=3.11.9` |
+
+## 📷 Variáveis de Configuração OCR
+
+| Variável | Tipo | Padrão | Descrição | Exemplo |
+|----------|------|--------|-----------|---------|
+| `TESSERACT_CONFIG` | string | `"--oem 3 --psm 8"` | Configuração do Tesseract OCR para reconhecimento de captcha | `TESSERACT_CONFIG="--oem 3 --psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"` |
+| `PADDLE_OCR_LANG` | string | `"en"` | Idioma para reconhecimento PaddleOCR | `PADDLE_OCR_LANG=pt` |
+| `PADDLE_OCR_USE_GPU` | boolean | `"false"` | Habilita uso de GPU para PaddleOCR | `PADDLE_OCR_USE_GPU=true` |
+| `PADDLE_OCR_SHOW_LOG` | boolean | `"false"` | Exibe logs do PaddleOCR | `PADDLE_OCR_SHOW_LOG=true` |
+
+## 📝 Como Usar as Variáveis de Ambiente
+
+### 1. Arquivo .env (Recomendado)
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```bash
+# Variáveis de Download
+STATE=SP
+POLYGON=APPS
+FOLDER=temp/SP
+TRIES=25
+DEBUG=false
+TIMEOUT=30
+MAX_RETRIES=5
+
+# Variáveis da API
+CORS_ALLOW_ORIGINS=*
+CORS_ALLOW_CREDENTIALS=true
+CORS_ALLOW_METHODS=GET,POST,OPTIONS
+CORS_ALLOW_HEADERS=*
+
+# Variáveis de Propriedades
+PROPERTY_FOLDER=PROPERTY
+PROPERTY_TRIES=25
+PROPERTY_DEBUG=false
+PROPERTY_TIMEOUT=30
+PROPERTY_MAX_RETRIES=5
+
+# Variáveis do Frontend
+API_ENDPOINT_URL=http://localhost:8000
+DEFAULT_POLYGON=AREA_PROPERTY
+DEFAULT_TIMEOUT=800000
+TIMEOUT_INCREMENT=10000
+MIN_TIMEOUT=10000
+MAX_TIMEOUT=300000
+
+# Timeouts por Estado (exemplos)
+STATE_TIMEOUT_SP=180000
+STATE_TIMEOUT_PA=240000
+STATE_TIMEOUT_AM=180000
+
+# Configurações OCR
+TESSERACT_CONFIG=--oem 3 --psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+PADDLE_OCR_LANG=en
+PADDLE_OCR_USE_GPU=false
+PADDLE_OCR_SHOW_LOG=false
+
+### 2. Linha de Comando
+
+```bash
+# Docker Compose com variáveis
+STATE=SP POLYGON=APPS docker compose up
+
+# Makefile com variáveis
+make download state=SP polygon=APPS folder=temp/SP debug=true
+
+# Build com pré-carregamento de modelos
+PRELOAD_MODELS=1 make build
+```
+
+### 3. Docker Compose
+
+```yaml
+version: '3.8'
+services:
+  download-car-api:
+    environment:
+      - CORS_ALLOW_ORIGINS=http://localhost:3000
+      - PROPERTY_FOLDER=properties
+      - PROPERTY_TIMEOUT=60
+```
+
+### 4. Configuração de Timeouts por Estado
+
+Para estados com muitos dados (como PA, AM, MT), configure timeouts maiores:
+
+```bash
+# Estados com muitos dados
+STATE_TIMEOUT_PA=240000  # 4 minutos
+STATE_TIMEOUT_AM=180000  # 3 minutos
+STATE_TIMEOUT_MT=180000  # 3 minutos
+
+# Estados com dados moderados
+STATE_TIMEOUT_SP=180000  # 3 minutos
+STATE_TIMEOUT_MG=180000  # 3 minutos
+STATE_TIMEOUT_BA=150000  # 2.5 minutos
+
+# Estados com dados menores
+STATE_TIMEOUT_DF=60000   # 1 minuto
+STATE_TIMEOUT_AL=90000   # 1.5 minutos
+STATE_TIMEOUT_SE=90000   # 1.5 minutos
+```
+
+### 5. Configuração de OCR
+
+Para otimizar o reconhecimento de captcha, configure as variáveis OCR:
+
+```bash
+# Configuração do Tesseract (padrão)
+TESSERACT_CONFIG="--oem 3 --psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+# Configuração do PaddleOCR
+PADDLE_OCR_LANG=en
+PADDLE_OCR_USE_GPU=false
+PADDLE_OCR_SHOW_LOG=false
+
+# Para melhor performance com GPU
+PADDLE_OCR_USE_GPU=true
+
+# Para debug de reconhecimento
+PADDLE_OCR_SHOW_LOG=true
+```
+
+**Dicas de configuração OCR:**
+
+- **Tesseract**: Use `--psm 8` para reconhecimento de texto único
+- **PaddleOCR**: Configure `PADDLE_OCR_LANG=pt` para português
+- **GPU**: Habilite `PADDLE_OCR_USE_GPU=true` se disponível
+- **Debug**: Use `PADDLE_OCR_SHOW_LOG=true` para diagnosticar problemas
 
 ---
 
@@ -187,10 +428,25 @@ API poderá ser acessada em `http://localhost` via Nginx (porta `80`).
 
 A API FastAPI está disponível em `http://localhost:8000` e oferece os seguintes endpoints:
 
+### Endpoints de Download
 - `POST /download_state` &ndash; recebe `state` e `polygon` (além dos
   parâmetros opcionais) e retorna um arquivo ZIP com o shapefile do estado.
 - `POST /download_country` &ndash; recebe apenas `polygon` e retorna um ZIP
   contendo os arquivos de todos os estados.
+- `POST /download-property` &ndash; baixa dados de uma propriedade específica pelo número do CAR.
+
+### Endpoints de Busca
+- `GET /state` &ndash; busca o estado de um imóvel pelo número do CAR.
+- `GET /property` &ndash; busca uma propriedade específica pelo número do CAR.
+
+### Endpoints de Informação
+- `GET /states` &ndash; retorna a lista completa de estados brasileiros disponíveis.
+- `GET /polygons` &ndash; retorna a lista completa de tipos de polígonos disponíveis.
+- `GET /` &ndash; página inicial da API com informações gerais.
+
+### Endpoints de Status e Gerenciamento
+- `GET /state_status/{state}` &ndash; verifica se existe arquivo baixado para um estado específico.
+- `GET /download_state_file/{state}/{polygon_type}` &ndash; faz download de um arquivo específico de estado.
 - `DELETE /delete_state` &ndash; exclui todos os arquivos relacionados a um estado específico.
 
 ### Campos esperados (multipart/form)
@@ -273,6 +529,37 @@ car = DownloadCar()
 car.download_state(State.MG, Polygon.LEGAL_RESERVE, folder="MG")
 ```
 
+## 📓 Suporte ao Jupyter Notebook
+
+O projeto é compatível com Jupyter Notebooks para análise de dados geoespaciais:
+
+```python
+# Em um Jupyter Notebook
+import geopandas as gpd
+from download_car import DownloadCar, State, Polygon
+
+# Baixar dados
+car = DownloadCar()
+car.download_state(State.SP, Polygon.AREA_PROPERTY, folder="notebook_data")
+
+# Carregar e analisar dados
+gdf = gpd.read_file("notebook_data/SP_AREA_IMOVEL.zip")
+print(f"Total de propriedades: {len(gdf)}")
+print(f"Área total: {gdf['num_area'].sum():.2f} hectares")
+
+# Visualizar dados
+gdf.plot(column='num_area', legend=True, figsize=(12, 8))
+```
+
+### Dependências para Jupyter
+```bash
+# Instalar dependências para análise geoespacial
+pip install jupyter geopandas matplotlib folium
+
+# Ou usar o ambiente completo
+pip install "download-car[all]"
+```
+
 ## 6️⃣ Comandos Makefile
 
 O projeto inclui um Makefile com diversos comandos úteis para facilitar o desenvolvimento e uso:
@@ -318,11 +605,215 @@ O projeto inclui um Makefile com diversos comandos úteis para facilitar o desen
 ### 🔄 Comandos de manutenção:
 - `make git-update` - Atualiza repositório Git
 
+### 🛠️ Comandos de desenvolvimento:
+- `make format` - Formata código com Black
+- `make lint` - Verifica estilo do código
+- `make docs` - Gera documentação com Interrogate
+- `make coverage` - Executa testes com cobertura
+
 Para ver todos os comandos disponíveis:
 
 ```bash
 make help
 ```
+
+---
+
+# 🛠️ Ferramentas de Desenvolvimento
+
+O projeto inclui diversas ferramentas para desenvolvimento, teste e qualidade de código.
+
+## 📋 Scripts de Teste e Verificação
+
+### Scripts de Teste da API
+
+| Script | Descrição | Uso |
+|--------|-----------|-----|
+| `verify_features.sh` | Testa todos os endpoints da API | `./verify_features.sh` |
+| `test_delete_state.py` | Testa o endpoint DELETE /delete_state | `python test_delete_state.py` |
+| `verify_property.py` | Verifica e compara arquivos de propriedades | `python verify_property.py --state data/SP_AREA_PROPERTY.zip --property data/property_SP-123.zip` |
+
+### Exemplos de Uso dos Scripts
+
+```bash
+# Testar todos os endpoints da API
+./verify_features.sh
+
+# Testar exclusão de arquivos de estado
+python test_delete_state.py
+
+# Verificar arquivos de propriedades
+python verify_property.py \
+  --state data/MA_AREA_PROPERTY.zip \
+  --property data/property_MA-2114007-FFFE73B6633D4199ACB914F4DFCCEEE4.zip \
+  --verbose
+```
+
+## 🔧 Ferramentas de Qualidade de Código
+
+### Black (Formatação)
+```bash
+# Formatar código automaticamente
+black download_car/
+
+# Verificar se o código está formatado
+black --check download_car/
+```
+
+### Interrogate (Documentação)
+```bash
+# Gerar documentação
+interrogate download_car/
+
+# Verificar cobertura de documentação
+interrogate --fail-under 80 download_car/
+```
+
+### Coverage (Cobertura de Testes)
+```bash
+# Executar testes com cobertura
+coverage run -m unittest discover download_car/tests/
+coverage report
+coverage html  # Gera relatório HTML
+```
+
+## 📦 Dependências Opcionais
+
+O projeto suporta dependências opcionais para diferentes casos de uso:
+
+```bash
+# Instalação básica
+pip install download-car
+
+# Com suporte ao PaddleOCR
+pip install "download-car[paddle]"
+
+# Com ferramentas de desenvolvimento
+pip install "download-car[dev]"
+
+# Com todas as dependências
+pip install "download-car[all]"
+```
+
+### Dependências por Categoria
+
+| Categoria | Dependências | Descrição |
+|-----------|--------------|-----------|
+| `paddle` | `paddlepaddle>=3.0.0`, `paddleocr>=2.10.0` | Suporte ao PaddleOCR para reconhecimento de captcha |
+| `dev` | `coverage`, `interrogate`, `black`, `coveralls` | Ferramentas de desenvolvimento e qualidade |
+| `all` | Todas as dependências | Instalação completa com todas as funcionalidades |
+
+## 🎨 Assets e Recursos
+
+O projeto inclui recursos visuais para o frontend:
+
+### Bandeiras dos Estados
+- Localização: `assets/flags/`
+- Formato: PNG
+- Estados disponíveis: Todos os 27 estados brasileiros (AC.png, AL.png, AM.png, etc.)
+
+### Estrutura de Assets
+```
+assets/
+└── flags/
+    ├── AC.png  # Acre
+    ├── AL.png  # Alagoas
+    ├── AM.png  # Amazonas
+    └── ...     # Todos os estados
+```
+
+## 🐳 Configurações Docker Específicas
+
+### Dockerfile.nginx
+- Base: `nginx:alpine`
+- Instala Node.js para geração dinâmica de configuração
+- Scripts: `entrypoint.nginx.sh`, `generate-config.nginx.js`
+
+### Dockerfile.api
+- Base: `download-car-base:latest`
+- Dependências: FastAPI, Uvicorn, httpx, Pillow, tqdm, python-multipart
+- Entrypoint: `entrypoint.api.sh`
+
+### Dockerfile.base
+- Base: `ubuntu:22.04`
+- Python: 3.11.9 via pyenv
+- Dependências: Tesseract OCR, OpenCV
+- Instalação: `download_car[paddle]`
+
+### Arquivos de Configuração
+- `.dockerignore`: Exclui `.git`, `__pycache__`, `.venv*`, `tests`
+- `entrypoint.nginx.sh`: Substitui variáveis de ambiente no nginx.conf
+- `entrypoint.api.sh`: Configura ambiente Python e inicia API
+- `generate-config.nginx.js`: Gera configuração do frontend dinamicamente
+
+## 📊 Configurações de Teste
+
+### Cobertura de Código
+- Configuração: `pyproject.toml`
+- Meta: 100% de cobertura
+- Exclusões: `download_car/tests/integration/*`
+- Relatórios: HTML, XML, Coveralls
+
+### Documentação
+- Ferramenta: Interrogate
+- Meta: 100% de documentação
+- Exclusões: `download_car/tests*`
+- Badge: `.github`
+
+### Formatação
+- Ferramenta: Black
+- Configuração: Padrão do Black
+- Badge: Status no README
+
+## 📁 Estrutura do Projeto
+
+```
+download-car/
+├── download_car/                 # Módulo principal
+│   ├── __init__.py
+│   ├── sicar.py                  # Classe principal DownloadCar
+│   ├── state.py                  # Enumeração dos estados
+│   ├── polygon.py                # Enumeração dos polígonos
+│   ├── url.py                    # Geração de URLs
+│   ├── exceptions.py             # Exceções customizadas
+│   └── drivers/                  # Drivers de OCR
+│       ├── __init__.py
+│       ├── captcha.py            # Classe base para captcha
+│       ├── tesseract.py          # Driver Tesseract
+│       └── paddle.py             # Driver PaddleOCR
+├── download_car/tests/           # Testes
+│   ├── unit/                     # Testes unitários
+│   └── integration/              # Testes de integração
+├── assets/                       # Recursos do frontend
+│   └── flags/                    # Bandeiras dos estados
+├── app.py                        # API FastAPI
+├── download_state.py             # Script de download
+├── download_state.sh             # Script shell
+├── api.sh                        # Script da API
+├── verify_features.sh            # Script de teste da API
+├── verify_property.py            # Script de verificação
+├── test_delete_state.py          # Script de teste
+├── docker-compose.yml            # Configuração Docker Compose
+├── Dockerfile.*                  # Dockerfiles específicos
+├── entrypoint.*.sh               # Scripts de entrada
+├── generate-config.nginx.js      # Geração de configuração
+├── nginx.conf.template           # Template do Nginx
+├── index.html                    # Frontend
+├── Makefile                      # Comandos de automação
+├── pyproject.toml                # Configuração do projeto
+└── README.md                     # Esta documentação
+```
+
+### Arquivos de Configuração Importantes
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `pyproject.toml` | Configuração do projeto Python, dependências, ferramentas |
+| `docker-compose.yml` | Orquestração dos serviços Docker |
+| `Makefile` | Automação de comandos comuns |
+| `.env` | Variáveis de ambiente (criar localmente) |
+| `.gitignore` | Arquivos ignorados pelo Git |
+| `.dockerignore` | Arquivos ignorados pelo Docker |
 
 ---
 
@@ -385,6 +876,21 @@ If you have any feedback, please reach me at ricardomalnati@gmail.com
 
 **Posso contribuir?**
 - Sim! Veja a seção "Contributing". Issues e pull requests são bem-vindos.
+
+**Como resolver problemas de captcha?**
+- Verifique se o Tesseract OCR está instalado: `tesseract --version`
+- Para melhor precisão, use PaddleOCR: `pip install "download-car[paddle]"`
+- Configure timeouts maiores para estados com muitos dados
+
+**Como debugar problemas de download?**
+- Ative o modo debug: `DEBUG=true`
+- Verifique logs do container: `docker compose logs download-car-download`
+- Use o script de verificação: `./verify_features.sh`
+
+**Como configurar para produção?**
+- Use variáveis de ambiente específicas para produção
+- Configure timeouts adequados para seu ambiente
+- Monitore logs e métricas da API
 
 # License
 

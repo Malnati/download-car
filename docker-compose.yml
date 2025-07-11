@@ -1,5 +1,7 @@
 # docker-compose.yml
 version: '3.8'
+
+# Carregar variáveis de ambiente do arquivo .env (padrão do Docker Compose)
 services:
   download-car-download:
     build:
@@ -9,7 +11,7 @@ services:
       - .:/download-car
     entrypoint: ./entrypoint.download.sh
     environment:
-      - POLYGON=AREA_PROPERTY
+      - POLYGON
 
   download-car-api:
     build:
@@ -20,27 +22,72 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - API_URL=http://192.168.5.179:8787
-      - CORS_ALLOW_ORIGINS=*
-      - CORS_ALLOW_CREDENTIALS=true
-      - CORS_ALLOW_METHODS=GET,POST,OPTIONS
-      - CORS_ALLOW_HEADERS=*
-      - PROPERTY_FOLDER=PROPERTY
-      - PROPERTY_TRIES=25
-      - PROPERTY_DEBUG=false
-      - PROPERTY_TIMEOUT=30
-      - PROPERTY_MAX_RETRIES=5
+      - API_URL
+      - CORS_ALLOW_ORIGINS
+      - CORS_ALLOW_CREDENTIALS
+      - CORS_ALLOW_METHODS
+      - CORS_ALLOW_HEADERS
+      - PROPERTY_FOLDER
+      - PROPERTY_TRIES
+      - PROPERTY_DEBUG
+      - PROPERTY_TIMEOUT
+      - PROPERTY_MAX_RETRIES
 
   nginx:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     ports:
       - "8787:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./nginx.conf.template:/etc/nginx/conf.d/default.conf.template:ro
+      - ./index.html:/usr/share/nginx/html/index.html:rw
       - ./assets:/usr/share/nginx/html/assets:ro
+    entrypoint: ["/entrypoint.sh"]
     depends_on:
       - download-car-api
       - download-car-download
     environment:
-      - DEFAULT_API_URL=http://192.168.5.179:8787
+      # Todas as variáveis são carregadas automaticamente do arquivo .env
+      - API_ENDPOINT_URL
+      - DEFAULT_POLYGON
+      - DEFAULT_TIMEOUT
+      - TIMEOUT_INCREMENT
+      - MIN_TIMEOUT
+      - MAX_TIMEOUT
+      - STATE_TIMEOUT_AC
+      - STATE_TIMEOUT_AL
+      - STATE_TIMEOUT_AM
+      - STATE_TIMEOUT_AP
+      - STATE_TIMEOUT_BA
+      - STATE_TIMEOUT_CE
+      - STATE_TIMEOUT_DF
+      - STATE_TIMEOUT_ES
+      - STATE_TIMEOUT_GO
+      - STATE_TIMEOUT_MA
+      - STATE_TIMEOUT_MG
+      - STATE_TIMEOUT_MS
+      - STATE_TIMEOUT_MT
+      - STATE_TIMEOUT_PA
+      - STATE_TIMEOUT_PB
+      - STATE_TIMEOUT_PE
+      - STATE_TIMEOUT_PI
+      - STATE_TIMEOUT_PR
+      - STATE_TIMEOUT_RJ
+      - STATE_TIMEOUT_RN
+      - STATE_TIMEOUT_RO
+      - STATE_TIMEOUT_RR
+      - STATE_TIMEOUT_RS
+      - STATE_TIMEOUT_SC
+      - STATE_TIMEOUT_SE
+      - STATE_TIMEOUT_SP
+      - STATE_TIMEOUT_TO
+      - API_HOST
+      - API_PORT
+      - API_PATH
+      - NETWORK_TIMEOUT
+      - MAX_RETRIES
+      - CORS_ALLOW_ORIGINS
+      - CORS_ALLOW_CREDENTIALS
+      - CORS_ALLOW_METHODS
+      - CORS_ALLOW_HEADERS
