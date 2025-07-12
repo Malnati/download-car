@@ -1,6 +1,14 @@
 <!-- README.md -->
 # Download CAR files (shape) 
 
+
+> :globe_with_meridians: **Looking for this README in English?**
+>
+> Use [Google Translate version](https://translate.google.com/translate?hl=en&sl=pt&tl=en&u=https://github.com/Malnati/download-car/blob/main/README.md) (auto-generated).
+>
+> This project automates downloads of SICAR shapefiles (Brazilian Rural Environmental Registry), with CLI, Python, Docker, API and Jupyter support. See below for parameter examples, references and data sources.
+
+
 Ferramenta que automatiza o download de arquivos do [Cadastro Ambiental Rural (SICAR)](https://car.gov.br/publico/imoveis/index). Ela é voltada para estudantes, pesquisadores e analistas que precisam acessar shapefiles do sistema de maneira simples.
 
 ## Badges
@@ -34,12 +42,6 @@ O projeto utiliza uma arquitetura Docker modular e otimizada:
 - **Flexibilidade**: Escolha entre dev/pro via variável de ambiente
 - **Manutenibilidade**: Estrutura clara e organizada
 - **Performance**: Builds mais rápidos e imagens menores
-
-> :globe_with_meridians: **Looking for this README in English?**
->
-> Use [Google Translate version](https://translate.google.com/translate?hl=en&sl=pt&tl=en&u=https://github.com/Malnati/download-car/blob/main/README.md) (auto-generated).
->
-> This project automates downloads of SICAR shapefiles (Brazilian Rural Environmental Registry), with CLI, Python, Docker, API and Jupyter support. See below for parameter examples, references and data sources.
 
 ---
 
