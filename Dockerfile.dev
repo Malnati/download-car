@@ -19,11 +19,11 @@ COPY pyproject.toml ./
 COPY poetry.lock* ./
 COPY LICENSE ./
 
+# Copiar o restante do projeto ANTES da instalação das dependências
+COPY . .
+
 # Instalar todas as dependências (incluindo dev)
 RUN poetry install --extras dev
-
-# Copiar o restante do projeto
-COPY . .
 
 # Instalar PaddleOCR (opcional, caso queira manter dependências opcionais)
 RUN poetry run pip install paddlepaddle paddleocr
