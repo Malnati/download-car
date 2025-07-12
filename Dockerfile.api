@@ -6,6 +6,9 @@ WORKDIR /download-car
 
 COPY app.py /download-car/
 COPY download_car/ /download-car/download_car/
+COPY entrypoint.api.sh /download-car/
 
-ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+RUN chmod +x /download-car/entrypoint.api.sh
+
+ENTRYPOINT ["/download-car/entrypoint.api.sh"]
 
