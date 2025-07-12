@@ -16,11 +16,11 @@ Ferramenta que automatiza o download de arquivos do [Cadastro Ambiental Rural (S
 
 Permitir o download programático dos dados públicos do SICAR. O projeto inclui drivers para reconhecimento de captcha via **Tesseract** (padrão) ou **PaddleOCR**.
 
-## 🆕 Nova Arquitetura Docker
+## 🐳 Arquitetura Docker
 
-O projeto foi reestruturado com uma arquitetura Docker modular e otimizada:
+O projeto utiliza uma arquitetura Docker modular e otimizada:
 
-### 🏗️ Melhorias da Nova Estrutura
+### 🏗️ Estrutura da Arquitetura
 - **Imagem Base Otimizada**: `python:3.11-slim` com dependências core
 - **Builds Separados**: Desenvolvimento e produção com dependências específicas
 - **Arquitetura Modular**: Cada serviço tem seu próprio Dockerfile
@@ -80,7 +80,7 @@ O projeto foi reestruturado com uma arquitetura Docker modular e otimizada:
 - [📝 Licença](#license)
 
 ```bash
-pip install git+https://github.com/Malnati/download-car
+pip install download-car
 ```
 
 Prerequisite:
@@ -502,11 +502,9 @@ ambiente apropriadas.
 
 ## 3️⃣ Execução via Docker Compose
 
-O repositório possui um `docker-compose.yml` configurado com três serviços e suporte a imagens otimizadas com arquitetura modular:
+O repositório possui um `docker-compose.yml` configurado com três serviços e suporte a imagens otimizadas:
 
-### 🏗️ Arquitetura Docker
-
-#### Estrutura dos Dockerfiles:
+### 🏗️ Estrutura dos Dockerfiles
 - **Dockerfile.base** - Imagem base com Python 3.11-slim e dependências core (Tesseract OCR, OpenCV)
 - **Dockerfile.dev** - Desenvolvimento (base + Poetry + PaddleOCR + ferramentas de debug)
 - **Dockerfile.pro** - Produção (base + requirements.txt otimizado)
@@ -514,7 +512,7 @@ O repositório possui um `docker-compose.yml` configurado com três serviços e 
 - **Dockerfile.download-car** - Serviço de download (estende dev ou pro conforme BASE_IMAGE)
 - **Dockerfile.nginx** - Frontend Nginx com Node.js para configuração dinâmica
 
-#### Configuração via Variável de Ambiente:
+### 🔧 Configuração via Variável de Ambiente
 ```bash
 # Para desenvolvimento (com PaddleOCR e ferramentas)
 BASE_IMAGE=download-car-dev:latest docker compose up
@@ -529,7 +527,7 @@ docker compose up
 
 ### 🛠️ Build das Imagens
 
-#### Comandos Makefile para Build:
+### 🛠️ Comandos Makefile para Build
 ```bash
 # Build completo de desenvolvimento
 make build-dev
@@ -549,7 +547,7 @@ make build-download-dev    # Download com base de desenvolvimento
 make build-download-pro    # Download com base de produção
 ```
 
-#### Geração de Requirements:
+### 📦 Geração de Requirements
 O sistema automaticamente gera `requirements.txt` a partir do `pyproject.toml`:
 ```bash
 # Geração manual (se necessário)
@@ -763,7 +761,7 @@ Rotas disponíveis:
 
 ## 5️⃣ Importação como módulo Python
 
-Após instalar com `pip install git+https://github.com/Malnati/download-car`, basta importar e usar:
+Após instalar com `pip install download-car`, basta importar e usar:
 
 ```python
 from download_car import DownloadCar, State, Polygon
@@ -1242,7 +1240,7 @@ brazil_AREA_IMOVEL.zip
 
 ## Roadmap
 
-- [ ] Upload to pypi registry
+- [x] Upload to pypi registry
 
 ## Contributing
 

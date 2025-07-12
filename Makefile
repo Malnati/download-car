@@ -143,6 +143,10 @@ git-update:
 	@echo "🔄  Atualizando repositório Git..."
 	git reset --hard && git fetch && git pull
 
+publish:
+	@echo "📦  Publicando pacote Python..."
+	rm -rf dist/* && python -m build && python -m twine upload dist/*
+
 integration-test:
 	@echo "🧪  Executando testes de integração..."
 	python -m unittest download_car/tests/integration/*.py
@@ -234,3 +238,4 @@ help:
 	@echo ""
 	@echo "🔄  Comandos de manutenção:"
 	@echo "  git-update      - Atualiza repositório Git"
+	@echo "  publish         - Publica pacote Python no PyPI"
