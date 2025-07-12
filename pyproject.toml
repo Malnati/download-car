@@ -1,7 +1,7 @@
 # pyproject.toml
 [project]
 name = "download-car"
-version = "0.7.10"
+version = "1.0.0"
 authors = [{ name = "Ricardo Malnati", email = "ricardomalnati@gmail.com" }]
 description = "download-car - Tool designed for students, researchers, data scientists or anyone who would like to have access to download-car files."
 requires-python = ">=3.10,<3.13"

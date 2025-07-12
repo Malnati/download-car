@@ -145,6 +145,23 @@ git-update:
 
 publish:
 	@echo "📦  Publicando pacote Python..."
+	@echo "🔄  Incrementando versão (patch)..."
+	python scripts/bump_version.py patch
+	@echo "🏗️  Construindo pacote..."
+	rm -rf dist/* && python -m build && python -m twine upload dist/*
+
+publish-minor:
+	@echo "📦  Publicando pacote Python (minor version)..."
+	@echo "🔄  Incrementando versão (minor)..."
+	python scripts/bump_version.py minor
+	@echo "🏗️  Construindo pacote..."
+	rm -rf dist/* && python -m build && python -m twine upload dist/*
+
+publish-major:
+	@echo "📦  Publicando pacote Python (major version)..."
+	@echo "🔄  Incrementando versão (major)..."
+	python scripts/bump_version.py major
+	@echo "🏗️  Construindo pacote..."
 	rm -rf dist/* && python -m build && python -m twine upload dist/*
 
 integration-test:
@@ -238,4 +255,6 @@ help:
 	@echo ""
 	@echo "🔄  Comandos de manutenção:"
 	@echo "  git-update      - Atualiza repositório Git"
-	@echo "  publish         - Publica pacote Python no PyPI"
+	@echo "  publish         - Publica pacote Python no PyPI (incrementa patch)"
+	@echo "  publish-minor   - Publica pacote Python no PyPI (incrementa minor)"
+	@echo "  publish-major   - Publica pacote Python no PyPI (incrementa major)"
