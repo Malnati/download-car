@@ -6,9 +6,9 @@ WORKDIR /download-car
 
 COPY app.py /download-car/
 COPY download_car/ /download-car/download_car/
+COPY entrypoint.api.sh /download-car/
 
-# Instalar dependências específicas da API
-RUN pip install fastapi uvicorn python-multipart geopandas fiona
+RUN chmod +x /download-car/entrypoint.api.sh
 
-ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["/download-car/entrypoint.api.sh"]
 
