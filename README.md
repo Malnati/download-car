@@ -102,6 +102,9 @@ A classe central deste pacote é `DownloadCar`, que disponibiliza três métodos
 | Fonte                         | Descrição                                   | Link |
 |-------------------------------|---------------------------------------------|------|
 | Cadastro Ambiental Rural (CAR)| Limites de imóveis rurais                   | [SICAR](https://www.car.gov.br/publico/municipios/downloads) |
+| SICAR - Consulta Pública      | Base de dados principal do sistema          | [Consulta Pública](https://consultapublica.car.gov.br/publico/imoveis/index) |
+| SICAR - Downloads por Estado  | Downloads de shapefiles por estado          | [Downloads](https://consultapublica.car.gov.br/publico/estados/downloads) |
+| SICAR - ReCaptcha             | Sistema de captcha para downloads           | [ReCaptcha](https://consultapublica.car.gov.br/publico/municipios/ReCaptcha) |
 | Mapbiomas                     | Uso e cobertura da terra, qualidade da pastagem, etc. | [Mapbiomas](https://mapbiomas.org/colecoes-mapbiomas-1?cama_set_language=pt-BR) |
 | Limites Territoriais           | País, estados, municípios (IBGE)            | [IBGE Malhas](https://www.ibge.gov.br/geociencias/organizacao-do-territorio/malhas-territoriais/15774-malhas.html) |
 | Terras Indígenas              | Limites oficiais FUNAI                      | [FUNAI](https://www.gov.br/funai/pt-br/atuacao/terras-indigenas/geoprocessamento-e-mapas) |
@@ -120,6 +123,53 @@ A classe central deste pacote é `DownloadCar`, que disponibiliza três métodos
 | `debug`    | bool         | ❌          | `False`| Exibe mensagens extras de depuração.                                              | `debug=True`                        |
 | `chunk_size`| int         | ❌          | `1024` | Tamanho do bloco para escrita do arquivo (em bytes).                               | `chunk_size=2048`                   |
 | `timeout`   | int         | ❌          | `30`    | Tempo máximo em segundos para cada tentativa de download.                         | `timeout=60`                     |
+| `max_retries`| int        | ❌          | `5`     | Número máximo de tentativas para download de cada arquivo.                        | `max_retries=10`                    |
+
+### 📋 Valores Disponíveis para Estados
+
+| Estado | Sigla | Nome Completo | Timeout Padrão (ms) | Exemplo |
+|--------|-------|---------------|-------------------|---------|
+| AC | Acre | Acre | 60000 | `State.AC` |
+| AL | Alagoas | Alagoas | 120000 | `State.AL` |
+| AM | Amazonas | Amazonas | 60000 | `State.AM` |
+| AP | Amapá | Amapá | 60000 | `State.AP` |
+| BA | Bahia | Bahia | 600000 | `State.BA` |
+| CE | Ceará | Ceará | 240000 | `State.CE` |
+| DF | Distrito Federal | Distrito Federal | 60000 | `State.DF` |
+| ES | Espírito Santo | Espírito Santo | 120000 | `State.ES` |
+| GO | Goiás | Goiás | 300000 | `State.GO` |
+| MA | Maranhão | Maranhão | 180000 | `State.MA` |
+| MG | Minas Gerais | Minas Gerais | 300000 | `State.MG` |
+| MS | Mato Grosso do Sul | Mato Grosso do Sul | 60000 | `State.MS` |
+| MT | Mato Grosso | Mato Grosso | 60000 | `State.MT` |
+| PA | Pará | Pará | 120000 | `State.PA` |
+| PB | Paraíba | Paraíba | 60000 | `State.PB` |
+| PE | Pernambuco | Pernambuco | 180000 | `State.PE` |
+| PI | Piauí | Piauí | 60000 | `State.PI` |
+| PR | Paraná | Paraná | 120000 | `State.PR` |
+| RJ | Rio de Janeiro | Rio de Janeiro | 120000 | `State.RJ` |
+| RN | Rio Grande do Norte | Rio Grande do Norte | 60000 | `State.RN` |
+| RO | Rondônia | Rondônia | 120000 | `State.RO` |
+| RR | Roraima | Roraima | 60000 | `State.RR` |
+| RS | Rio Grande do Sul | Rio Grande do Sul | 180000 | `State.RS` |
+| SC | Santa Catarina | Santa Catarina | 180000 | `State.SC` |
+| SE | Sergipe | Sergipe | 60000 | `State.SE` |
+| SP | São Paulo | São Paulo | 840000 | `State.SP` |
+| TO | Tocantins | Tocantins | 600000 | `State.TO` |
+
+### 📋 Valores Disponíveis para Polígonos
+
+| Polígono | Valor Interno | Descrição | Exemplo |
+|----------|---------------|-----------|---------|
+| AREA_PROPERTY | AREA_IMOVEL | Perímetros dos imóveis (Property perimeters) | `Polygon.AREA_PROPERTY` |
+| APPS | APPS | Área de Preservação Permanente (Permanent preservation area) | `Polygon.APPS` |
+| NATIVE_VEGETATION | VEGETACAO_NATIVA | Remanescente de Vegetação Nativa (Native Vegetation Remnants) | `Polygon.NATIVE_VEGETATION` |
+| CONSOLIDATED_AREA | AREA_CONSOLIDADA | Área Consolidada (Consolidated Area) | `Polygon.CONSOLIDATED_AREA` |
+| AREA_FALL | AREA_POUSIO | Área de Pousio (Fallow Area) | `Polygon.AREA_FALL` |
+| HYDROGRAPHY | HIDROGRAFIA | Hidrografia (Hydrography) | `Polygon.HYDROGRAPHY` |
+| RESTRICTED_USE | USO_RESTRITO | Uso Restrito (Restricted Use) | `Polygon.RESTRICTED_USE` |
+| ADMINISTRATIVE_SERVICE | SERVIDAO_ADMINISTRATIVA | Servidão Administrativa (Administrative Servitude) | `Polygon.ADMINISTRATIVE_SERVICE` |
+| LEGAL_RESERVE | RESERVA_LEGAL | Reserva Legal (Legal reserve) | `Polygon.LEGAL_RESERVE` |
 
 Esses parâmetros se aplicam principalmente ao método `download_state`. O método `download_country` utiliza a mesma assinatura (exceto pelo parâmetro `state`).
 
@@ -145,7 +195,7 @@ O projeto utiliza diversas variáveis de ambiente para configurar diferentes asp
 
 | Variável | Tipo | Padrão | Descrição | Exemplo |
 |----------|------|--------|-----------|---------|
-| `API_URL` | string | - | URL base da API | `API_URL=http://localhost:8000` |
+| `API_URL` | string | `"http://192.168.5.179:8787"` | URL base da API | `API_URL=http://localhost:8000` |
 | `CORS_ALLOW_ORIGINS` | string | `"*"` | Origens permitidas para CORS (separadas por vírgula) | `CORS_ALLOW_ORIGINS=http://localhost:3000,https://example.com` |
 | `CORS_ALLOW_CREDENTIALS` | boolean | `"true"` | Permite credenciais em requisições CORS | `CORS_ALLOW_CREDENTIALS=true` |
 | `CORS_ALLOW_METHODS` | string | `"GET,POST,OPTIONS"` | Métodos HTTP permitidos para CORS | `CORS_ALLOW_METHODS=GET,POST,PUT,DELETE,OPTIONS` |
@@ -181,32 +231,32 @@ O projeto utiliza diversas variáveis de ambiente para configurar diferentes asp
 | Variável | Tipo | Padrão | Descrição | Exemplo |
 |----------|------|--------|-----------|---------|
 | `STATE_TIMEOUT_AC` | integer | `60000` | Timeout específico para Acre | `STATE_TIMEOUT_AC=120000` |
-| `STATE_TIMEOUT_AL` | integer | `60000` | Timeout específico para Alagoas | `STATE_TIMEOUT_AL=90000` |
+| `STATE_TIMEOUT_AL` | integer | `120000` | Timeout específico para Alagoas | `STATE_TIMEOUT_AL=180000` |
 | `STATE_TIMEOUT_AM` | integer | `60000` | Timeout específico para Amazonas | `STATE_TIMEOUT_AM=180000` |
 | `STATE_TIMEOUT_AP` | integer | `60000` | Timeout específico para Amapá | `STATE_TIMEOUT_AP=120000` |
-| `STATE_TIMEOUT_BA` | integer | `60000` | Timeout específico para Bahia | `STATE_TIMEOUT_BA=150000` |
-| `STATE_TIMEOUT_CE` | integer | `60000` | Timeout específico para Ceará | `STATE_TIMEOUT_CE=120000` |
+| `STATE_TIMEOUT_BA` | integer | `600000` | Timeout específico para Bahia | `STATE_TIMEOUT_BA=900000` |
+| `STATE_TIMEOUT_CE` | integer | `240000` | Timeout específico para Ceará | `STATE_TIMEOUT_CE=300000` |
 | `STATE_TIMEOUT_DF` | integer | `60000` | Timeout específico para Distrito Federal | `STATE_TIMEOUT_DF=60000` |
-| `STATE_TIMEOUT_ES` | integer | `60000` | Timeout específico para Espírito Santo | `STATE_TIMEOUT_ES=90000` |
-| `STATE_TIMEOUT_GO` | integer | `60000` | Timeout específico para Goiás | `STATE_TIMEOUT_GO=120000` |
-| `STATE_TIMEOUT_MA` | integer | `60000` | Timeout específico para Maranhão | `STATE_TIMEOUT_MA=150000` |
-| `STATE_TIMEOUT_MG` | integer | `60000` | Timeout específico para Minas Gerais | `STATE_TIMEOUT_MG=180000` |
+| `STATE_TIMEOUT_ES` | integer | `120000` | Timeout específico para Espírito Santo | `STATE_TIMEOUT_ES=180000` |
+| `STATE_TIMEOUT_GO` | integer | `300000` | Timeout específico para Goiás | `STATE_TIMEOUT_GO=450000` |
+| `STATE_TIMEOUT_MA` | integer | `180000` | Timeout específico para Maranhão | `STATE_TIMEOUT_MA=240000` |
+| `STATE_TIMEOUT_MG` | integer | `300000` | Timeout específico para Minas Gerais | `STATE_TIMEOUT_MG=450000` |
 | `STATE_TIMEOUT_MS` | integer | `60000` | Timeout específico para Mato Grosso do Sul | `STATE_TIMEOUT_MS=120000` |
 | `STATE_TIMEOUT_MT` | integer | `60000` | Timeout específico para Mato Grosso | `STATE_TIMEOUT_MT=180000` |
-| `STATE_TIMEOUT_PA` | integer | `60000` | Timeout específico para Pará | `STATE_TIMEOUT_PA=240000` |
+| `STATE_TIMEOUT_PA` | integer | `120000` | Timeout específico para Pará | `STATE_TIMEOUT_PA=240000` |
 | `STATE_TIMEOUT_PB` | integer | `60000` | Timeout específico para Paraíba | `STATE_TIMEOUT_PB=90000` |
-| `STATE_TIMEOUT_PE` | integer | `60000` | Timeout específico para Pernambuco | `STATE_TIMEOUT_PE=120000` |
+| `STATE_TIMEOUT_PE` | integer | `180000` | Timeout específico para Pernambuco | `STATE_TIMEOUT_PE=240000` |
 | `STATE_TIMEOUT_PI` | integer | `60000` | Timeout específico para Piauí | `STATE_TIMEOUT_PI=120000` |
-| `STATE_TIMEOUT_PR` | integer | `60000` | Timeout específico para Paraná | `STATE_TIMEOUT_PR=150000` |
-| `STATE_TIMEOUT_RJ` | integer | `60000` | Timeout específico para Rio de Janeiro | `STATE_TIMEOUT_RJ=120000` |
+| `STATE_TIMEOUT_PR` | integer | `120000` | Timeout específico para Paraná | `STATE_TIMEOUT_PR=180000` |
+| `STATE_TIMEOUT_RJ` | integer | `120000` | Timeout específico para Rio de Janeiro | `STATE_TIMEOUT_RJ=180000` |
 | `STATE_TIMEOUT_RN` | integer | `60000` | Timeout específico para Rio Grande do Norte | `STATE_TIMEOUT_RN=90000` |
-| `STATE_TIMEOUT_RO` | integer | `60000` | Timeout específico para Rondônia | `STATE_TIMEOUT_RO=120000` |
+| `STATE_TIMEOUT_RO` | integer | `120000` | Timeout específico para Rondônia | `STATE_TIMEOUT_RO=180000` |
 | `STATE_TIMEOUT_RR` | integer | `60000` | Timeout específico para Roraima | `STATE_TIMEOUT_RR=120000` |
-| `STATE_TIMEOUT_RS` | integer | `60000` | Timeout específico para Rio Grande do Sul | `STATE_TIMEOUT_RS=150000` |
-| `STATE_TIMEOUT_SC` | integer | `60000` | Timeout específico para Santa Catarina | `STATE_TIMEOUT_SC=120000` |
+| `STATE_TIMEOUT_RS` | integer | `180000` | Timeout específico para Rio Grande do Sul | `STATE_TIMEOUT_RS=240000` |
+| `STATE_TIMEOUT_SC` | integer | `180000` | Timeout específico para Santa Catarina | `STATE_TIMEOUT_SC=240000` |
 | `STATE_TIMEOUT_SE` | integer | `60000` | Timeout específico para Sergipe | `STATE_TIMEOUT_SE=90000` |
-| `STATE_TIMEOUT_SP` | integer | `60000` | Timeout específico para São Paulo | `STATE_TIMEOUT_SP=180000` |
-| `STATE_TIMEOUT_TO` | integer | `60000` | Timeout específico para Tocantins | `STATE_TIMEOUT_TO=120000` |
+| `STATE_TIMEOUT_SP` | integer | `840000` | Timeout específico para São Paulo | `STATE_TIMEOUT_SP=1200000` |
+| `STATE_TIMEOUT_TO` | integer | `600000` | Timeout específico para Tocantins | `STATE_TIMEOUT_TO=900000` |
 
 ## 🔧 Variáveis de Configuração do Sistema
 
@@ -236,7 +286,7 @@ Crie um arquivo `.env` na raiz do projeto:
 ```bash
 # Variáveis de Download
 STATE=SP
-POLYGON=APPS
+POLYGON=AREA_PROPERTY
 FOLDER=temp/SP
 TRIES=25
 DEBUG=false
@@ -244,10 +294,27 @@ TIMEOUT=30
 MAX_RETRIES=5
 
 # Variáveis da API
+API_URL=http://192.168.5.179:8787
 CORS_ALLOW_ORIGINS=*
 CORS_ALLOW_CREDENTIALS=true
 CORS_ALLOW_METHODS=GET,POST,OPTIONS
 CORS_ALLOW_HEADERS=*
+
+# Variáveis do Frontend
+API_ENDPOINT_URL=http://192.168.5.179:8787
+DEFAULT_POLYGON=AREA_PROPERTY
+DEFAULT_TIMEOUT=800000
+TIMEOUT_INCREMENT=10000
+MIN_TIMEOUT=10000
+MAX_TIMEOUT=300000
+
+# Timeouts específicos por estado (exemplos)
+STATE_TIMEOUT_SP=840000
+STATE_TIMEOUT_BA=600000
+STATE_TIMEOUT_MG=300000
+STATE_TIMEOUT_GO=300000
+STATE_TIMEOUT_CE=240000
+```
 
 # Variáveis de Propriedades
 PROPERTY_FOLDER=PROPERTY
@@ -279,14 +346,18 @@ PADDLE_OCR_SHOW_LOG=false
 
 ```bash
 # Docker Compose com variáveis
-STATE=SP POLYGON=APPS docker compose up
+STATE=SP POLYGON=AREA_PROPERTY docker compose up
 
 # Makefile com variáveis
-make download state=SP polygon=APPS folder=temp/SP debug=true
+make download state=SP polygon=AREA_PROPERTY folder=temp/SP debug=true timeout=60
 
 # Build com configuração específica
 BASE_IMAGE=download-car-dev:latest make build-dev
 BUILD_TARGET=dev make build
+
+# Exemplos com diferentes estados e polígonos
+STATE=MG POLYGON=APPS make download folder=temp/MG debug=true timeout=300
+STATE=BA POLYGON=AREA_PROPERTY make download folder=temp/BA debug=false timeout=600
 ```
 
 ### 3. Docker Compose
@@ -304,28 +375,50 @@ services:
       - CORS_ALLOW_ORIGINS=http://localhost:3000
       - PROPERTY_FOLDER=properties
       - PROPERTY_TIMEOUT=60
-      - API_URL=http://localhost:8000
+      - API_URL=http://192.168.5.179:8787
+      - STATE_TIMEOUT_SP=840000
+      - STATE_TIMEOUT_BA=600000
+      - STATE_TIMEOUT_MG=300000
+      - TESSERACT_CONFIG=--oem 3 --psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
 ```
 
 ### 4. Configuração de Timeouts por Estado
 
-Para estados com muitos dados (como PA, AM, MT), configure timeouts maiores:
+Para estados com muitos dados, configure timeouts maiores baseados nos valores reais do sistema:
 
 ```bash
-# Estados com muitos dados
-STATE_TIMEOUT_PA=240000  # 4 minutos
-STATE_TIMEOUT_AM=180000  # 3 minutos
-STATE_TIMEOUT_MT=180000  # 3 minutos
+# Estados com muitos dados (timeouts altos)
+STATE_TIMEOUT_SP=840000   # 14 minutos (São Paulo - maior timeout)
+STATE_TIMEOUT_BA=600000   # 10 minutos (Bahia)
+STATE_TIMEOUT_TO=600000   # 10 minutos (Tocantins)
+STATE_TIMEOUT_MG=300000   # 5 minutos (Minas Gerais)
+STATE_TIMEOUT_GO=300000   # 5 minutos (Goiás)
 
-# Estados com dados moderados
-STATE_TIMEOUT_SP=180000  # 3 minutos
-STATE_TIMEOUT_MG=180000  # 3 minutos
-STATE_TIMEOUT_BA=150000  # 2.5 minutos
+# Estados com dados moderados (timeouts médios)
+STATE_TIMEOUT_CE=240000   # 4 minutos (Ceará)
+STATE_TIMEOUT_MA=180000   # 3 minutos (Maranhão)
+STATE_TIMEOUT_PE=180000   # 3 minutos (Pernambuco)
+STATE_TIMEOUT_RS=180000   # 3 minutos (Rio Grande do Sul)
+STATE_TIMEOUT_SC=180000   # 3 minutos (Santa Catarina)
+STATE_TIMEOUT_PA=120000   # 2 minutos (Pará)
+STATE_TIMEOUT_ES=120000   # 2 minutos (Espírito Santo)
+STATE_TIMEOUT_PR=120000   # 2 minutos (Paraná)
+STATE_TIMEOUT_RJ=120000   # 2 minutos (Rio de Janeiro)
+STATE_TIMEOUT_RO=120000   # 2 minutos (Rondônia)
 
-# Estados com dados menores
-STATE_TIMEOUT_DF=60000   # 1 minuto
-STATE_TIMEOUT_AL=90000   # 1.5 minutos
-STATE_TIMEOUT_SE=90000   # 1.5 minutos
+# Estados com dados menores (timeouts baixos)
+STATE_TIMEOUT_AL=120000   # 2 minutos (Alagoas)
+STATE_TIMEOUT_AC=60000    # 1 minuto (Acre)
+STATE_TIMEOUT_AM=60000    # 1 minuto (Amazonas)
+STATE_TIMEOUT_AP=60000    # 1 minuto (Amapá)
+STATE_TIMEOUT_DF=60000    # 1 minuto (Distrito Federal)
+STATE_TIMEOUT_MS=60000    # 1 minuto (Mato Grosso do Sul)
+STATE_TIMEOUT_MT=60000    # 1 minuto (Mato Grosso)
+STATE_TIMEOUT_PB=60000    # 1 minuto (Paraíba)
+STATE_TIMEOUT_PI=60000    # 1 minuto (Piauí)
+STATE_TIMEOUT_RN=60000    # 1 minuto (Rio Grande do Norte)
+STATE_TIMEOUT_RR=60000    # 1 minuto (Roraima)
+STATE_TIMEOUT_SE=60000    # 1 minuto (Sergipe)
 ```
 
 ### 5. Configuração de OCR
@@ -336,16 +429,19 @@ Para otimizar o reconhecimento de captcha, configure as variáveis OCR:
 # Configuração do Tesseract (padrão)
 TESSERACT_CONFIG="--oem 3 --psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-# Configuração do PaddleOCR
+# Configuração do PaddleOCR (recomendado para melhor precisão)
 PADDLE_OCR_LANG=en
 PADDLE_OCR_USE_GPU=false
 PADDLE_OCR_SHOW_LOG=false
 
-# Para melhor performance com GPU
+# Para melhor performance com GPU (se disponível)
 PADDLE_OCR_USE_GPU=true
 
-# Para debug de reconhecimento
+# Para debug de reconhecimento (útil para diagnosticar problemas)
 PADDLE_OCR_SHOW_LOG=true
+
+# Configuração específica para português (se necessário)
+PADDLE_OCR_LANG=pt
 ```
 
 **Dicas de configuração OCR:**
@@ -354,6 +450,12 @@ PADDLE_OCR_SHOW_LOG=true
 - **PaddleOCR**: Configure `PADDLE_OCR_LANG=pt` para português
 - **GPU**: Habilite `PADDLE_OCR_USE_GPU=true` se disponível
 - **Debug**: Use `PADDLE_OCR_SHOW_LOG=true` para diagnosticar problemas
+
+**URLs do Sistema SICAR:**
+- **Base**: `https://consultapublica.car.gov.br/publico`
+- **Consulta**: `https://consultapublica.car.gov.br/publico/imoveis/index`
+- **Downloads**: `https://consultapublica.car.gov.br/publico/estados/downloads`
+- **ReCaptcha**: `https://consultapublica.car.gov.br/publico/municipios/ReCaptcha`
 
 ---
 
@@ -364,8 +466,24 @@ PADDLE_OCR_SHOW_LOG=true
 ```python
 from download_car import DownloadCar, State, Polygon
 
+# Exemplo básico
 car = DownloadCar()
-car.download_state(state=State.PA, polygon=Polygon.APPS, folder="PA")
+car.download_state(state=State.SP, polygon=Polygon.AREA_PROPERTY, folder="dados/SP")
+
+# Exemplo com todos os parâmetros
+car.download_state(
+    state=State.MG, 
+    polygon=Polygon.APPS, 
+    folder="dados/MG", 
+    tries=25, 
+    debug=True, 
+    chunk_size=1024, 
+    timeout=60,
+    max_retries=5
+)
+
+# Exemplo para download de todo o país
+car.download_country(polygon=Polygon.AREA_PROPERTY, folder="dados/brasil")
 ```
 
 ## 2️⃣ Execução via Shell Script
@@ -538,44 +656,85 @@ A API FastAPI está disponível em `http://localhost:8000` e oferece os seguinte
 #### POST /download_state
 - `state` (obrigatório): Sigla do estado (ex: "SP", "RJ", "MG")
 - `polygon` (opcional): Tipo de polígono (padrão: "AREA_PROPERTY")
+  - Valores válidos: "AREA_PROPERTY", "APPS", "NATIVE_VEGETATION", "CONSOLIDATED_AREA", "AREA_FALL", "HYDROGRAPHY", "RESTRICTED_USE", "ADMINISTRATIVE_SERVICE", "LEGAL_RESERVE"
 - `folder` (opcional): Pasta de destino (padrão: "temp")
 - `tries` (opcional): Número de tentativas (padrão: 25)
 - `debug` (opcional): Modo debug (padrão: false)
 - `timeout` (opcional): Timeout em segundos (padrão: 30)
 - `max_retries` (opcional): Máximo de retry (padrão: 5)
 
+**Exemplos de valores válidos:**
+- `state`: "SP", "MG", "BA", "PA", "AM", "MT", "GO", "PR", "RS", "SC", "CE", "PE", "MA", "ES", "RJ", "RO", "PI", "AL", "PB", "RN", "SE", "TO", "AC", "AP", "RR", "DF", "MS"
+- `polygon`: "AREA_PROPERTY" (Área do Imóvel), "APPS" (Área de Preservação Permanente), "LEGAL_RESERVE" (Reserva Legal)
+
 #### POST /download_country
 - `polygon` (opcional): Tipo de polígono (padrão: "AREA_PROPERTY")
+  - Valores válidos: "AREA_PROPERTY", "APPS", "NATIVE_VEGETATION", "CONSOLIDATED_AREA", "AREA_FALL", "HYDROGRAPHY", "RESTRICTED_USE", "ADMINISTRATIVE_SERVICE", "LEGAL_RESERVE"
 - `folder` (opcional): Pasta de destino (padrão: "brazil")
 - `tries` (opcional): Número de tentativas (padrão: 25)
 - `debug` (opcional): Modo debug (padrão: false)
 - `timeout` (opcional): Timeout em segundos (padrão: 30)
 - `max_retries` (opcional): Máximo de retry (padrão: 5)
 
+#### POST /download-property
+- `car` (obrigatório): Número do CAR da propriedade (ex: "SP12345678901234567890")
+  - Formato: {SIGLA_ESTADO}{20_DIGITOS_ALFANUMERICOS}
+  - Exemplos: "SP12345678901234567890", "MG98765432109876543210", "BA11111111111111111111"
+
 #### DELETE /delete_state
 - `state` (obrigatório): Sigla do estado a ser excluído (ex: "SP", "RJ", "MG")
+  - Valores válidos: "SP", "MG", "BA", "PA", "AM", "MT", "GO", "PR", "RS", "SC", "CE", "PE", "MA", "ES", "RJ", "RO", "PI", "AL", "PB", "RN", "SE", "TO", "AC", "AP", "RR", "DF", "MS"
 - `folder` (opcional): Pasta onde estão os arquivos (padrão: "temp")
 - `include_properties` (opcional): Se deve excluir também arquivos de propriedades (padrão: true)
+
+#### GET /state?car={CAR}
+- `car` (obrigatório): Número do CAR da propriedade
+  - Exemplo: `GET /state?car=SP12345678901234567890`
+
+#### GET /property?car={CAR}
+- `car` (obrigatório): Número do CAR da propriedade
+  - Exemplo: `GET /property?car=SP12345678901234567890`
 
 ### Exemplo via curl
 
 ```bash
-# Download de um estado
+# Download de um estado (São Paulo - Área do Imóvel)
 curl -X POST "http://localhost:8000/download_state" \
      -F "state=SP" \
-     -F "polygon=APPS" \
+     -F "polygon=AREA_PROPERTY" \
      -F "folder=temp" \
      -F "tries=25" \
      -F "debug=false" \
-     --output SP_APPS.zip
+     -F "timeout=30" \
+     -F "max_retries=5" \
+     --output SP_AREA_IMOVEL.zip
 
-# Download de todo o país
+# Download de APPS (Minas Gerais - Área de Preservação Permanente)
+curl -X POST "http://localhost:8000/download_state" \
+     -F "state=MG" \
+     -F "polygon=APPS" \
+     -F "folder=temp" \
+     -F "tries=25" \
+     -F "debug=true" \
+     -F "timeout=60" \
+     --output MG_APPS.zip
+
+# Download de todo o país (Área do Imóvel)
 curl -X POST "http://localhost:8000/download_country" \
      -F "polygon=AREA_PROPERTY" \
      -F "folder=brazil" \
      -F "tries=25" \
      -F "debug=false" \
-     --output brazil_AREA_PROPERTY.zip
+     -F "timeout=30" \
+     --output brazil_AREA_IMOVEL.zip
+
+# Buscar estado de um CAR específico
+curl -X GET "http://localhost:8000/state?car=SP12345678901234567890"
+
+# Baixar propriedade específica
+curl -X POST "http://localhost:8000/download-property" \
+     -F "car=SP12345678901234567890" \
+     --output property_SP12345678901234567890.zip
 
 # Excluir arquivos de um estado
 curl -X DELETE "http://localhost:8000/delete_state" \
@@ -609,8 +768,18 @@ Após instalar com `pip install git+https://github.com/Malnati/download-car`, ba
 ```python
 from download_car import DownloadCar, State, Polygon
 
+# Exemplo básico
 car = DownloadCar()
 car.download_state(State.MG, Polygon.LEGAL_RESERVE, folder="MG")
+
+# Exemplo com configuração específica de OCR
+from download_car.drivers import Paddle
+car = DownloadCar(driver=Paddle())
+car.download_state(State.SP, Polygon.AREA_PROPERTY, folder="dados/SP", debug=True)
+
+# Exemplo para obter datas de release
+release_dates = car.get_release_dates()
+print(f"Data de release para SP: {release_dates.get(State.SP)}")
 ```
 
 ## 📓 Suporte ao Jupyter Notebook
@@ -630,6 +799,22 @@ car.download_state(State.SP, Polygon.AREA_PROPERTY, folder="notebook_data")
 gdf = gpd.read_file("notebook_data/SP_AREA_IMOVEL.zip")
 print(f"Total de propriedades: {len(gdf)}")
 print(f"Área total: {gdf['num_area'].sum():.2f} hectares")
+
+# Análise por município
+municipio_stats = gdf.groupby('municipio').agg({
+    'num_area': ['count', 'sum', 'mean'],
+    'mod_fiscal': 'mean'
+}).round(2)
+print("Estatísticas por município:")
+print(municipio_stats)
+
+# Análise por status do CAR
+status_stats = gdf.groupby('ind_status').agg({
+    'num_area': ['count', 'sum'],
+    'mod_fiscal': 'mean'
+}).round(2)
+print("Estatísticas por status do CAR:")
+print(status_stats)
 
 # Visualizar dados
 gdf.plot(column='num_area', legend=True, figsize=(12, 8))
@@ -721,8 +906,20 @@ make build-dev
 # Iniciar apenas a API
 make api-up
 
-# Executar download específico
-make download state=SP polygon=APPS folder=temp/SP debug=true
+# Executar download específico (São Paulo - Área do Imóvel)
+make download state=SP polygon=AREA_PROPERTY folder=temp/SP debug=true timeout=60
+
+# Executar download específico (Minas Gerais - APPS)
+make download state=MG polygon=APPS folder=temp/MG debug=true timeout=300
+
+# Buscar estado de um CAR específico
+make search-car car=SP12345678901234567890
+
+# Baixar propriedade específica
+make download-property car=SP12345678901234567890
+
+# Excluir arquivos de um estado
+make delete-state state=SP folder=temp include_properties=true
 
 # Ver logs da API
 make logs service=download-car-api
@@ -995,12 +1192,32 @@ download-car/
 O download gera um arquivo `.zip` contendo os shapefiles correspondentes. Exemplo de estrutura:
 
 ```plain
-data.zip
-├── dados.shp
-├── dados.shx
-├── dados.dbf
-└── dados.prj
+# Exemplo de arquivo para São Paulo - Área do Imóvel
+SP_AREA_IMOVEL.zip
+├── SP_AREA_IMOVEL.shp
+├── SP_AREA_IMOVEL.shx
+├── SP_AREA_IMOVEL.dbf
+└── SP_AREA_IMOVEL.prj
+
+# Exemplo de arquivo para Minas Gerais - APPS
+MG_APPS.zip
+├── MG_APPS.shp
+├── MG_APPS.shx
+├── MG_APPS.dbf
+└── MG_APPS.prj
+
+# Exemplo de arquivo para todo o Brasil
+brazil_AREA_IMOVEL.zip
+├── AC_AREA_IMOVEL.shp
+├── AL_AREA_IMOVEL.shp
+├── AM_AREA_IMOVEL.shp
+└── ... (todos os estados)
 ```
+
+**Convenção de nomenclatura:**
+- Estados: `{SIGLA}_{TIPO_POLIGONO}.zip`
+- Brasil: `brazil_{TIPO_POLIGONO}.zip`
+- Propriedades: `property_{CAR}.zip`
 
 # Data dictionary
 
@@ -1053,7 +1270,10 @@ If you have any feedback, please reach me at ricardomalnati@gmail.com
 **Como resolver problemas de captcha?**
 - Verifique se o Tesseract OCR está instalado: `tesseract --version`
 - Para melhor precisão, use PaddleOCR: `pip install "download-car[paddle]"`
-- Configure timeouts maiores para estados com muitos dados
+- Configure timeouts maiores para estados com muitos dados:
+  - São Paulo: `STATE_TIMEOUT_SP=840000` (14 minutos)
+  - Bahia: `STATE_TIMEOUT_BA=600000` (10 minutos)
+  - Minas Gerais: `STATE_TIMEOUT_MG=300000` (5 minutos)
 
 **Como debugar problemas de download?**
 - Ative o modo debug: `DEBUG=true`
