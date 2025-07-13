@@ -150,21 +150,21 @@ git-update:
 publish:
 	@echo "📦  Publicando pacote Python..."
 	@echo "🔄  Incrementando versão (patch)..."
-	python scripts/bump_version.py patch
+	python dev/bump_version.py patch
 	@echo "🏗️  Construindo pacote..."
 	rm -rf dist/* && python -m build && python -m twine upload dist/*
 
 publish-minor:
 	@echo "📦  Publicando pacote Python (minor version)..."
 	@echo "🔄  Incrementando versão (minor)..."
-	python scripts/bump_version.py minor
+	python dev/bump_version.py minor
 	@echo "🏗️  Construindo pacote..."
 	rm -rf dist/* && python -m build && python -m twine upload dist/*
 
 publish-major:
 	@echo "📦  Publicando pacote Python (major version)..."
 	@echo "🔄  Incrementando versão (major)..."
-	python scripts/bump_version.py major
+	python dev/bump_version.py major
 	@echo "🏗️  Construindo pacote..."
 	rm -rf dist/* && python -m build && python -m twine upload dist/*
 
