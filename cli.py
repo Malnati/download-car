@@ -190,6 +190,61 @@ def execute_with_vpn_fallback(func, *args, **kwargs):
     
     raise Exception("❌ Todas as tentativas de conexão falharam")
 
+def execute_with_automatic_vpn_fallback(func, *args, **kwargs):
+    """Executa função com fallback VPN automático em caso de rate limiting."""
+    
+    def _detect_rate_limiting_error(error):
+        """Detecta se o erro é de rate limiting ou SSL."""
+        error_msg = str(error).lower()
+        rate_limiting_keywords = [
+            "rate limit", "ssl", "handshake", "timeout", 
+            "connection", "urlnotok", "failed to access"
+        ]
+        return any(keyword in error_msg for keyword in rate_limiting_keywords)
+    
+    # Primeira tentativa: download normal
+    try:
+        print("🚀 Tentativa 1: Download normal...")
+        result = func(*args, **kwargs)
+        if result:  # Se retornou um caminho válido
+            print("✅ Download concluído com sucesso!")
+            return result
+    except Exception as e:
+        if _detect_rate_limiting_error(e):
+            print(f"⚠️  Problema de conexão detectado: {e}")
+            print("🔄 Ativando modo VPN fallback...")
+        else:
+            # Erro não relacionado a conexão, propagar
+            raise e
+    
+    # Se chegou aqui, houve problema de conexão ou download falhou
+    # Tentar com VPN fallback
+    for attempt in range(3):  # Máximo 3 tentativas com VPN
+        try:
+            print(f"🚀 Tentativa {attempt + 2}: Rotacionando conexão...")
+            
+            # Rotacionar conexão (VPN/proxy)
+            if vpn_manager.rotate_connection():
+                print("⏳ Aguardando estabilização da conexão...")
+                time.sleep(10)
+                
+                # Tentar download novamente
+                result = func(*args, **kwargs)
+                if result:
+                    print("✅ Download concluído com VPN!")
+                    return result
+            else:
+                print("❌ Não foi possível rotacionar conexão")
+                break
+                
+        except Exception as e:
+            print(f"❌ Tentativa {attempt + 2} falhou: {e}")
+            if not _detect_rate_limiting_error(e):
+                # Erro não relacionado a conexão, propagar
+                raise e
+    
+    raise Exception("❌ Todas as tentativas falharam (normal + VPN)")
+
 def zip_shapefile(shp_path: str) -> str:
     """Cria um arquivo ZIP contendo todos os arquivos do shapefile."""
     base = os.path.splitext(shp_path)[0]
@@ -942,7 +997,7 @@ def get_polygons_logic() -> Dict[str, Any]:
 # =============================================================================
 
 def main():
-    """Função principal do CLI com suporte a VPN fallback."""
+    """Função principal do CLI com VPN fallback automático."""
     # Importa apenas quando necessário
     from download_car import DownloadCar, Polygon, State
     from download_car.drivers import Tesseract
@@ -955,8 +1010,13 @@ def main():
     parser.add_argument("--debug", type=lambda x: str(x).lower() == "true", default=os.getenv("DEBUG", "False"))
     parser.add_argument("--timeout", type=int, default=int(os.getenv("TIMEOUT", "30")))
     parser.add_argument("--max_retries", type=int, default=int(os.getenv("MAX_RETRIES", "5")))
-    parser.add_argument("--vpn-fallback", action="store_true", help="Enable VPN fallback for rate limiting")
+    parser.add_argument("--no-vpn-fallback", action="store_true", help="Disable automatic VPN fallback")
     args = parser.parse_args()
+
+    # Configurar VPN fallback automaticamente (a menos que seja desabilitado)
+    if not args.no_vpn_fallback:
+        print("🔗 Configurando VPN fallback automático...")
+        setup_vpn_fallback()
 
     # Read parameters from environment variables with reasonable defaults
     state = State[args.state] if args.state in State.__members__ else State[os.getenv("STATE", "DF")]
@@ -972,9 +1032,8 @@ def main():
     car = DownloadCar(driver=Tesseract)
 
     # Download polygon for the selected state
-    if args.vpn_fallback:
-        print("🚀 Executando download com VPN fallback...")
-        # Implementar lógica de VPN fallback aqui
+    if args.no_vpn_fallback:
+        print("🚀 Executando download normal (sem VPN fallback)...")
         result = car.download_state(
             state=state,
             polygon=polygon,
@@ -986,8 +1045,9 @@ def main():
             max_retries=max_retries,
         )
     else:
-        print("🚀 Executando download normal...")
-        result = car.download_state(
+        print("🚀 Executando download com VPN fallback automático...")
+        result = execute_with_automatic_vpn_fallback(
+            car.download_state,
             state=state,
             polygon=polygon,
             folder=folder,
