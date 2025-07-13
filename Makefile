@@ -365,3 +365,10 @@ help:
 	@echo "  sync-car car=X state=Y polygon=Z - Sincroniza dados de um CAR específico"
 	@echo "  query-car car=X - Consulta dados de um CAR no banco"
 	@echo "  query-state state=X limit=Y - Consulta dados de um estado no banco"
+
+# Limpar arquivos de download
+clean-downloads:
+	@echo "🗑️  Limpando arquivos de download..."
+	rm -f data/*.zip || true
+	rm -f temp/*.zip || true
+	@echo "✅ Arquivos de download removidos"
