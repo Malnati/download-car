@@ -29,6 +29,7 @@ dependencies = [
 [project.optional-dependencies]
 paddle = ["paddlepaddle>=3.0.0", "paddleocr>=2.10.0"]
 dev = ["coverage", "interrogate", "black", "coveralls"]
+full = ["paddlepaddle>=3.0.0", "paddleocr>=2.10.0", "coverage", "interrogate", "black", "coveralls"]
 
 [project.urls]
 "Homepage" = "https://github.com/Malnati/download-car"

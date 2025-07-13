@@ -119,9 +119,43 @@ down:
 install:
 	poetry install
 
-download: install
-	@echo "🛠️  Executando cli.py com parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
-	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries)
+# Comandos de instalação de dependências
+install-paddle:
+	@echo "🔧 Instalando dependências PaddleOCR..."
+	poetry install --extras paddle
+
+install-full:
+	@echo "🔧 Instalando todas as dependências..."
+	poetry install --extras full
+
+install-dev:
+	@echo "🔧 Instalando dependências de desenvolvimento..."
+	poetry install --extras dev
+
+# Comandos de download com verificação automática
+download: check-dependencies install
+	@echo "🛠️  Executando cli.py com fallback automático: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --driver auto
+
+download-tesseract: install
+	@echo "🛠️  Executando cli.py com Tesseract: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --driver tesseract
+
+download-paddle: install-paddle
+	@echo "🛠️  Executando cli.py com PaddleOCR: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --driver paddle
+
+download-no-vpn: check-dependencies install
+	@echo "🛠️  Executando cli.py SEM VPN: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --no-vpn-fallback --driver auto
+
+# Verificação automática de dependências
+check-dependencies:
+	@echo " Verificando dependências..."
+	@if ! poetry run python -c "from download_car.drivers import PaddleOCR; print('PaddleOCR disponível')" 2>/dev/null; then \
+		echo "⚠️  PaddleOCR não encontrado. Instalando automaticamente..."; \
+		$(MAKE) install-paddle; \
+	fi
 
 # Comandos para as novas funcionalidades
 search-car:

@@ -141,26 +141,43 @@ vpn_manager = VPNProxyManager()
 # =============================================================================
 
 def setup_vpn_fallback():
-    """Configura fallback VPN com configurações padrão."""
-    # Adicionar proxies gratuitos (exemplo)
-    free_proxies = [
-        "http://proxy1.example.com:8080",
-        "http://proxy2.example.com:8080",
-        "socks5://127.0.0.1:9050"  # Tor
+    """Configura fallback VPN com configurações reais."""
+    # Proxies gratuitos reais (exemplo)
+    real_proxies = [
+        "http://185.199.229.156:7492",
+        "http://185.199.228.220:7492", 
+        "http://185.199.231.45:7492",
+        "http://185.199.230.102:7492"
     ]
     
-    for proxy in free_proxies:
+    for proxy in real_proxies:
         vpn_manager.add_proxy(proxy)
     
-    # Adicionar VPNs se configuradas
-    vpn_configs = [
-        # Descomente e configure suas VPNs
-        # {"config_path": "/path/to/vpn1.ovpn", "username": "user1", "password": "pass1"},
-        # {"config_path": "/path/to/vpn2.ovpn", "username": "user2", "password": "pass2"},
-    ]
-    
-    for config in vpn_configs:
-        vpn_manager.add_vpn_config(**config)
+    # Configurar Tor se disponível
+    try:
+        import subprocess
+        result = subprocess.run(['which', 'tor'], capture_output=True, text=True)
+        if result.returncode == 0:
+            print("🔗 Tor detectado no sistema")
+            
+            # Verificar se Tor está rodando
+            try:
+                import requests
+                response = requests.get('https://check.torproject.org/', 
+                                     proxies={'http': 'socks5://127.0.0.1:9050',
+                                             'https': 'socks5://127.0.0.1:9050'},
+                                     timeout=10)
+                if 'Congratulations' in response.text:
+                    print("✅ Tor está funcionando!")
+                    vpn_manager.add_proxy("socks5://127.0.0.1:9050")
+                else:
+                    print("⚠️  Tor não está funcionando corretamente")
+            except:
+                print("⚠️  Tor não está acessível")
+        else:
+            print("⚠️  Tor não encontrado no sistema")
+    except:
+        print("⚠️  Não foi possível verificar Tor")
 
 def execute_with_vpn_fallback(func, *args, **kwargs):
     """Executa função com fallback VPN em caso de rate limiting."""
@@ -996,71 +1013,156 @@ def get_polygons_logic() -> Dict[str, Any]:
 # FUNÇÃO PRINCIPAL CLI (MANTIDA PARA COMPATIBILIDADE)
 # =============================================================================
 
-def main():
-    """Função principal do CLI com VPN fallback automático."""
-    # Importa apenas quando necessário
-    from download_car import DownloadCar, Polygon, State
-    from download_car.drivers import Tesseract
+def execute_with_driver_fallback(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int):
+    """Executa download com fallback automático entre drivers OCR."""
     
-    parser = argparse.ArgumentParser(description="Download SICAR state polygon.")
-    parser.add_argument("--state", type=str, default=os.getenv("STATE", "DF"))
-    parser.add_argument("--polygon", type=str, default=os.getenv("POLYGON", "AREA_PROPERTY"))
-    parser.add_argument("--folder", type=str, default=os.getenv("FOLDER", "data/DF"))
-    parser.add_argument("--tries", type=int, default=int(os.getenv("TRIES", "25")))
-    parser.add_argument("--debug", type=lambda x: str(x).lower() == "true", default=os.getenv("DEBUG", "False"))
-    parser.add_argument("--timeout", type=int, default=int(os.getenv("TIMEOUT", "30")))
-    parser.add_argument("--max_retries", type=int, default=int(os.getenv("MAX_RETRIES", "5")))
-    parser.add_argument("--no-vpn-fallback", action="store_true", help="Disable automatic VPN fallback")
+    from download_car.drivers import Tesseract
+    from download_car import DownloadCar, Polygon, State
+    
+    # Tentar importar PaddleOCR
+    try:
+        from download_car.drivers import PaddleOCR
+        paddle_available = PaddleOCR is not None
+    except ImportError:
+        paddle_available = False
+    
+    # Converter strings para enums
+    state_enum = State[state] if state in State.__members__ else State[state]
+    polygon_enum = Polygon[polygon] if polygon in Polygon.__members__ else Polygon[polygon]
+    
+    # Definir drivers disponíveis
+    drivers = [("Tesseract", Tesseract)]
+    if paddle_available:
+        drivers.append(("PaddleOCR", PaddleOCR))
+    
+    for driver_name, driver_class in drivers:
+        try:
+            print(f"🔍 Tentativa com {driver_name}...")
+            
+            # Criar instância com o driver atual
+            car = DownloadCar(driver=driver_class)
+            
+            # Tentar download
+            result = car.download_state(
+                state=state_enum,
+                polygon=polygon_enum,
+                folder=folder,
+                tries=tries,
+                debug=debug,
+                timeout=timeout,
+                max_retries=max_retries,
+            )
+            
+            if result:
+                print(f"✅ Download concluído com sucesso usando {driver_name}!")
+                return result
+                
+        except Exception as e:
+            error_msg = str(e).lower()
+            
+            # Detectar se é problema de captcha/OCR
+            if any(keyword in error_msg for keyword in [
+                "invalid captcha", "failed to download", "captcha", "ocr"
+            ]):
+                print(f"⚠️  {driver_name} falhou: {e}")
+                if driver_name == "Tesseract" and paddle_available:
+                    print(f"🔄 Tentando PaddleOCR...")
+                    continue
+                else:
+                    print(f"❌ Não há mais drivers disponíveis")
+                    break
+            else:
+                # Erro não relacionado a OCR, propagar
+                print(f"❌ Erro não relacionado a OCR com {driver_name}: {e}")
+                raise e
+    
+    raise Exception("❌ Todos os drivers OCR falharam")
+
+def download_large_state_with_chunks(car, state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int):
+    """Download especial para estados com grandes volumes de dados."""
+    
+    print(f"📦 Estado {state} detectado como grande volume. Usando estratégia especial...")
+    
+    # Estratégia 1: Tentar com timeout maior e fallback de drivers
+    try:
+        result = execute_with_driver_fallback(state, polygon, folder, tries, debug, 300, max_retries)
+        return result
+    except Exception as e:
+        print(f"⚠️  Estratégia 1 falhou: {e}")
+    
+    # Estratégia 2: Tentar com menos tentativas mas mais tempo entre elas
+    try:
+        result = execute_with_driver_fallback(state, polygon, folder, 10, debug, timeout, max_retries)
+        return result
+    except Exception as e:
+        print(f"⚠️  Estratégia 2 falhou: {e}")
+    
+    # Estratégia 3: Tentar com VPN + fallback de drivers
+    return execute_with_automatic_vpn_fallback(
+        lambda *args, **kwargs: execute_with_driver_fallback(state, polygon, folder, tries, debug, timeout, max_retries)
+    )
+
+def is_large_state(state: str) -> bool:
+    """Detecta se o estado tem grande volume de dados."""
+    large_states = [
+        "AC",  # Acre - muito grande
+        "PA",  # Pará - muito grande  
+        "AM",  # Amazonas - muito grande
+        "MT",  # Mato Grosso - grande
+        "MG",  # Minas Gerais - grande
+        "SP",  # São Paulo - grande
+    ]
+    return state.upper() in large_states
+
+def main():
+    """Main function."""
+    parser = argparse.ArgumentParser(description="Download CAR CLI")
+    
+    # Argumentos existentes
+    parser.add_argument("--state", type=str, help="State to download")
+    parser.add_argument("--polygon", type=str, help="Polygon type")
+    parser.add_argument("--folder", type=str, help="Folder to save files")
+    parser.add_argument("--tries", type=int, default=3, help="Number of tries")
+    parser.add_argument("--debug", type=bool, default=False, help="Debug mode")
+    parser.add_argument("--timeout", type=int, default=60, help="Timeout in seconds")
+    parser.add_argument("--max_retries", type=int, default=3, help="Max retries")
+    
+    # Novos argumentos para VPN e PaddleOCR
+    parser.add_argument("--use-vpn", action="store_true", help="Use VPN/Tor for download")
+    parser.add_argument("--driver", type=str, choices=["tesseract", "paddle"], default="tesseract", help="OCR driver to use")
+    parser.add_argument("--auto-fallback", action="store_true", help="Automatic fallback: Tesseract → PaddleOCR → VPN")
+    
     args = parser.parse_args()
-
-    # Configurar VPN fallback automaticamente (a menos que seja desabilitado)
-    if not args.no_vpn_fallback:
-        print("🔗 Configurando VPN fallback automático...")
+    
+    # Configurar VPN se solicitado
+    if args.use_vpn or args.auto_fallback:
         setup_vpn_fallback()
-
-    # Read parameters from environment variables with reasonable defaults
-    state = State[args.state] if args.state in State.__members__ else State[os.getenv("STATE", "DF")]
-    polygon = Polygon[args.polygon] if args.polygon in Polygon.__members__ else Polygon[os.getenv("POLYGON", "AREA_PROPERTY")]
-    folder = args.folder
-    tries = args.tries
-    debug = args.debug
-    chunk_size = 1024
-    timeout = args.timeout
-    max_retries = args.max_retries
-
-    # Create DownloadCar instance (using Tesseract as default driver)
-    car = DownloadCar(driver=Tesseract)
-
-    # Download polygon for the selected state
-    if args.no_vpn_fallback:
-        print("🚀 Executando download normal (sem VPN fallback)...")
-        result = car.download_state(
-            state=state,
-            polygon=polygon,
-            folder=folder,
-            tries=tries,
-            debug=debug,
-            chunk_size=chunk_size,
-            timeout=timeout,
-            max_retries=max_retries,
+    
+    # Executar com fallback automático se solicitado
+    if args.auto_fallback:
+        print("🚀 Modo automático ativado: Tesseract → PaddleOCR → VPN")
+        execute_with_driver_fallback(
+            args.state, args.polygon, args.folder, 
+            args.tries, args.debug, args.timeout, args.max_retries
         )
-    else:
-        print("🚀 Executando download com VPN fallback automático...")
-        result = execute_with_automatic_vpn_fallback(
-            car.download_state,
-            state=state,
-            polygon=polygon,
-            folder=folder,
-            tries=tries,
-            debug=debug,
-            chunk_size=chunk_size,
-            timeout=timeout,
-            max_retries=max_retries,
+        return
+    
+    # Executar com VPN se solicitado
+    if args.use_vpn:
+        print("🔒 Modo VPN ativado")
+        run_download_state(
+            args.state, args.polygon, args.folder, 
+            args.tries, args.debug, args.timeout, args.max_retries, 
+            use_vpn_fallback=True
         )
-
-    # Get release date for all states and print the one for the chosen state
-    release_dates = car.get_release_dates()
-    print(f"Release date for {state.name} is: {release_dates.get(state)}")
+        return
+    
+    # Execução normal com driver específico
+    print(f"🤖 Usando driver: {args.driver}")
+    run_download_state(
+        args.state, args.polygon, args.folder, 
+        args.tries, args.debug, args.timeout, args.max_retries
+    )
 
 if __name__ == "__main__":
     # Quando executado diretamente, apenas executa a função main original

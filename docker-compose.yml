@@ -3,51 +3,47 @@ version: '3.8'
 
 # Carregar variáveis de ambiente do arquivo .env (padrão do Docker Compose)
 services:
-  download-car-download:
+  download-car:
     build:
       context: .
       dockerfile: Dockerfile.download-car
       args:
         BASE_IMAGE: ${BASE_IMAGE:-download-car-pro:latest}
+    container_name: download-car
     volumes:
       - .:/download-car
-    entrypoint: ./entrypoint.download.sh
+      - ./data:/download-car/data
     environment:
-      - STATE
-      - POLYGON
-      - FOLDER
-      - TRIES
-      - DEBUG
-      - TIMEOUT
-      - MAX_RETRIES
+      - PYTHONPATH=/download-car
+      - TOR_ENABLED=true  # Habilitar Tor
+    ports:
+      - "8000:8000"
+    command: ["/usr/local/bin/start-tor.sh", "python", "cli.py"]
+    depends_on:
+      - postgres
+    networks:
+      - download-car-network
 
-  download-car-api:
+  api:
     build:
       context: .
       dockerfile: Dockerfile.api
       args:
         BASE_IMAGE: ${BASE_IMAGE:-download-car-pro:latest}
+    container_name: download-car-api
     volumes:
       - .:/download-car
-    ports:
-      - "8000:8000"
-
+      - ./data:/download-car/data
     environment:
-      - API_URL
-      - CORS_ALLOW_ORIGINS
-      - CORS_ALLOW_CREDENTIALS
-      - CORS_ALLOW_METHODS
-      - CORS_ALLOW_HEADERS
-      - MAPBIOMAS_URL
-      - IBGE_URL
-      - DB_HOST
-      - DB_PORT
-      - DB_NAME
-      - DB_USER
-      - DB_PASSWORD
-      - DB_SCHEMA
-      - DB_POOL_SIZE
-      - DB_TIMEOUT
+      - PYTHONPATH=/download-car
+      - TOR_ENABLED=true  # Habilitar Tor
+    ports:
+      - "8787:8000"
+    command: ["/usr/local/bin/start-tor.sh", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      - postgres
+    networks:
+      - download-car-network
 
   nginx:
     build:

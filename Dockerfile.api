@@ -10,6 +10,10 @@ COPY requirements.txt /download-car/
 # Instalar dependências específicas da API se necessário
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Garantir que Tor está instalado
+RUN apt-get update && apt-get install -y --no-install-recommends tor && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY api.py /download-car/
 COPY database.py /download-car/
 COPY download_car/ /download-car/download_car/

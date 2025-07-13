@@ -3,8 +3,9 @@ FROM download-car-base:latest
 
 # Instalar ferramentas de debug e desenvolvimento
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        curl wget ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+        curl wget ca-certificates \
+        tor \  # Garantir que Tor está instalado
+    && rm -rf /var/lib/apt/lists/*
 
 # Instalar Poetry
 RUN pip install poetry
@@ -29,3 +30,7 @@ RUN poetry install --extras dev
 
 # Instalar PaddleOCR (opcional, caso queira manter dependências opcionais)
 RUN poetry run pip install paddlepaddle paddleocr
+
+# Script para iniciar Tor junto com a aplicação
+COPY dev/start-tor.sh /usr/local/bin/start-tor.sh
+RUN chmod +x /usr/local/bin/start-tor.sh

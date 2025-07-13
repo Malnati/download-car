@@ -12,7 +12,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libffi-dev liblzma-dev libncursesw5-dev xz-utils tk-dev libgdbm-dev \
         uuid-dev \
         tesseract-ocr python3-opencv \
+        tor \  # Adicionar Tor
     && rm -rf /var/lib/apt/lists/*
+
+# Configurar Tor
+RUN mkdir -p /var/lib/tor && \
+    chown -R debian-tor:debian-tor /var/lib/tor && \
+    chmod 700 /var/lib/tor
+
+# Configuração básica do Tor
+RUN echo "SocksPort 9050" >> /etc/tor/torrc && \
+    echo "DataDirectory /var/lib/tor" >> /etc/tor/torrc && \
+    echo "Log notice file /var/log/tor/notices.log" >> /etc/tor/torrc
 
 RUN pip install --upgrade pip
 
