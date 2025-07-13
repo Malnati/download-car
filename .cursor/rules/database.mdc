@@ -1,0 +1,10 @@
+---
+description: O banco PostGIS é externo e mantido por outro projeto. Este projeto apenas se conecta para registrar dados extraídos de shapefiles. A inicialização do banco não deve ser tratada aqui.
+globs:
+alwaysApply: true
+---
+
+- Do not initialize or configure the PostGIS database within this project.
+- Only connect to PostGIS to insert data extracted from shapefiles.
+- Ensure all connection parameters are declared in `.config.env`.
+- Pass environment variables correctly to Docker and Docker Compose via the Makefile.

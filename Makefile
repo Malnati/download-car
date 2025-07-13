@@ -87,7 +87,8 @@ api-up:
 
 clean:
 	@echo "🗑️  Removendo imagens, volumes e containers órfãos..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down --rmi all --volumes --remove-orphans
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down --rmi all --volumes --remove-orphans || true
+
 
 clean-volumes:
 	@echo "🗑️  Removendo volumes Docker, incluindo arquivos montados..."
@@ -116,8 +117,8 @@ down:
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down
 
 download:
-	@echo "🛠️  Executando download_state.sh com parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
-	./download_state.sh --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries)
+	@echo "🛠️  Executando cli.sh com parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	./cli.sh --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries)
 
 # Comandos para as novas funcionalidades
 search-car:
@@ -201,6 +202,42 @@ unit-test:
 	@echo "🧪  Executando testes unitários..."
 	python -m unittest download_car/tests/unit/*.py download_car/tests/unit/drivers/*.py
 
+# Comandos de banco de dados
+init-db:
+	@echo "🗄️  Inicializando banco de dados PostgreSQL/PostGIS..."
+	python init_database.py
+
+db-status:
+	@echo "🔍  Verificando status da conexão com banco de dados..."
+	curl -X GET "http://localhost:8000/database_status" | jq .
+
+sync-state:
+	@echo "🔄  Sincronizando dados do estado $(state) com banco de dados..."
+	curl -X POST "http://localhost:8000/sync_to_database" \
+		-F "sync_type=state" \
+		-F "state=$(state)" \
+		-F "polygon_type=$(polygon)" \
+		-F "folder=temp" \
+		-F "create_tables=true" | jq .
+
+sync-car:
+	@echo "🔄  Sincronizando dados do CAR $(car) com banco de dados..."
+	curl -X POST "http://localhost:8000/sync_to_database" \
+		-F "sync_type=car" \
+		-F "car_code=$(car)" \
+		-F "state=$(state)" \
+		-F "polygon_type=$(polygon)" \
+		-F "folder=temp" \
+		-F "create_tables=true" | jq .
+
+query-car:
+	@echo "🔍  Consultando dados do CAR $(car) no banco de dados..."
+	curl -X GET "http://localhost:8000/car_data?car_code=$(car)" | jq .
+
+query-state:
+	@echo "🔍  Consultando dados do estado $(state) no banco de dados..."
+	curl -X GET "http://localhost:8000/car_data?state=$(state)&limit=$(limit)" | jq .
+
 up:
 	@echo "🔼  Iniciando todos os serviços..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up -d
@@ -258,3 +295,11 @@ help:
 	@echo "  publish         - Publica pacote Python no PyPI (incrementa patch)"
 	@echo "  publish-minor   - Publica pacote Python no PyPI (incrementa minor)"
 	@echo "  publish-major   - Publica pacote Python no PyPI (incrementa major)"
+	@echo ""
+	@echo "🗄️  Comandos de banco de dados:"
+	@echo "  init-db         - Inicializa banco de dados PostgreSQL/PostGIS"
+	@echo "  db-status       - Verifica status da conexão com banco de dados"
+	@echo "  sync-state state=X polygon=Y - Sincroniza dados de um estado com o banco"
+	@echo "  sync-car car=X state=Y polygon=Z - Sincroniza dados de um CAR específico"
+	@echo "  query-car car=X - Consulta dados de um CAR no banco"
+	@echo "  query-state state=X limit=Y - Consulta dados de um estado no banco"

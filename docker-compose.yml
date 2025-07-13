@@ -25,17 +25,23 @@ services:
       - .:/download-car
     ports:
       - "8000:8000"
+
     environment:
       - API_URL
       - CORS_ALLOW_ORIGINS
       - CORS_ALLOW_CREDENTIALS
       - CORS_ALLOW_METHODS
       - CORS_ALLOW_HEADERS
-      - PROPERTY_FOLDER
-      - PROPERTY_TRIES
-      - PROPERTY_DEBUG
-      - PROPERTY_TIMEOUT
-      - PROPERTY_MAX_RETRIES
+      - MAPBIOMAS_URL
+      - IBGE_URL
+      - DB_HOST
+      - DB_PORT
+      - DB_NAME
+      - DB_USER
+      - DB_PASSWORD
+      - DB_SCHEMA
+      - DB_POOL_SIZE
+      - DB_TIMEOUT
 
   nginx:
     build:
@@ -95,3 +101,5 @@ services:
       - CORS_ALLOW_CREDENTIALS
       - CORS_ALLOW_METHODS
       - CORS_ALLOW_HEADERS
+
+

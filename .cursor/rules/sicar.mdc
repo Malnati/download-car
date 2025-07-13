@@ -1,0 +1,7 @@
+---
+description: Não alterar o diretório do sicar download_car/
+globs:
+alwaysApply: true
+---
+
+Do not modify the download_car/ directory. It contains files related to SICAR.

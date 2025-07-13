@@ -9,3 +9,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+# Renomear app.py para api.py se existir
+RUN if [ -f app.py ]; then mv app.py api.py; fi

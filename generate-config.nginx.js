@@ -43,7 +43,7 @@ function generateConfig() {
 
 // Função para substituir configuração no index.html
 function updateIndexHtml() {
-    const indexPath = path.join(__dirname, '..', 'index.html');
+    const indexPath = path.join(__dirname, 'index.html');
     const templatePath = path.join(__dirname, 'index.html.template');
     
     // Se não existir template, usar o index.html atual

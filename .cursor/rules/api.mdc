@@ -1,0 +1,10 @@
+---
+description: Garantir que o arquivo api.py exponha apenas os endpoints e delegue toda a lógica para o cli.py.
+globs:
+  - api.py
+  - cli.py
+alwaysApply: true
+rules:
+  - Do not implement business or core logic directly in `api.py`.
+  - All logic must be delegated to functions defined in `cli.py`.
+  - API endpoints in `api.py` should act only as interfaces that call `cli.py` functions.

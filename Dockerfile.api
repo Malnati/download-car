@@ -4,7 +4,14 @@ FROM ${BASE_IMAGE}
 
 WORKDIR /download-car
 
-COPY app.py /download-car/
+# Copiar requirements.txt para garantir que todas as dependências estejam instaladas
+COPY requirements.txt /download-car/
+
+# Instalar dependências específicas da API se necessário
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY api.py /download-car/
+COPY database.py /download-car/
 COPY download_car/ /download-car/download_car/
 COPY entrypoint.api.sh /download-car/
 

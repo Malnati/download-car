@@ -59,5 +59,5 @@ PYENV_VERSION="$PYTHON_VERSION" pyenv exec pip install --upgrade pip
 PYENV_VERSION="$PYTHON_VERSION" pyenv exec pip install fastapi uvicorn httpx Pillow tqdm python-multipart
 
 echo "🚀 Servidor FastAPI pronto em http://localhost:8000"
-PYENV_VERSION="$PYTHON_VERSION" pyenv exec uvicorn app:app --reload --port 8000
+PYENV_VERSION="$PYTHON_VERSION" pyenv exec uvicorn api:app --reload --port 8000
 

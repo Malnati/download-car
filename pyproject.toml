@@ -7,6 +7,7 @@ description = "download-car - Tool designed for students, researchers, data scie
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
 license = { file = "LICENSE" }
+keywords = ["pyproject", "api", "cli", "html", "nginx", "python", "tesseract", "sicar", "mapbiomas", "docker", "docker-compose", "black", "tests", "cursor"]
 dependencies = [
     "httpx>=0.28.1",
     "urllib3>=2.3.0",

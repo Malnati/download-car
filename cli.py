@@ -1,17 +1,10 @@
-# download_state.py
+# cli.py
 """Example script to download data from download_car using environment variables and command-line arguments."""
 
 import os
 import argparse
 from download_car import DownloadCar, Polygon, State
 from download_car.drivers import Tesseract
-
-# Tentar importar Paddle, mas usar Tesseract como fallback
-try:
-    from download_car.drivers import Paddle
-    PADDLE_AVAILABLE = True
-except ImportError:
-    PADDLE_AVAILABLE = False
 
 parser = argparse.ArgumentParser(description="Download SICAR state polygon.")
 parser.add_argument("--state", type=str, default=os.getenv("STATE", "DF"))
@@ -33,11 +26,8 @@ chunk_size = 1024
 timeout = args.timeout
 max_retries = args.max_retries
 
-# Create DownloadCar instance (use Paddle if available, otherwise Tesseract)
-if PADDLE_AVAILABLE:
-    car = DownloadCar(driver=Paddle())
-else:
-    car = DownloadCar(driver=Tesseract)
+# Create DownloadCar instance (using Tesseract as default driver)
+car = DownloadCar(driver=Tesseract)
 
 # Download polygon for the selected state
 car.download_state(

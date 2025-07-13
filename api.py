@@ -1,4 +1,4 @@
-# app.py
+# api.py
 from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, Path
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,6 +18,7 @@ from datetime import datetime
 
 from download_car import DownloadCar, State, Polygon
 from download_car.drivers import Tesseract
+from database import db_manager
 
 # Configurações CORS baseadas em variáveis de ambiente
 CORS_ALLOW_ORIGINS = os.getenv("CORS_ALLOW_ORIGINS", "*").split(",")
@@ -135,14 +136,14 @@ def extract_and_find_shp(upload_file: UploadFile, temp_dir: str) -> str:
 
 def run_download_state(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
     """
-    Executa o download_state.py como subprocess e retorna o caminho do arquivo baixado.
+    Executa o cli.py como subprocess e retorna o caminho do arquivo baixado.
     """
     # Garante que a pasta existe
     os.makedirs(folder, exist_ok=True)
     
     # Constrói o comando
     cmd = [
-        sys.executable, "download_state.py",
+        sys.executable, "cli.py",
         "--state", state,
         "--polygon", polygon,
         "--folder", folder,
@@ -156,7 +157,7 @@ def run_download_state(state: str, polygon: str, folder: str, tries: int, debug:
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
     
     # Constrói o caminho esperado do arquivo
-    # O download_state.py cria arquivos com o nome {state}_AREA_IMOVEL.zip
+    # O cli.py cria arquivos com o nome {state}_AREA_IMOVEL.zip
     # independentemente do polígono passado (AREA_PROPERTY é mapeado para AREA_IMOVEL)
     expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
     
@@ -170,7 +171,7 @@ def run_download_state(state: str, polygon: str, folder: str, tries: int, debug:
         if "UrlNotOkException" in error_msg:
             raise Exception(f"Falha no download devido a problemas de captcha. Tente novamente em alguns minutos. Detalhes: {error_msg}")
         else:
-            raise Exception(f"Erro ao executar download_state.py: {error_msg}")
+            raise Exception(f"Erro ao executar cli.py: {error_msg}")
     
     # Se chegou aqui, o processo não falhou mas o arquivo não foi criado
     raise Exception(f"Download concluído mas arquivo não foi criado: {expected_file}")
@@ -253,7 +254,7 @@ async def download_state_endpoint(
     Baixa shapefiles de dados do CAR para um estado específico.
     """
     try:
-        # Executa o download usando o download_state.py
+        # Executa o download usando o cli.py
         file_path = run_download_state(state, polygon, folder, tries, debug, timeout, max_retries)
         
         # Retorna o arquivo como resposta
@@ -930,6 +931,341 @@ async def download_state_file(
         )
 
 
+@app.post(
+    "/sync_to_database",
+    summary="Sincronizar shapefile com banco de dados",
+    description="""
+    Sincroniza um shapefile com o banco de dados PostgreSQL/PostGIS.
+    
+    Este endpoint permite sincronizar dados de um estado específico ou de um CAR específico
+    com o banco de dados PostGIS configurado. Os dados são armazenados com geometria espacial
+    e propriedades em formato JSON.
+    
+    **⚠️ Atenção:** Este endpoint requer que o banco de dados PostgreSQL/PostGIS esteja configurado
+    e que a extensão PostGIS esteja habilitada.
+    
+    **Exemplo de uso:**
+    ```bash
+    # Sincronizar dados de um estado
+    curl -X POST "http://localhost:8000/sync_to_database" \\
+         -F "state=SP" \\
+         -F "polygon_type=AREA_PROPERTY" \\
+         -F "sync_type=state"
+    
+    # Sincronizar dados de um CAR específico
+    curl -X POST "http://localhost:8000/sync_to_database" \\
+         -F "car_code=SP12345678901234567890" \\
+         -F "state=SP" \\
+         -F "polygon_type=AREA_PROPERTY" \\
+         -F "sync_type=car"
+    ```
+    
+    **Retorno:**
+    - JSON com informações sobre a sincronização realizada
+    """,
+    response_description="Resultado da sincronização com o banco de dados",
+    tags=["Sincronização com Banco de Dados"]
+)
+async def sync_to_database_endpoint(
+    sync_type: str = Form(
+        ...,
+        description="Tipo de sincronização: 'state' para estado completo ou 'car' para CAR específico",
+        example="state",
+        regex="^(state|car)$"
+    ),
+    state: str = Form(
+        ...,
+        description="Sigla do estado brasileiro (2 letras maiúsculas)",
+        example="SP",
+        min_length=2,
+        max_length=2,
+        regex="^[A-Z]{2}$"
+    ),
+    polygon_type: str = Form(
+        "AREA_PROPERTY",
+        description="Tipo de polígono a ser sincronizado (padrão: AREA_PROPERTY)",
+        example="AREA_PROPERTY",
+        regex="^(AREA_PROPERTY|APPS|NATIVE_VEGETATION|CONSOLIDATED_AREA|AREA_FALL|HYDROGRAPHY|RESTRICTED_USE|ADMINISTRATIVE_SERVICE|LEGAL_RESERVE)$"
+    ),
+    car_code: Optional[str] = Form(
+        None,
+        description="Código CAR específico (obrigatório quando sync_type=car)",
+        example="SP12345678901234567890",
+        min_length=10,
+        max_length=50
+    ),
+    folder: str = Form(
+        "temp",
+        description="Pasta onde buscar os arquivos shapefile",
+        example="temp"
+    ),
+
+):
+    """
+    Sincroniza shapefiles com o banco de dados PostgreSQL/PostGIS.
+    """
+    try:
+        # Verificar se o banco de dados está configurado
+        if not db_manager.test_connection():
+            raise HTTPException(
+                status_code=500,
+                detail="Não foi possível conectar ao banco de dados. Verifique as configurações."
+            )
+        
+        # Verificar se PostGIS está disponível
+        if not db_manager.check_postgis_extension():
+            raise HTTPException(
+                status_code=500,
+                detail="PostGIS não está disponível no banco de dados."
+            )
+        
+        # Verificar parâmetros baseados no tipo de sincronização
+        if sync_type == "car" and not car_code:
+            raise HTTPException(
+                status_code=400,
+                detail="Código CAR é obrigatório quando sync_type=car"
+            )
+        
+        # Caminho do arquivo shapefile
+        polygon = "AREA_IMOVEL"  # Padrão usado no download
+        zip_path = os.path.join(folder, f"{state}_{polygon}.zip")
+        
+        if not os.path.exists(zip_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Arquivo do estado {state} não encontrado. Baixe primeiro via /download_state."
+            )
+        
+        # Extrair o ZIP para um diretório temporário
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with zipfile.ZipFile(zip_path, "r") as zip_ref:
+                zip_ref.extractall(tmpdir)
+            
+            # Encontrar o arquivo .shp extraído
+            shp_files = [f for f in os.listdir(tmpdir) if f.endswith(".shp")]
+            if not shp_files:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Shapefile não encontrado no ZIP do estado."
+                )
+            
+            shp_path = os.path.join(tmpdir, shp_files[0])
+            
+            # Sincronizar com o banco de dados
+            result = db_manager.sync_shapefile_to_db(
+                shapefile_path=shp_path,
+                state=state,
+                polygon_type=polygon_type,
+                car_code=car_code
+            )
+            
+            if not result["success"]:
+                raise HTTPException(
+                    status_code=500,
+                    detail=result["message"]
+                )
+            
+            return {
+                "success": True,
+                "message": "Sincronização concluída com sucesso",
+                "sync_type": sync_type,
+                "state": state,
+                "polygon_type": polygon_type,
+                "car_code": car_code,
+                "records_processed": result.get("records_processed", 0),
+                "details": result
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao sincronizar com banco de dados: {str(e)}"
+        )
+
+
+@app.get(
+    "/database_status",
+    summary="Status da conexão com banco de dados",
+    description="""
+    Verifica o status da conexão com o banco de dados PostgreSQL/PostGIS.
+    
+    Este endpoint testa a conectividade com o banco de dados e retorna informações
+    sobre a configuração atual.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X GET "http://localhost:8000/database_status"
+    ```
+    
+    **Retorno:**
+    - JSON com status da conexão e informações de configuração
+    """,
+    response_description="Status da conexão com o banco de dados",
+    tags=["Sincronização com Banco de Dados"]
+)
+async def database_status_endpoint():
+    """
+    Verifica o status da conexão com o banco de dados.
+    """
+    try:
+        # Testar conexão
+        connection_ok = db_manager.test_connection()
+        
+        # Obter informações de configuração
+        import os
+        config = {
+            "db_host": os.getenv("DB_HOST", "localhost"),
+            "db_port": os.getenv("DB_PORT", "5432"),
+            "db_name": os.getenv("DB_NAME", "download_car"),
+            "db_user": os.getenv("DB_USER", "postgres"),
+            "db_schema": os.getenv("DB_SCHEMA", "public"),
+            "db_pool_size": os.getenv("DB_POOL_SIZE", "5"),
+            "db_timeout": os.getenv("DB_TIMEOUT", "30")
+        }
+        
+        return {
+            "success": connection_ok,
+            "connection_status": "connected" if connection_ok else "disconnected",
+            "configuration": config,
+            "message": "Conexão com banco de dados funcionando" if connection_ok else "Erro na conexão com banco de dados"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "connection_status": "error",
+            "error": str(e),
+            "message": "Erro ao verificar status do banco de dados"
+        }
+
+
+@app.get(
+    "/brasil_config",
+    summary="Configurações do Brasil",
+    description="""
+    Retorna as configurações padrão para a seção Brasil.
+    
+    Este endpoint fornece os valores iniciais para os campos MapBiomas e IBGE
+    baseados nas variáveis de ambiente configuradas.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X GET "http://localhost:8000/brasil_config"
+    ```
+    
+    **Retorno:**
+    - JSON com configurações do Brasil
+    """,
+    response_description="Configurações do Brasil",
+    tags=["Configurações"]
+)
+async def brasil_config_endpoint():
+    """
+    Retorna as configurações do Brasil.
+    """
+    try:
+        import os
+        config = {
+            "mapbiomas_url": os.getenv("MAPBIOMAS_URL", "https://storage.googleapis.com/mapbiomas-public/initiative/collection-7/brasil/coverage/mapbiomas-brasil-coverage-2022.tif"),
+            "ibge_url": os.getenv("IBGE_URL", "https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2022/Brasil/BR/BR_Municipios_2022.zip")
+        }
+        
+        return {
+            "success": True,
+            "configuration": config,
+            "message": "Configurações do Brasil carregadas com sucesso"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Erro ao carregar configurações do Brasil"
+        }
+
+
+@app.get(
+    "/car_data",
+    summary="Buscar dados do CAR no banco de dados",
+    description="""
+    Busca dados do CAR armazenados no banco de dados PostgreSQL/PostGIS.
+    
+    Este endpoint permite consultar os dados do CAR que foram sincronizados com o banco de dados,
+    com filtros por código CAR, estado e tipo de polígono.
+    
+    **Exemplo de uso:**
+    ```bash
+    # Buscar todos os dados de um estado
+    curl -X GET "http://localhost:8000/car_data?state=SP&limit=10"
+    
+    # Buscar dados de um CAR específico
+    curl -X GET "http://localhost:8000/car_data?car_code=SP12345678901234567890"
+    
+    # Buscar dados por tipo de polígono
+    curl -X GET "http://localhost:8000/car_data?polygon_type=APPS&limit=5"
+    ```
+    
+    **Retorno:**
+    - JSON com os dados do CAR encontrados
+    """,
+    response_description="Dados do CAR armazenados no banco de dados",
+    tags=["Sincronização com Banco de Dados"]
+)
+async def car_data_endpoint(
+    car_code: Optional[str] = Query(
+        None,
+        description="Código CAR específico para busca",
+        example="SP12345678901234567890"
+    ),
+    state: Optional[str] = Query(
+        None,
+        description="Sigla do estado para filtrar resultados",
+        example="SP",
+        regex="^[A-Z]{2}$"
+    ),
+    polygon_type: Optional[str] = Query(
+        None,
+        description="Tipo de polígono para filtrar resultados",
+        example="AREA_PROPERTY"
+    ),
+    limit: int = Query(
+        100,
+        description="Limite de resultados retornados",
+        example=100,
+        ge=1,
+        le=1000
+    )
+):
+    """
+    Busca dados do CAR no banco de dados.
+    """
+    try:
+        result = db_manager.get_car_data(
+            car_code=car_code,
+            state=state,
+            polygon_type=polygon_type,
+            limit=limit
+        )
+        
+        if not result["success"]:
+            raise HTTPException(
+                status_code=500,
+                detail=result["message"]
+            )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao buscar dados do CAR: {str(e)}"
+        )
+
+
 @app.get(
     "/",
     summary="Informações da API",
@@ -955,7 +1291,10 @@ async def root():
             "states": "/states - Lista de estados disponíveis",
             "polygons": "/polygons - Lista de polígonos disponíveis",
             "state": "/state - Buscar estado de um imóvel pelo CAR",
-            "property": "/property - Buscar propriedade pelo CAR"
+            "property": "/property - Buscar propriedade pelo CAR",
+            "sync_to_database": "/sync_to_database - Sincronizar shapefile com banco de dados",
+            "database_status": "/database_status - Status da conexão com banco de dados",
+            "car_data": "/car_data - Buscar dados do CAR no banco de dados"
         },
         "documentation": "/docs",
         "repository": "https://github.com/Malnati/download-car",

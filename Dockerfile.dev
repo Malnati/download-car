@@ -21,6 +21,8 @@ COPY LICENSE ./
 
 # Copiar o restante do projeto ANTES da instalação das dependências
 COPY . .
+# Renomear app.py para api.py se existir
+RUN if [ -f app.py ]; then mv app.py api.py; fi
 
 # Instalar todas as dependências (incluindo dev)
 RUN poetry install --extras dev

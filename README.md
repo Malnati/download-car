@@ -57,6 +57,7 @@ O projeto utiliza uma arquitetura Docker modular e otimizada:
   - [⏱️ Timeouts por Estado](#️-timeouts-por-estado)
   - [🔧 Variáveis de Configuração do Sistema](#-variáveis-de-configuração-do-sistema)
   - [📷 Variáveis de Configuração OCR](#-variáveis-de-configuração-ocr)
+  - [🗄️ Variáveis do Banco de Dados PostgreSQL/PostGIS](#️-variáveis-do-banco-de-dados-postgresqlpostgis)
   - [📝 Como Usar as Variáveis de Ambiente](#-como-usar-as-variáveis-de-ambiente)
 - [🚀 Como usar](#-como-usar)
   - [1️⃣ Execução via Python (direto)](#1️⃣-execução-via-python-direto)
@@ -279,6 +280,19 @@ O projeto utiliza diversas variáveis de ambiente para configurar diferentes asp
 | `PADDLE_OCR_USE_GPU` | boolean | `"false"` | Habilita uso de GPU para PaddleOCR | `PADDLE_OCR_USE_GPU=true` |
 | `PADDLE_OCR_SHOW_LOG` | boolean | `"false"` | Exibe logs do PaddleOCR | `PADDLE_OCR_SHOW_LOG=true` |
 
+## 🗄️ Variáveis do Banco de Dados PostgreSQL/PostGIS
+
+| Variável | Tipo | Padrão | Descrição | Exemplo |
+|----------|------|--------|-----------|---------|
+| `DB_HOST` | string | `"localhost"` | Host do banco de dados PostgreSQL/PostGIS | `DB_HOST=postgres` |
+| `DB_PORT` | string | `"5432"` | Porta do banco de dados PostgreSQL/PostGIS | `DB_PORT=5432` |
+| `DB_NAME` | string | `"download_car"` | Nome do banco de dados | `DB_NAME=car_data` |
+| `DB_USER` | string | `"postgres"` | Usuário do banco de dados | `DB_USER=car_user` |
+| `DB_PASSWORD` | string | `"postgres"` | Senha do banco de dados | `DB_PASSWORD=secure_password` |
+| `DB_SCHEMA` | string | `"public"` | Schema do banco de dados | `DB_SCHEMA=car_schema` |
+| `DB_POOL_SIZE` | integer | `"5"` | Pool de conexões | `DB_POOL_SIZE=10` |
+| `DB_TIMEOUT` | integer | `"30"` | Timeout de conexão em segundos | `DB_TIMEOUT=60` |
+
 ## 📝 Como Usar as Variáveis de Ambiente
 
 ### 1. Arquivo .env (Recomendado)
@@ -343,6 +357,16 @@ TESSERACT_CONFIG=--oem 3 --psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRST
 PADDLE_OCR_LANG=en
 PADDLE_OCR_USE_GPU=false
 PADDLE_OCR_SHOW_LOG=false
+
+# Configurações do Banco de Dados PostgreSQL/PostGIS
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=download_car
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_SCHEMA=public
+DB_POOL_SIZE=5
+DB_TIMEOUT=30
 
 ### 2. Linha de Comando
 
@@ -490,12 +514,12 @@ car.download_country(polygon=Polygon.AREA_PROPERTY, folder="dados/brasil")
 
 ## 2️⃣ Execução via Shell Script
 
-O repositório inclui o script `download_state.sh` que facilita a configuração do
-ambiente e a execução do exemplo `download_state.py`. Basta informar os
+O repositório inclui o script `cli.sh` que facilita a configuração do
+ambiente e a execução do exemplo `cli.py`. Basta informar os
 parâmetros desejados:
 
 ```bash
-./download_state.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True
+./cli.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True
 ```
 
 O script irá garantir que a versão correta do Python esteja disponível via
@@ -651,6 +675,11 @@ A API FastAPI está disponível em `http://localhost:8000` e oferece os seguinte
 - `GET /download_state_file/{state}/{polygon_type}` &ndash; faz download de um arquivo específico de estado.
 - `DELETE /delete_state` &ndash; exclui todos os arquivos relacionados a um estado específico.
 
+### Endpoints de Sincronização com Banco de Dados
+- `POST /sync_to_database` &ndash; sincroniza shapefiles com o banco de dados PostgreSQL/PostGIS.
+- `GET /database_status` &ndash; verifica o status da conexão com o banco de dados.
+- `GET /car_data` &ndash; busca dados do CAR armazenados no banco de dados.
+
 ### Campos esperados (multipart/form)
 
 #### POST /download_state
@@ -694,6 +723,24 @@ A API FastAPI está disponível em `http://localhost:8000` e oferece os seguinte
 #### GET /property?car={CAR}
 - `car` (obrigatório): Número do CAR da propriedade
   - Exemplo: `GET /property?car=SP12345678901234567890`
+
+#### POST /sync_to_database
+- `sync_type` (obrigatório): Tipo de sincronização ("state" ou "car")
+- `state` (obrigatório): Sigla do estado brasileiro (2 letras maiúsculas)
+- `polygon_type` (opcional): Tipo de polígono (padrão: "AREA_PROPERTY")
+- `car_code` (opcional): Código CAR específico (obrigatório quando sync_type=car)
+- `folder` (opcional): Pasta onde buscar os arquivos shapefile (padrão: "temp")
+- `create_tables` (opcional): Se deve criar tabelas automaticamente (padrão: true)
+
+#### GET /database_status
+- Sem parâmetros obrigatórios
+- Retorna status da conexão e configuração do banco de dados
+
+#### GET /car_data
+- `car_code` (opcional): Código CAR específico para busca
+- `state` (opcional): Sigla do estado para filtrar resultados
+- `polygon_type` (opcional): Tipo de polígono para filtrar resultados
+- `limit` (opcional): Limite de resultados retornados (padrão: 100, máximo: 1000)
 
 ### Exemplo via curl
 
@@ -741,6 +788,30 @@ curl -X DELETE "http://localhost:8000/delete_state" \
      -F "state=SP" \
      -F "folder=temp" \
      -F "include_properties=true"
+
+# Sincronizar dados de um estado com banco de dados
+curl -X POST "http://localhost:8000/sync_to_database" \
+     -F "sync_type=state" \
+     -F "state=SP" \
+     -F "polygon_type=AREA_PROPERTY" \
+     -F "folder=temp" \
+     -F "create_tables=true"
+
+# Sincronizar dados de um CAR específico
+curl -X POST "http://localhost:8000/sync_to_database" \
+     -F "sync_type=car" \
+     -F "car_code=SP12345678901234567890" \
+     -F "state=SP" \
+     -F "polygon_type=AREA_PROPERTY"
+
+# Verificar status do banco de dados
+curl -X GET "http://localhost:8000/database_status"
+
+# Buscar dados do CAR no banco de dados
+curl -X GET "http://localhost:8000/car_data?state=SP&limit=10"
+
+# Buscar dados de um CAR específico
+curl -X GET "http://localhost:8000/car_data?car_code=SP12345678901234567890"
 ```
 
 ### Rodando localmente com FastAPI
@@ -760,6 +831,9 @@ Rotas disponíveis:
   parâmetros opcionais) e retorna um arquivo ZIP com o shapefile do estado.
 - `POST /download_country` &ndash; recebe apenas `polygon` e retorna um ZIP
   contendo os arquivos de todos os estados.
+- `POST /sync_to_database` &ndash; sincroniza shapefiles com o banco de dados PostgreSQL/PostGIS.
+- `GET /database_status` &ndash; verifica o status da conexão com o banco de dados.
+- `GET /car_data` &ndash; busca dados do CAR armazenados no banco de dados.
 
 ## 5️⃣ Importação como módulo Python
 
@@ -1136,9 +1210,9 @@ download-car/
 │   └── integration/              # Testes de integração
 ├── assets/                       # Recursos do frontend
 │   └── flags/                    # Bandeiras dos estados
-├── app.py                        # API FastAPI
-├── download_state.py             # Script de download
-├── download_state.sh             # Script shell
+├── api.py                        # API FastAPI
+├── cli.py                        # Script de download
+├── cli.sh             # Script shell
 ├── api.sh                        # Script da API
 ├── verify_features.sh            # Script de teste da API
 ├── verify_property.py            # Script de verificação

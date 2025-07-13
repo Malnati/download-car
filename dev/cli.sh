@@ -1,11 +1,10 @@
 #!/bin/bash
-# dev/download_state.sh
-# download_state.sh
+# dev/cli.sh
 
 set -e
 
 # \U1F9E0 Uso:
-# ./download_state.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True
+# ./cli.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True
 
 # \U1F9EA Verifica pyenv
 if ! command -v pyenv &> /dev/null; then
@@ -93,7 +92,7 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     *)
       echo "Erro: Parâmetro desconhecido $1"
-      echo "Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout> --max_retries <max_retries>"
+      echo "Uso: ./cli.sh --state <state> --polygon <polygon> --folder <folder> --tries <tries> --debug <debug> --timeout <timeout> --max_retries <max_retries>"
       exit 1
       ;;
   esac
@@ -103,10 +102,10 @@ done
 if [ -z "$STATE" ] || [ -z "$POLYGON" ] || [ -z "$FOLDER" ]; then
   echo "❌ Erro: Parâmetros obrigatórios faltando."
   echo ""
-  echo "📋 Uso: ./download_state.sh --state <state> --polygon <polygon> --folder <folder> [--tries <tries>] [--debug <debug>] [--timeout <timeout>] [--max_retries <max_retries>]"
+  echo "📋 Uso: ./cli.sh --state <state> --polygon <polygon> --folder <folder> [--tries <tries>] [--debug <debug>] [--timeout <timeout>] [--max_retries <max_retries>]"
   echo ""
   echo "💡 Exemplo de chamada correta:"
-  echo "   ./download_state.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True"
+  echo "   ./cli.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True"
   echo ""
   echo "📝 Parâmetros obrigatórios:"
   echo "   --state: Sigla do estado (ex: DF, SP, RJ)"
@@ -129,8 +128,8 @@ DEBUG="${DEBUG:-False}"
 # \U1F4D1 Exemplo de parâmetros passados para o script
 echo "Executando download para o estado $STATE, polígono $POLYGON, na pasta $FOLDER com tries=$TRIES, debug=$DEBUG, timeout=$TIMEOUT e max_retries=$MAX_RETRIES..."
 
-# \u25B6️ Executa o script download_state.py com os parâmetros fornecidos
-PYENV_VERSION="$PYTHON_VERSION" pyenv exec python download_state.py \
+# \u25B6️ Executa o script cli.py com os parâmetros fornecidos
+PYENV_VERSION="$PYTHON_VERSION" pyenv exec python cli.py \
   --state "$STATE" \
   --polygon "$POLYGON" \
   --folder "$FOLDER" \
