@@ -12,8 +12,9 @@ from datetime import datetime
 from typing import Optional, Dict, List, Any
 from pathlib import Path as FilePath
 
-from download_car import DownloadCar, Polygon, State
-from download_car.drivers import Tesseract
+# Imports condicionais - apenas quando necessário
+# from download_car import DownloadCar, Polygon, State
+# from download_car.drivers import Tesseract
 
 # =============================================================================
 # FUNÇÕES AUXILIARES
@@ -114,6 +115,10 @@ def download_country_logic(polygon: str, folder: str, tries: int, debug: bool, t
     Lógica de download de país - transferida de api.py
     """
     try:
+        # Importa apenas quando necessário
+        from download_car import DownloadCar, Polygon
+        from download_car.drivers import Tesseract
+        
         # Garante que a pasta existe
         os.makedirs(folder, exist_ok=True)
         
@@ -507,6 +512,9 @@ def sync_to_database_logic(sync_type: str, state: str, polygon_type: str, car_co
     Lógica de sincronização com banco de dados - transferida de api.py
     """
     try:
+        # Importa db_manager apenas quando necessário
+        from database import db_manager
+        
         # Verificar se o banco de dados está configurado
         if not db_manager.test_connection():
             raise Exception("Não foi possível conectar ao banco de dados. Verifique as configurações.")
@@ -569,6 +577,9 @@ def database_status_logic() -> Dict[str, Any]:
     Lógica de verificação de status do banco de dados - transferida de api.py
     """
     try:
+        # Importa db_manager apenas quando necessário
+        from database import db_manager
+        
         # Testar conexão
         connection_ok = db_manager.test_connection()
         
@@ -604,6 +615,9 @@ def car_data_logic(car_code: Optional[str], state: Optional[str], polygon_type: 
     Lógica de busca de dados do CAR no banco de dados - transferida de api.py
     """
     try:
+        # Importa db_manager apenas quando necessário
+        from database import db_manager
+        
         result = db_manager.get_car_data(
             car_code=car_code,
             state=state,
@@ -653,6 +667,9 @@ def get_states_logic() -> Dict[str, Any]:
     Lógica de obtenção da lista de estados - transferida de api.py
     """
     try:
+        # Importa apenas quando necessário
+        from download_car import State
+        
         states = []
         for state in State:
             states.append({
@@ -749,6 +766,10 @@ def get_polygons_logic() -> Dict[str, Any]:
 
 def main():
     """Função principal do CLI - mantida para compatibilidade com o código original."""
+    # Importa apenas quando necessário
+    from download_car import DownloadCar, Polygon, State
+    from download_car.drivers import Tesseract
+    
     parser = argparse.ArgumentParser(description="Download SICAR state polygon.")
     parser.add_argument("--state", type=str, default=os.getenv("STATE", "DF"))
     parser.add_argument("--polygon", type=str, default=os.getenv("POLYGON", "AREA_PROPERTY"))
@@ -793,5 +814,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # Quando executado diretamente, apenas executa a função main original
+    # sem importar as funções de lógica que dependem de módulos externos
     main()
 
