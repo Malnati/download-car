@@ -514,12 +514,12 @@ car.download_country(polygon=Polygon.AREA_PROPERTY, folder="dados/brasil")
 
 ## 2️⃣ Execução via Shell Script
 
-O repositório inclui o script `cli.sh` que facilita a configuração do
-ambiente e a execução do exemplo `cli.py`. Basta informar os
+O repositório inclui o script `cli.py` que facilita a configuração do
+ambiente e a execução do download. Basta informar os
 parâmetros desejados:
 
 ```bash
-./cli.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True
+python cli.py --state DF --polygon APPS --folder data/DF --tries 25 --debug True
 ```
 
 O script irá garantir que a versão correta do Python esteja disponível via

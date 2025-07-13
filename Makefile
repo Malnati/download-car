@@ -116,9 +116,12 @@ down:
 	@echo "🛑  Parando e removendo containers..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down
 
-download:
-	@echo "🛠️  Executando cli.sh com parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
-	./cli.sh --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries)
+install:
+	poetry install
+
+download: install
+	@echo "🛠️  Executando cli.py com parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries)
 
 # Comandos para as novas funcionalidades
 search-car:
