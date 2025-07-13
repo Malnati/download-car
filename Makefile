@@ -135,7 +135,7 @@ install-dev:
 # Comandos de download com verificação automática
 download: check-dependencies install
 	@echo "🛠️  Executando cli.py com fallback automático: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
-	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --driver auto
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --auto-fallback
 
 download-tesseract: install
 	@echo "🛠️  Executando cli.py com Tesseract: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
@@ -147,7 +147,27 @@ download-paddle: install-paddle
 
 download-no-vpn: check-dependencies install
 	@echo "🛠️  Executando cli.py SEM VPN: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
-	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --no-vpn-fallback --driver auto
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --driver tesseract
+
+# Comandos para VPN e fallback automático
+download-with-vpn: install
+	@echo "🔒  Executando download com VPN (Tor)..."
+	@echo "🛠️  Parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --use-vpn
+
+download-with-fallback: install
+	@echo "🔄  Executando download com fallback automático (Tesseract → PaddleOCR → VPN)..."
+	@echo "🛠️  Parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --auto-fallback
+
+# Comandos Docker com VPN
+download-docker-vpn:
+	@echo "🔒  Executando download com VPN no Docker..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker run -it --rm \
+		-v $(PWD):/download-car \
+		download-car-download:dev \
+		/usr/local/bin/start-tor.sh \
+		python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --use-vpn
 
 # Verificação automática de dependências
 check-dependencies:
@@ -238,6 +258,11 @@ test:
 unit-test:
 	@echo "🧪  Executando testes unitários..."
 	python -m unittest download_car/tests/unit/*.py download_car/tests/unit/drivers/*.py
+
+# Testar drivers OCR (versão corrigida)
+test-ocr:
+	@echo "🧪  Testando drivers OCR..."
+	poetry run python -c 'from download_car.drivers import Tesseract; print("Tesseract disponível:", Tesseract is not None)'
 
 # Comandos de banco de dados
 init-db:

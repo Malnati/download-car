@@ -1141,7 +1141,7 @@ def main():
     # Executar com fallback automático se solicitado
     if args.auto_fallback:
         print("🚀 Modo automático ativado: Tesseract → PaddleOCR → VPN")
-        execute_with_driver_fallback(
+        execute_complete_fallback(
             args.state, args.polygon, args.folder, 
             args.tries, args.debug, args.timeout, args.max_retries
         )
@@ -1163,6 +1163,115 @@ def main():
         args.state, args.polygon, args.folder, 
         args.tries, args.debug, args.timeout, args.max_retries
     )
+
+def execute_complete_fallback(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int):
+    """Executa download com fallback completo: Tesseract → PaddleOCR → VPN → Timeout aumentado."""
+    
+    print("🔄 Iniciando sequência de fallback automático...")
+    
+    # Estratégia 1: Tesseract com timeout normal
+    try:
+        print("🔍 Tentativa 1: Tesseract com timeout normal...")
+        result = execute_with_driver_fallback(state, polygon, folder, tries, debug, timeout, max_retries)
+        if result:
+            print("✅ Download concluído com Tesseract!")
+            return result
+    except Exception as e:
+        print(f"⚠️  Tesseract falhou: {e}")
+    
+    # Estratégia 2: PaddleOCR com timeout normal
+    try:
+        print("🔍 Tentativa 2: PaddleOCR com timeout normal...")
+        from download_car.drivers import PaddleOCR
+        from download_car import DownloadCar, Polygon, State
+        
+        car = DownloadCar(driver=PaddleOCR)
+        result = car.download_state(
+            state=State[state],
+            polygon=Polygon[polygon],
+            folder=folder,
+            tries=tries,
+            debug=debug,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+        if result:
+            print("✅ Download concluído com PaddleOCR!")
+            return result
+    except Exception as e:
+        print(f"⚠️  PaddleOCR falhou: {e}")
+    
+    # Estratégia 3: Tesseract com timeout aumentado
+    try:
+        print("🔍 Tentativa 3: Tesseract com timeout aumentado (300s)...")
+        result = execute_with_driver_fallback(state, polygon, folder, tries, debug, 300, max_retries)
+        if result:
+            print("✅ Download concluído com Tesseract (timeout aumentado)!")
+            return result
+    except Exception as e:
+        print(f"⚠️  Tesseract com timeout aumentado falhou: {e}")
+    
+    # Estratégia 4: PaddleOCR com timeout aumentado
+    try:
+        print("🔍 Tentativa 4: PaddleOCR com timeout aumentado (300s)...")
+        from download_car.drivers import PaddleOCR
+        from download_car import DownloadCar, Polygon, State
+        
+        car = DownloadCar(driver=PaddleOCR)
+        result = car.download_state(
+            state=State[state],
+            polygon=Polygon[polygon],
+            folder=folder,
+            tries=tries,
+            debug=debug,
+            timeout=300,
+            max_retries=max_retries,
+        )
+        if result:
+            print("✅ Download concluído com PaddleOCR (timeout aumentado)!")
+            return result
+    except Exception as e:
+        print(f"⚠️  PaddleOCR com timeout aumentado falhou: {e}")
+    
+    # Estratégia 5: VPN + Tesseract
+    try:
+        print("🚀 Tentativa 5: VPN + Tesseract...")
+        setup_vpn_fallback()
+        result = execute_with_vpn_fallback(
+            lambda: execute_with_driver_fallback(state, polygon, folder, tries, debug, timeout, max_retries)
+        )
+        if result:
+            print("✅ Download concluído com VPN + Tesseract!")
+            return result
+    except Exception as e:
+        print(f"⚠️  VPN + Tesseract falhou: {e}")
+    
+    # Estratégia 6: VPN + PaddleOCR
+    try:
+        print("🚀 Tentativa 6: VPN + PaddleOCR...")
+        from download_car.drivers import PaddleOCR
+        from download_car import DownloadCar, Polygon, State
+        
+        car = DownloadCar(driver=PaddleOCR)
+        result = execute_with_vpn_fallback(
+            lambda: car.download_state(
+                state=State[state],
+                polygon=Polygon[polygon],
+                folder=folder,
+                tries=tries,
+                debug=debug,
+                timeout=timeout,
+                max_retries=max_retries,
+            )
+        )
+        if result:
+            print("✅ Download concluído com VPN + PaddleOCR!")
+            return result
+    except Exception as e:
+        print(f"⚠️  VPN + PaddleOCR falhou: {e}")
+    
+    # Se chegou aqui, todas as estratégias falharam
+    raise Exception("❌ Todas as estratégias de fallback falharam. Tente novamente em algumas horas.")
 
 if __name__ == "__main__":
     # Quando executado diretamente, apenas executa a função main original
