@@ -344,7 +344,7 @@ class DownloadCar(Url):
                             f"[{tries:02d}] - Requesting {info} with captcha '{captcha}'"
                         )
 
-                    return self._download_polygon(
+                    result = self._download_polygon(
                         state=state,
                         polygon=polygon,
                         captcha=captcha,
@@ -353,6 +353,10 @@ class DownloadCar(Url):
                         timeout=timeout,
                         max_retries=max_retries,
                     )
+                    
+                    if result:
+                        return result
+                    
                 elif debug:
                     print(
                         f"[{tries:02d}] - Invalid captcha '{captcha}' to request {info}"
@@ -365,7 +369,8 @@ class DownloadCar(Url):
                     print(f"[{tries:02d}] - {error} When requesting {info}")
             finally:
                 tries -= 1
-                time.sleep(random.random() + random.random())
+                # Aumentar delay entre tentativas para evitar rate limiting
+                time.sleep(random.random() * 5 + 2)  # 2-7 segundos
 
         return False
 

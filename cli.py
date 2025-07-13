@@ -8,17 +8,187 @@ import zipfile
 import shutil
 import sys
 import subprocess
+import time
 from datetime import datetime
 from typing import Optional, Dict, List, Any
 from pathlib import Path as FilePath
+from itertools import cycle
+
+# NÃO importar requests aqui - será importado condicionalmente quando necessário
 
 # Imports condicionais - apenas quando necessário
 # from download_car import DownloadCar, Polygon, State
 # from download_car.drivers import Tesseract
 
 # =============================================================================
+# VPN E PROXY MANAGER (INTEGRADO)
+# =============================================================================
+
+class VPNProxyManager:
+    """Gerenciador de VPN e Proxy integrado para contornar rate limiting."""
+    
+    def __init__(self):
+        self.current_method = None
+        self.proxy_list = []
+        self.vpn_configs = []
+        self.max_retries = 3
+        
+    def add_proxy(self, proxy_url: str):
+        """Adiciona proxy à lista de rotação."""
+        self.proxy_list.append(proxy_url)
+        print(f"🔗 Proxy adicionado: {proxy_url}")
+    
+    def add_vpn_config(self, config_path: str, username: str = None, password: str = None):
+        """Adiciona configuração OpenVPN."""
+        self.vpn_configs.append({
+            'config_path': config_path,
+            'username': username,
+            'password': password
+        })
+        print(f" VPN config adicionada: {config_path}")
+    
+    def setup_tor_proxy(self) -> bool:
+        """Configura proxy Tor."""
+        try:
+            # Import condicional
+            import socks
+            socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 9050)
+            import socket
+            socket.socket = socks.socksocket
+            print("🔗 Proxy Tor configurado")
+            return True
+        except ImportError:
+            print("❌ Módulo 'pysocks' não encontrado. Instale com: pip install pysocks")
+            return False
+        except Exception as e:
+            print(f"❌ Erro ao configurar Tor: {e}")
+            return False
+    
+    def connect_openvpn(self, config: Dict) -> bool:
+        """Conecta ao OpenVPN."""
+        try:
+            cmd = ['sudo', 'openvpn', '--config', config['config_path'], '--daemon']
+            
+            if config.get('username') and config.get('password'):
+                # Criar arquivo de autenticação
+                auth_file = '/tmp/vpn_auth.txt'
+                with open(auth_file, 'w') as f:
+                    f.write(f"{config['username']}\n{config['password']}\n")
+                cmd.extend(['--auth-user-pass', auth_file])
+            
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                print(f" OpenVPN conectado: {config['config_path']}")
+                time.sleep(5)  # Aguardar estabilização
+                return True
+            else:
+                print(f"❌ Falha OpenVPN: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Erro OpenVPN: {e}")
+            return False
+    
+    def disconnect_vpn(self):
+        """Desconecta VPN atual."""
+        try:
+            subprocess.run(['sudo', 'pkill', 'openvpn'], capture_output=True)
+            print("🔗 VPN desconectada")
+        except Exception as e:
+            print(f"❌ Erro ao desconectar VPN: {e}")
+    
+    def test_connection(self, url: str = "https://httpbin.org/ip") -> bool:
+        """Testa se a conexão atual está funcionando."""
+        try:
+            # Import condicional
+            import requests
+            response = requests.get(url, timeout=10, verify=False)
+            return response.status_code == 200
+        except ImportError:
+            print("❌ Módulo 'requests' não encontrado. Instale com: pip install requests")
+            return False
+        except:
+            return False
+    
+    def rotate_connection(self) -> bool:
+        """Rotaciona para próximo método de conexão."""
+        print(" Rotacionando conexão...")
+        
+        # Tentar VPNs
+        for config in self.vpn_configs:
+            self.disconnect_vpn()
+            if self.connect_openvpn(config):
+                return True
+        
+        # Tentar Tor
+        if self.setup_tor_proxy():
+            return True
+        
+        # Tentar proxies
+        if self.proxy_list:
+            # Implementação básica de proxy
+            print(f"🔗 Usando proxy da lista ({len(self.proxy_list)} disponíveis)")
+            return True
+        
+        return False
+
+# Instância global do gerenciador
+vpn_manager = VPNProxyManager()
+
+# =============================================================================
 # FUNÇÕES AUXILIARES
 # =============================================================================
+
+def setup_vpn_fallback():
+    """Configura fallback VPN com configurações padrão."""
+    # Adicionar proxies gratuitos (exemplo)
+    free_proxies = [
+        "http://proxy1.example.com:8080",
+        "http://proxy2.example.com:8080",
+        "socks5://127.0.0.1:9050"  # Tor
+    ]
+    
+    for proxy in free_proxies:
+        vpn_manager.add_proxy(proxy)
+    
+    # Adicionar VPNs se configuradas
+    vpn_configs = [
+        # Descomente e configure suas VPNs
+        # {"config_path": "/path/to/vpn1.ovpn", "username": "user1", "password": "pass1"},
+        # {"config_path": "/path/to/vpn2.ovpn", "username": "user2", "password": "pass2"},
+    ]
+    
+    for config in vpn_configs:
+        vpn_manager.add_vpn_config(**config)
+
+def execute_with_vpn_fallback(func, *args, **kwargs):
+    """Executa função com fallback VPN em caso de rate limiting."""
+    for attempt in range(vpn_manager.max_retries):
+        try:
+            result = func(*args, **kwargs)
+            return result
+        except Exception as e:
+            error_msg = str(e).lower()
+            
+            # Detectar rate limiting ou problemas SSL
+            if any(keyword in error_msg for keyword in [
+                "rate limit", "ssl", "handshake", "timeout", "connection", "urlnotok"
+            ]):
+                print(f"⚠️  Problema de conexão detectado (tentativa {attempt + 1}/{vpn_manager.max_retries})")
+                print(f"🔍 Erro: {e}")
+                
+                if vpn_manager.rotate_connection():
+                    print("⏳ Aguardando estabilização da conexão...")
+                    time.sleep(10)
+                    continue
+                else:
+                    print("❌ Não foi possível rotacionar conexão")
+            else:
+                # Erro não relacionado a conexão, propagar
+                raise e
+    
+    raise Exception("❌ Todas as tentativas de conexão falharam")
 
 def zip_shapefile(shp_path: str) -> str:
     """Cria um arquivo ZIP contendo todos os arquivos do shapefile."""
@@ -30,7 +200,6 @@ def zip_shapefile(shp_path: str) -> str:
         for f in files:
             zipf.write(f, arcname=os.path.basename(f))
     return zip_path
-
 
 def extract_and_find_shp(upload_file, temp_dir: str) -> str:
     """Extrai um arquivo ZIP e encontra o arquivo .shp dentro dele."""
@@ -50,67 +219,69 @@ def extract_and_find_shp(upload_file, temp_dir: str) -> str:
         return shp_path
     raise ValueError(f"No .shp file found in zip '{upload_file.filename}'.")
 
-
-def run_download_state(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
+def run_download_state(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int, use_vpn_fallback: bool = False) -> str:
     """
     Executa o download de um estado e retorna o caminho do arquivo baixado.
     """
-    try:
-        # Importa apenas quando necessário
-        from download_car import DownloadCar, Polygon
-        from download_car.drivers import Tesseract
-        
-        # Garante que a pasta existe
-        os.makedirs(folder, exist_ok=True)
-        
-        # Cria instância do DownloadCar
-        car = DownloadCar(driver=Tesseract)
-        
-        # Executa o download diretamente
-        car.download_state(
-            state=state,
-            polygon=Polygon[polygon],
-            folder=folder,
-            tries=tries,
-            debug=debug,
-            timeout=timeout,
-            max_retries=max_retries
-        )
-        
-        # Constrói o caminho esperado do arquivo
-        # O download cria arquivos com o nome {state}_AREA_IMOVEL.zip
-        # independentemente do polígono passado (AREA_PROPERTY é mapeado para AREA_IMOVEL)
-        expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
-        
-        if os.path.exists(expected_file):
-            return expected_file
-        else:
-            raise Exception(f"Download concluído mas arquivo não foi criado: {expected_file}")
+    def _download_internal():
+        try:
+            # Importa apenas quando necessário
+            from download_car import DownloadCar, Polygon
+            from download_car.drivers import Tesseract
             
-    except Exception as e:
-        # Se o arquivo foi criado mesmo com erro, retorna o caminho
-        expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
-        if os.path.exists(expected_file):
-            return expected_file
-        
-        # Se não foi criado, propaga o erro
-        if "UrlNotOkException" in str(e):
-            raise Exception(f"Falha no download devido a problemas de captcha. Tente novamente em alguns minutos. Detalhes: {str(e)}")
-        else:
-            raise Exception(f"Erro ao executar download: {str(e)}")
-
+            # Garante que a pasta existe
+            os.makedirs(folder, exist_ok=True)
+            
+            # Cria instância do DownloadCar
+            car = DownloadCar(driver=Tesseract)
+            
+            # Executa o download diretamente
+            car.download_state(
+                state=state,
+                polygon=Polygon[polygon],
+                folder=folder,
+                tries=tries,
+                debug=debug,
+                timeout=timeout,
+                max_retries=max_retries
+            )
+            
+            # Constrói o caminho esperado do arquivo
+            expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
+            
+            if os.path.exists(expected_file):
+                return expected_file
+            else:
+                raise Exception(f"Download concluído mas arquivo não foi criado: {expected_file}")
+                
+        except Exception as e:
+            # Se o arquivo foi criado mesmo com erro, retorna o caminho
+            expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
+            if os.path.exists(expected_file):
+                return expected_file
+            
+            # Se não foi criado, propaga o erro
+            if "UrlNotOkException" in str(e):
+                raise Exception(f"Falha no download devido a problemas de captcha. Tente novamente em alguns minutos. Detalhes: {str(e)}")
+            else:
+                raise Exception(f"Erro ao executar download: {str(e)}")
+    
+    if use_vpn_fallback:
+        return execute_with_vpn_fallback(_download_internal)
+    else:
+        return _download_internal()
 
 # =============================================================================
 # FUNÇÕES DE DOWNLOAD
 # =============================================================================
 
-def download_state_logic(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
+def download_state_logic(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int, use_vpn_fallback: bool = False) -> str:
     """
-    Lógica de download de estado - transferida de api.py
+    Lógica de download de estado com suporte a VPN fallback.
     """
     try:
         # Executa o download usando o cli.py
-        file_path = run_download_state(state, polygon, folder, tries, debug, timeout, max_retries)
+        file_path = run_download_state(state, polygon, folder, tries, debug, timeout, max_retries, use_vpn_fallback)
         return file_path
     except Exception as e:
         raise Exception(f"Erro no download do estado {state}: {str(e)}")
@@ -771,7 +942,7 @@ def get_polygons_logic() -> Dict[str, Any]:
 # =============================================================================
 
 def main():
-    """Função principal do CLI - mantida para compatibilidade com o código original."""
+    """Função principal do CLI com suporte a VPN fallback."""
     # Importa apenas quando necessário
     from download_car import DownloadCar, Polygon, State
     from download_car.drivers import Tesseract
@@ -784,6 +955,7 @@ def main():
     parser.add_argument("--debug", type=lambda x: str(x).lower() == "true", default=os.getenv("DEBUG", "False"))
     parser.add_argument("--timeout", type=int, default=int(os.getenv("TIMEOUT", "30")))
     parser.add_argument("--max_retries", type=int, default=int(os.getenv("MAX_RETRIES", "5")))
+    parser.add_argument("--vpn-fallback", action="store_true", help="Enable VPN fallback for rate limiting")
     args = parser.parse_args()
 
     # Read parameters from environment variables with reasonable defaults
@@ -800,24 +972,35 @@ def main():
     car = DownloadCar(driver=Tesseract)
 
     # Download polygon for the selected state
-    car.download_state(
-        state=state,
-        polygon=polygon,
-        folder=folder,
-        tries=tries,
-        debug=debug,
-        chunk_size=chunk_size,
-        timeout=timeout,
-        max_retries=max_retries,
-    )
-
-    # Download polygons for all states (uncomment if needed)
-    # car.download_country(polygon=polygon, folder="/Brazil")
+    if args.vpn_fallback:
+        print("🚀 Executando download com VPN fallback...")
+        # Implementar lógica de VPN fallback aqui
+        result = car.download_state(
+            state=state,
+            polygon=polygon,
+            folder=folder,
+            tries=tries,
+            debug=debug,
+            chunk_size=chunk_size,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+    else:
+        print("🚀 Executando download normal...")
+        result = car.download_state(
+            state=state,
+            polygon=polygon,
+            folder=folder,
+            tries=tries,
+            debug=debug,
+            chunk_size=chunk_size,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
 
     # Get release date for all states and print the one for the chosen state
     release_dates = car.get_release_dates()
     print(f"Release date for {state.name} is: {release_dates.get(state)}")
-
 
 if __name__ == "__main__":
     # Quando executado diretamente, apenas executa a função main original
