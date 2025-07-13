@@ -57,7 +57,7 @@ O projeto utiliza uma arquitetura Docker modular e otimizada:
   - [⏱️ Timeouts por Estado](#️-timeouts-por-estado)
   - [🔧 Variáveis de Configuração do Sistema](#-variáveis-de-configuração-do-sistema)
   - [📷 Variáveis de Configuração OCR](#-variáveis-de-configuração-ocr)
-  - [🗄️ Variáveis do Banco de Dados PostgreSQL/PostGIS](#️-variáveis-do-banco-de-dados-postgresqlpostgis)
+  - [🗄️ Banco de Dados PostgreSQL/PostGIS](#️-banco-de-dados-postgresqlpostgis)
   - [📝 Como Usar as Variáveis de Ambiente](#-como-usar-as-variáveis-de-ambiente)
 - [🚀 Como usar](#-como-usar)
   - [1️⃣ Execução via Python (direto)](#1️⃣-execução-via-python-direto)
@@ -280,7 +280,33 @@ O projeto utiliza diversas variáveis de ambiente para configurar diferentes asp
 | `PADDLE_OCR_USE_GPU` | boolean | `"false"` | Habilita uso de GPU para PaddleOCR | `PADDLE_OCR_USE_GPU=true` |
 | `PADDLE_OCR_SHOW_LOG` | boolean | `"false"` | Exibe logs do PaddleOCR | `PADDLE_OCR_SHOW_LOG=true` |
 
-## 🗄️ Variáveis do Banco de Dados PostgreSQL/PostGIS
+## 🗄️ Banco de Dados PostgreSQL/PostGIS
+
+O projeto suporta sincronização de shapefiles com um banco de dados PostgreSQL/PostGIS, permitindo armazenamento persistente, consultas espaciais otimizadas e análises geoespaciais avançadas.
+
+### 🏗️ Estrutura do Banco de Dados
+
+#### Tabela Principal: `car_data`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | SERIAL | Chave primária auto-incrementada |
+| `car_code` | VARCHAR(100) | Código único do CAR |
+| `state` | VARCHAR(2) | Sigla do estado (ex: SP, MG, BA) |
+| `polygon_type` | VARCHAR(50) | Tipo de polígono (ex: AREA_PROPERTY, APPS) |
+| `geometry` | GEOMETRY(MULTIPOLYGON, 4326) | Geometria espacial em WGS84 |
+| `properties` | JSONB | Propriedades do shapefile em formato JSON |
+| `created_at` | TIMESTAMP | Data/hora de criação do registro |
+| `updated_at` | TIMESTAMP | Data/hora da última atualização |
+
+#### Índices Criados
+
+- `idx_car_data_car_code` - Índice no código do CAR
+- `idx_car_data_state` - Índice no estado
+- `idx_car_data_polygon_type` - Índice no tipo de polígono
+- `idx_car_data_geometry` - Índice espacial GIST na geometria
+
+### 🗄️ Variáveis do Banco de Dados PostgreSQL/PostGIS
 
 | Variável | Tipo | Padrão | Descrição | Exemplo |
 |----------|------|--------|-----------|---------|
@@ -292,6 +318,200 @@ O projeto utiliza diversas variáveis de ambiente para configurar diferentes asp
 | `DB_SCHEMA` | string | `"public"` | Schema do banco de dados | `DB_SCHEMA=car_schema` |
 | `DB_POOL_SIZE` | integer | `"5"` | Pool de conexões | `DB_POOL_SIZE=10` |
 | `DB_TIMEOUT` | integer | `"30"` | Timeout de conexão em segundos | `DB_TIMEOUT=60` |
+
+### ⚙️ Configuração e Inicialização
+
+#### 1. Inicialização do Banco
+
+```bash
+# Inicializar banco de dados
+make init-db
+
+# Ou executar diretamente
+python init_database.py
+```
+
+#### 2. Verificar Status
+
+```bash
+# Verificar status da conexão
+make db-status
+
+# Ou via curl
+curl -X GET "http://localhost:8000/database_status"
+```
+
+### 📊 Consultas SQL Úteis
+
+#### Consultas Básicas
+
+```sql
+-- Contar total de registros por estado
+SELECT state, COUNT(*) as total
+FROM car_data
+GROUP BY state
+ORDER BY total DESC;
+
+-- Contar por tipo de polígono
+SELECT polygon_type, COUNT(*) as total
+FROM car_data
+GROUP BY polygon_type
+ORDER BY total DESC;
+
+-- Buscar CAR específico
+SELECT car_code, state, polygon_type, 
+       ST_AsText(geometry) as geometry,
+       properties
+FROM car_data
+WHERE car_code = 'SP12345678901234567890';
+```
+
+#### Consultas Espaciais
+
+```sql
+-- Calcular área total por estado
+SELECT state, 
+       SUM(ST_Area(geometry::geography)) / 10000 as area_hectares
+FROM car_data
+GROUP BY state
+ORDER BY area_hectares DESC;
+
+-- Buscar propriedades dentro de uma área
+SELECT car_code, state, polygon_type
+FROM car_data
+WHERE ST_Intersects(
+    geometry,
+    ST_GeomFromText('POLYGON((...))', 4326)
+);
+
+-- Calcular centroide das propriedades
+SELECT car_code, 
+       ST_AsText(ST_Centroid(geometry)) as centroid
+FROM car_data
+WHERE state = 'SP';
+```
+
+#### Consultas Avançadas
+
+```sql
+-- Propriedades com maior área
+SELECT car_code, state, polygon_type,
+       ST_Area(geometry::geography) / 10000 as area_hectares
+FROM car_data
+ORDER BY area_hectares DESC
+LIMIT 10;
+
+-- Estatísticas por município (se disponível nas propriedades)
+SELECT properties->>'municipio' as municipio,
+       COUNT(*) as total_propriedades,
+       AVG(ST_Area(geometry::geography) / 10000) as area_media_hectares
+FROM car_data
+WHERE properties->>'municipio' IS NOT NULL
+GROUP BY properties->>'municipio'
+ORDER BY total_propriedades DESC;
+```
+
+### 🔧 Manutenção
+
+#### Backup do Banco
+
+```bash
+# Backup completo
+pg_dump -h localhost -U postgres -d download_car > backup_$(date +%Y%m%d).sql
+
+# Backup apenas dados (sem estrutura)
+pg_dump -h localhost -U postgres -d download_car --data-only > data_backup_$(date +%Y%m%d).sql
+```
+
+#### Restaurar Backup
+
+```bash
+# Restaurar backup completo
+psql -h localhost -U postgres -d download_car < backup_20231201.sql
+
+# Restaurar apenas dados
+psql -h localhost -U postgres -d download_car < data_backup_20231201.sql
+```
+
+#### Limpeza de Dados
+
+```sql
+-- Remover registros duplicados
+DELETE FROM car_data
+WHERE id NOT IN (
+    SELECT MIN(id)
+    FROM car_data
+    GROUP BY car_code
+);
+
+-- Remover registros antigos
+DELETE FROM car_data
+WHERE created_at < NOW() - INTERVAL '1 year';
+```
+
+### 🐳 Docker Compose
+
+O projeto inclui configuração Docker Compose com PostgreSQL/PostGIS:
+
+```yaml
+services:
+  postgis:
+    image: postgis/postgis:15-3.3
+    environment:
+      - POSTGRES_DB=${DB_NAME:-download_car}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-download_car}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+### 🔍 Troubleshooting
+
+#### Problemas Comuns
+
+1. **Erro de conexão**
+   - Verifique se o PostgreSQL está rodando
+   - Confirme as variáveis de ambiente
+   - Teste a conexão: `make db-status`
+
+2. **Erro de PostGIS**
+   - Verifique se a extensão PostGIS está instalada
+   - Execute: `CREATE EXTENSION IF NOT EXISTS postgis;`
+
+3. **Erro de permissões**
+   - Verifique se o usuário tem permissões no banco
+   - Execute: `GRANT ALL PRIVILEGES ON DATABASE download_car TO postgres;`
+
+4. **Erro de memória**
+   - Aumente o pool de conexões: `DB_POOL_SIZE=10`
+   - Aumente o timeout: `DB_TIMEOUT=60`
+
+#### Logs
+
+```bash
+# Ver logs do PostgreSQL
+docker compose logs postgis
+
+# Ver logs da API
+docker compose logs download-car-api
+
+# Ver logs específicos
+docker compose logs -f download-car-api | grep -i database
+```
+
+### 📚 Recursos Adicionais
+
+- [Documentação PostgreSQL](https://www.postgresql.org/docs/)
+- [Documentação PostGIS](https://postgis.net/documentation/)
+- [GeoAlchemy2](https://geoalchemy-2.readthedocs.io/)
+- [SQLAlchemy](https://docs.sqlalchemy.org/)
 
 ## 📝 Como Usar as Variáveis de Ambiente
 
@@ -959,6 +1179,14 @@ O projeto inclui um Makefile abrangente com comandos para facilitar o desenvolvi
 - `make download-property car=X` - Baixa propriedade do CAR via API
 - `make delete-state state=X folder=Y include_properties=Z` - Exclui arquivos de um estado
 
+### 🗄️ Comandos de Banco de Dados
+- `make init-db` - Inicializa o banco de dados PostgreSQL/PostGIS
+- `make db-status` - Verifica o status da conexão com o banco de dados
+- `make sync-state state=X polygon=Y` - Sincroniza dados de um estado com o banco
+- `make sync-car car=X state=Y polygon=Z` - Sincroniza dados de um CAR específico
+- `make query-car car=X` - Consulta dados de um CAR no banco
+- `make query-state state=X limit=Y` - Consulta dados de um estado no banco
+
 ### 🔄 Comandos de Manutenção
 - `make git-update` - Atualiza repositório Git
 
@@ -994,6 +1222,24 @@ make download-property car=SP12345678901234567890
 
 # Excluir arquivos de um estado
 make delete-state state=SP folder=temp include_properties=true
+
+# Inicializar banco de dados
+make init-db
+
+# Verificar status do banco
+make db-status
+
+# Sincronizar estado com banco de dados
+make sync-state state=SP polygon=AREA_PROPERTY
+
+# Sincronizar CAR específico
+make sync-car car=SP12345678901234567890 state=SP polygon=AREA_PROPERTY
+
+# Consultar dados de um CAR
+make query-car car=SP12345678901234567890
+
+# Consultar dados de um estado
+make query-state state=SP limit=10
 
 # Ver logs da API
 make logs service=download-car-api
