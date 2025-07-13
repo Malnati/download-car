@@ -55,43 +55,49 @@ def run_download_state(state: str, polygon: str, folder: str, tries: int, debug:
     """
     Executa o download de um estado e retorna o caminho do arquivo baixado.
     """
-    # Garante que a pasta existe
-    os.makedirs(folder, exist_ok=True)
-    
-    # Constrói o comando
-    cmd = [
-        sys.executable, "cli.py",
-        "--state", state,
-        "--polygon", polygon,
-        "--folder", folder,
-        "--tries", str(tries),
-        "--debug", str(debug).lower(),
-        "--timeout", str(timeout),
-        "--max_retries", str(max_retries)
-    ]
-    
-    # Executa o comando
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
-    
-    # Constrói o caminho esperado do arquivo
-    # O cli.py cria arquivos com o nome {state}_AREA_IMOVEL.zip
-    # independentemente do polígono passado (AREA_PROPERTY é mapeado para AREA_IMOVEL)
-    expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
-    
-    # Verifica se o arquivo foi criado, mesmo que o processo tenha falhado
-    if os.path.exists(expected_file):
-        return expected_file
-    
-    # Se o arquivo não existe, verifica se houve erro
-    if result.returncode != 0:
-        error_msg = result.stderr.strip()
-        if "UrlNotOkException" in error_msg:
-            raise Exception(f"Falha no download devido a problemas de captcha. Tente novamente em alguns minutos. Detalhes: {error_msg}")
+    try:
+        # Importa apenas quando necessário
+        from download_car import DownloadCar, Polygon
+        from download_car.drivers import Tesseract
+        
+        # Garante que a pasta existe
+        os.makedirs(folder, exist_ok=True)
+        
+        # Cria instância do DownloadCar
+        car = DownloadCar(driver=Tesseract)
+        
+        # Executa o download diretamente
+        car.download_state(
+            state=state,
+            polygon=Polygon[polygon],
+            folder=folder,
+            tries=tries,
+            debug=debug,
+            timeout=timeout,
+            max_retries=max_retries
+        )
+        
+        # Constrói o caminho esperado do arquivo
+        # O download cria arquivos com o nome {state}_AREA_IMOVEL.zip
+        # independentemente do polígono passado (AREA_PROPERTY é mapeado para AREA_IMOVEL)
+        expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
+        
+        if os.path.exists(expected_file):
+            return expected_file
         else:
-            raise Exception(f"Erro ao executar cli.py: {error_msg}")
-    
-    # Se chegou aqui, o processo não falhou mas o arquivo não foi criado
-    raise Exception(f"Download concluído mas arquivo não foi criado: {expected_file}")
+            raise Exception(f"Download concluído mas arquivo não foi criado: {expected_file}")
+            
+    except Exception as e:
+        # Se o arquivo foi criado mesmo com erro, retorna o caminho
+        expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
+        if os.path.exists(expected_file):
+            return expected_file
+        
+        # Se não foi criado, propaga o erro
+        if "UrlNotOkException" in str(e):
+            raise Exception(f"Falha no download devido a problemas de captcha. Tente novamente em alguns minutos. Detalhes: {str(e)}")
+        else:
+            raise Exception(f"Erro ao executar download: {str(e)}")
 
 
 # =============================================================================

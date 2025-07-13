@@ -13,7 +13,13 @@ services:
       - .:/download-car
     entrypoint: ./entrypoint.download.sh
     environment:
+      - STATE
       - POLYGON
+      - FOLDER
+      - TRIES
+      - DEBUG
+      - TIMEOUT
+      - MAX_RETRIES
 
   download-car-api:
     build:
