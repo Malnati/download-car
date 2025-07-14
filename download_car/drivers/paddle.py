@@ -38,9 +38,10 @@ class Paddle(Captcha):
             The `use_angle_cls` parameter is set to False to disable text angle detection.
             The `lang` parameter is set to "en" to specify the English language.
             The `use_space_char` parameter is set to False to disable space character output.
+            The `show_log` parameter is set to False to suppress PaddleOCR's logging messages.
         """
         self.ocr = PaddleOCR(
-            use_angle_cls=False, lang="en", use_space_char=False
+            use_angle_cls=False, lang="en", use_space_char=False, show_log=False
         )
 
     def get_captcha(self, captcha: Image) -> str:
@@ -58,13 +59,12 @@ class Paddle(Captcha):
             optical character recognition. The extracted text is then cleaned using regular expressions to remove
             non-alphanumeric characters.
         """
-        try:
-            result = self.ocr.ocr(self._process_captcha(captcha), det=False, cls=False)
-            if result and result[0]:
-                text = result[0][0][0]  # Extract text from result
-                return re.sub("[^A-Za-z0-9]+", "", text)
-            else:
-                return ""
-        except Exception as e:
-            print(f"⚠️  Erro no PaddleOCR: {e}")
-            return ""
+        return re.sub(
+            "[^A-Za-z0-9]+",
+            "",
+            list(
+                itertools.chain.from_iterable(
+                    self.ocr.ocr(self._process_captcha(captcha), det=False, cls=False)
+                )
+            )[0][0],
+        )

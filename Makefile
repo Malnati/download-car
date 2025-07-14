@@ -134,8 +134,8 @@ install-dev:
 
 # Comandos de download com verificação automática
 download: check-dependencies install
-	@echo "🛠️  Executando cli.py com fallback automático: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
-	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --auto-fallback
+	@echo "🛠️  Executando cli.py com fallback simples: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --simple-fallback
 
 download-tesseract: install
 	@echo "🛠️  Executando cli.py com Tesseract: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
@@ -369,6 +369,6 @@ help:
 # Limpar arquivos de download
 clean-downloads:
 	@echo "🗑️  Limpando arquivos de download..."
-	rm -f data/*.zip || true
-	rm -f temp/*.zip || true
+	sudo rm -f data/*.zip || true
+	sudo rm -f temp/*.zip || true
 	@echo "✅ Arquivos de download removidos"
