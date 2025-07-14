@@ -41,7 +41,7 @@ class Paddle(Captcha):
             The `show_log` parameter is set to False to suppress PaddleOCR's logging messages.
         """
         self.ocr = PaddleOCR(
-            use_angle_cls=False, lang="en", use_space_char=False, show_log=False
+            use_angle_cls=False, lang="en"
         )
 
     def get_captcha(self, captcha: Image) -> str:

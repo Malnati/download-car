@@ -1,23 +1,27 @@
-# app.py
+# api.py
 from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, Path
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
-import tempfile
-import zipfile
-import shutil
-import tempfile
-import shutil
-import os
-import zipfile
-from pathlib import Path as FilePath
 from typing import Optional
-import subprocess
-import sys
-from datetime import datetime
 
-from download_car import DownloadCar, State, Polygon
-from download_car.drivers import Tesseract
+# Importa as funções de lógica do cli.py
+from cli import (
+    download_state_logic,
+    download_country_logic,
+    download_property_logic,
+    buscar_estado_por_car_logic,
+    buscar_propriedade_por_car_logic,
+    get_state_status_logic,
+    download_state_file_logic,
+    sync_to_database_logic,
+    database_status_logic,
+    brasil_config_logic,
+    car_data_logic,
+    delete_state_logic,
+    get_states_logic,
+    get_polygons_logic
+)
 
 # Configurações CORS baseadas em variáveis de ambiente
 CORS_ALLOW_ORIGINS = os.getenv("CORS_ALLOW_ORIGINS", "*").split(",")
@@ -104,78 +108,6 @@ app.add_middleware(
 )
 
 
-def zip_shapefile(shp_path: str) -> str:
-    base = os.path.splitext(shp_path)[0]
-    exts = [".shp", ".shx", ".dbf", ".prj"]
-    files = [base + ext for ext in exts if os.path.exists(base + ext)]
-    zip_path = base + ".zip"
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for f in files:
-            zipf.write(f, arcname=os.path.basename(f))
-    return zip_path
-
-
-def extract_and_find_shp(upload_file: UploadFile, temp_dir: str) -> str:
-    zip_path = os.path.join(temp_dir, upload_file.filename)
-    with open(zip_path, "wb") as f:
-        shutil.copyfileobj(upload_file.file, f)
-
-    with zipfile.ZipFile(zip_path, "r") as zip_ref:
-        zip_ref.extractall(temp_dir)
-
-    shp_path = None
-    for root, _dirs, files in os.walk(temp_dir):
-        for file in files:
-            if file.lower().endswith(".shp"):
-                shp_path = os.path.join(root, file)
-    if shp_path:
-        return shp_path
-    raise ValueError(f"No .shp file found in zip '{upload_file.filename}'.")
-
-
-def run_download_state(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
-    """
-    Executa o download_state.py como subprocess e retorna o caminho do arquivo baixado.
-    """
-    # Garante que a pasta existe
-    os.makedirs(folder, exist_ok=True)
-    
-    # Constrói o comando
-    cmd = [
-        sys.executable, "download_state.py",
-        "--state", state,
-        "--polygon", polygon,
-        "--folder", folder,
-        "--tries", str(tries),
-        "--debug", str(debug).lower(),
-        "--timeout", str(timeout),
-        "--max_retries", str(max_retries)
-    ]
-    
-    # Executa o comando
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
-    
-    # Constrói o caminho esperado do arquivo
-    # O download_state.py cria arquivos com o nome {state}_AREA_IMOVEL.zip
-    # independentemente do polígono passado (AREA_PROPERTY é mapeado para AREA_IMOVEL)
-    expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
-    
-    # Verifica se o arquivo foi criado, mesmo que o processo tenha falhado
-    if os.path.exists(expected_file):
-        return expected_file
-    
-    # Se o arquivo não existe, verifica se houve erro
-    if result.returncode != 0:
-        error_msg = result.stderr.strip()
-        if "UrlNotOkException" in error_msg:
-            raise Exception(f"Falha no download devido a problemas de captcha. Tente novamente em alguns minutos. Detalhes: {error_msg}")
-        else:
-            raise Exception(f"Erro ao executar download_state.py: {error_msg}")
-    
-    # Se chegou aqui, o processo não falhou mas o arquivo não foi criado
-    raise Exception(f"Download concluído mas arquivo não foi criado: {expected_file}")
-
-
 @app.post(
     "/download_state",
     summary="Download de dados por estado",
@@ -253,8 +185,8 @@ async def download_state_endpoint(
     Baixa shapefiles de dados do CAR para um estado específico.
     """
     try:
-        # Executa o download usando o download_state.py
-        file_path = run_download_state(state, polygon, folder, tries, debug, timeout, max_retries)
+        # Delega para a lógica em cli.py
+        file_path = download_state_logic(state, polygon, folder, tries, debug, timeout, max_retries)
         
         # Retorna o arquivo como resposta
         return FileResponse(
@@ -264,7 +196,7 @@ async def download_state_endpoint(
         )
         
     except Exception as e:
-        return {"error": str(e)}, 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post(
@@ -339,41 +271,18 @@ async def download_country_endpoint(
     Baixa shapefiles de dados do CAR para todos os estados do Brasil.
     """
     try:
-        # Lista de todos os estados
-        states = [state.name for state in State]
+        # Delega para a lógica em cli.py
+        file_path = download_country_logic(polygon, folder, tries, debug, timeout, max_retries)
         
-        # Cria a pasta base
-        os.makedirs(folder, exist_ok=True)
-        
-        # Baixa dados para cada estado
-        downloaded_files = []
-        for state in states:
-            try:
-                file_path = run_download_state(state, polygon, folder, tries, debug, timeout, max_retries)
-                downloaded_files.append(file_path)
-            except Exception as e:
-                if debug:
-                    print(f"Erro ao baixar {state}: {e}")
-                continue
-        
-        if not downloaded_files:
-            return {"error": "Nenhum arquivo foi baixado com sucesso"}, 500
-        
-        # Cria um ZIP com todos os arquivos baixados
-        country_zip_path = os.path.join(folder, f"brazil_{polygon}.zip")
-        with zipfile.ZipFile(country_zip_path, "w", zipfile.ZIP_DEFLATED) as country_zip:
-            for file_path in downloaded_files:
-                country_zip.write(file_path, arcname=os.path.basename(file_path))
-        
-        # Retorna o arquivo ZIP do país
+        # Retorna o arquivo como resposta
         return FileResponse(
-            path=country_zip_path,
+            path=file_path,
             filename=f"brazil_{polygon}.zip",
             media_type="application/zip"
         )
         
     except Exception as e:
-        return {"error": str(e)}, 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get(
@@ -391,19 +300,12 @@ async def get_states():
     """
     Retorna a lista de estados brasileiros disponíveis.
     """
-    states = []
-    for state in State:
-        states.append({
-            "code": state.name,
-            "name": state.value,
-            "description": f"Estado de {state.value}"
-        })
-    
-    return {
-        "states": states,
-        "total": len(states),
-        "description": "Lista completa dos 27 estados brasileiros disponíveis para download"
-    }
+    try:
+        # Delega para a lógica em cli.py
+        result = get_states_logic()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get(
@@ -421,31 +323,12 @@ async def get_polygons():
     """
     Retorna a lista de tipos de polígonos disponíveis.
     """
-    polygons = []
-    for polygon in Polygon:
-        description = {
-            "AREA_PROPERTY": "Perímetros dos imóveis (Property perimeters)",
-            "APPS": "Área de Preservação Permanente (Permanent preservation area)",
-            "NATIVE_VEGETATION": "Remanescente de Vegetação Nativa (Native Vegetation Remnants)",
-            "CONSOLIDATED_AREA": "Área Consolidada (Consolidated Area)",
-            "AREA_FALL": "Área de Pousio (Fallow Area)",
-            "HYDROGRAPHY": "Hidrografia (Hydrography)",
-            "RESTRICTED_USE": "Uso Restrito (Restricted Use)",
-            "ADMINISTRATIVE_SERVICE": "Servidão Administrativa (Administrative Servitude)",
-            "LEGAL_RESERVE": "Reserva Legal (Legal reserve)"
-        }.get(polygon.name, "Polígono não documentado")
-        
-        polygons.append({
-            "code": polygon.name,
-            "value": polygon.value,
-            "description": description
-        })
-    
-    return {
-        "polygons": polygons,
-        "total": len(polygons),
-        "description": "Lista completa dos tipos de polígonos disponíveis para download"
-    }
+    try:
+        # Delega para a lógica em cli.py
+        result = get_polygons_logic()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post(
@@ -534,94 +417,20 @@ async def download_property_endpoint(
                 detail="Estado deve ser informado para busca de propriedade"
             )
 
-        # 1. Caminho do ZIP do estado
-        polygon = "AREA_IMOVEL"  # Padrão usado no download
-        zip_path = os.path.join("temp", f"{state}_{polygon}.zip")
+        # Delega para a lógica em cli.py
+        file_path = download_property_logic(car, state, folder, tries, debug, timeout, max_retries)
         
-        if not os.path.exists(zip_path):
-            raise HTTPException(
-                status_code=404, 
-                detail=f"Arquivo do estado {state} não encontrado. Baixe primeiro via /download_state."
-            )
-
-        # 2. Extrair o ZIP para um diretório temporário
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                zip_ref.extractall(tmpdir)
-
-            # 3. Encontrar o arquivo .shp extraído
-            shp_files = [f for f in os.listdir(tmpdir) if f.endswith(".shp")]
-            if not shp_files:
-                raise HTTPException(
-                    status_code=500, 
-                    detail="Shapefile não encontrado no ZIP do estado."
-                )
-            shp_path = os.path.join(tmpdir, shp_files[0])
-
-            # 4. Ler o shapefile com geopandas
-            try:
-                import geopandas as gpd
-                gdf = gpd.read_file(shp_path)
-            except ImportError:
-                raise HTTPException(
-                    status_code=500,
-                    detail="Geopandas não disponível. Instale com: pip install geopandas"
-                )
-
-            # 5. Procurar o CAR (tentar diferentes nomes de campo)
-            car_fields = ["CAR", "cod_imovel", "COD_IMOVEL", "car", "codigo_car"]
-            car_field = None
-            
-            for field in car_fields:
-                if field in gdf.columns:
-                    car_field = field
-                    break
-            
-            if car_field is None:
-                # Se não encontrar, mostrar as colunas disponíveis para debug
-                available_columns = list(gdf.columns)
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Campo do CAR não encontrado. Colunas disponíveis: {available_columns}"
-                )
-
-            # 6. Buscar o CAR (case insensitive)
-            result_gdf = gdf[gdf[car_field].astype(str).str.upper() == car.upper()]
-            
-            if result_gdf.empty:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"CAR {car} não encontrado no estado {state}."
-                )
-
-            # 7. Salvar o resultado em um novo shapefile temporário
-            out_dir = tempfile.mkdtemp()
-            out_shp = os.path.join(out_dir, f"property_{car}.shp")
-            result_gdf.to_file(out_shp)
-
-            # 8. Empacotar o shapefile em um ZIP
-            zip_filename = os.path.join(out_dir, f"property_{car}.zip")
-            with zipfile.ZipFile(zip_filename, "w") as zipf:
-                for ext in [".shp", ".shx", ".dbf", ".prj", ".cpg"]:
-                    f = out_shp.replace(".shp", ext)
-                    if os.path.exists(f):
-                        zipf.write(f, arcname=os.path.basename(f))
-
-            # 9. Retornar o arquivo ZIP como download
-            return FileResponse(
-                path=zip_filename,
-                filename=f"property_{car}.zip",
-                media_type="application/zip"
-            )
-            
+        # Retorna o arquivo como resposta
+        return FileResponse(
+            path=file_path,
+            filename=f"property_{car}.zip",
+            media_type="application/zip"
+        )
+        
     except HTTPException:
-        # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao processar propriedade {car}: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get(
@@ -673,19 +482,11 @@ async def buscar_estado_por_car(
     Busca o estado de um imóvel pelo número do CAR.
     """
     try:
-        # Esta funcionalidade ainda não está implementada na classe DownloadCar
-        return {
-            "success": False,
-            "car_number": car,
-            "message": "Funcionalidade de busca por CAR ainda não implementada. Use /download_state ou /download_country para baixar os dados primeiro."
-        }
-        
+        # Delega para a lógica em cli.py
+        result = buscar_estado_por_car_logic(car, state, data_folder)
+        return result
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "car_number": car
-        }
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get(
@@ -734,22 +535,14 @@ async def buscar_propriedade_por_car(
     )
 ):
     """
-    Busca uma propriedade pelo número do CAR e retorna o shape.
+    Busca uma propriedade pelo número do CAR.
     """
     try:
-        # Esta funcionalidade ainda não está implementada na classe DownloadCar
-        return {
-            "success": False,
-            "car_number": car,
-            "message": "Funcionalidade de busca por CAR ainda não implementada. Use /download_state ou /download_country para baixar os dados primeiro."
-        }
-        
+        # Delega para a lógica em cli.py
+        result = buscar_propriedade_por_car_logic(car, state, data_folder)
+        return result
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "car_number": car
-        }
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get(
@@ -785,92 +578,11 @@ async def get_state_status(
     Verifica se existe arquivo baixado para um estado específico.
     """
     try:
-        # Lista de possíveis arquivos para o estado
-        state_files_patterns = [
-            f"{state}_AREA_IMOVEL.zip",
-            f"{state}_APPS.zip",
-            f"{state}_NATIVE_VEGETATION.zip",
-            f"{state}_CONSOLIDATED_AREA.zip",
-            f"{state}_AREA_FALL.zip",
-            f"{state}_HYDROGRAPHY.zip",
-            f"{state}_RESTRICTED_USE.zip",
-            f"{state}_ADMINISTRATIVE_SERVICE.zip",
-            f"{state}_LEGAL_RESERVE.zip"
-        ]
-        
-        available_files = []
-        total_size = 0
-        
-        for pattern in state_files_patterns:
-            file_path = os.path.join(folder, pattern)
-            if os.path.exists(file_path):
-                try:
-                    file_size = os.path.getsize(file_path)
-                    file_mtime = os.path.getmtime(file_path)
-                    
-                    # Extrair tipo de polígono do nome do arquivo
-                    polygon_type = pattern.replace(f"{state}_", "").replace(".zip", "")
-                    
-                    available_files.append({
-                        "filename": pattern,
-                        "file_path": file_path,
-                        "size_bytes": file_size,
-                        "size_mb": round(file_size / (1024 * 1024), 2),
-                        "modified": datetime.fromtimestamp(file_mtime).isoformat(),
-                        "polygon_type": polygon_type,
-                        "download_url": f"/download_state_file/{state}/{polygon_type}"
-                    })
-                    
-                    total_size += file_size
-                except Exception as e:
-                    continue
-        
-        # Verificar se há arquivos do estado em ZIPs nacionais
-        national_files_containing_state = []
-        national_zip_patterns = [
-            "brazil_AREA_IMOVEL.zip",
-            "brazil_APPS.zip",
-            "brazil_NATIVE_VEGETATION.zip",
-            "brazil_CONSOLIDATED_AREA.zip",
-            "brazil_AREA_FALL.zip",
-            "brazil_HYDROGRAPHY.zip",
-            "brazil_RESTRICTED_USE.zip",
-            "brazil_ADMINISTRATIVE_SERVICE.zip",
-            "brazil_LEGAL_RESERVE.zip"
-        ]
-        
-        for pattern in national_zip_patterns:
-            zip_path = os.path.join(folder, pattern)
-            if os.path.exists(zip_path):
-                try:
-                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                        state_files_in_zip = [f for f in zip_ref.namelist() if f.startswith(f"{state}_")]
-                        if state_files_in_zip:
-                            national_files_containing_state.append({
-                                "national_zip": pattern,
-                                "state_files": state_files_in_zip
-                            })
-                except Exception as e:
-                    continue
-        
-        return {
-            "state": state,
-            "has_files": len(available_files) > 0,
-            "available_files": available_files,
-            "total_files": len(available_files),
-            "total_size_mb": round(total_size / (1024 * 1024), 2),
-            "national_files_containing_state": national_files_containing_state,
-            "folder": folder,
-            "message": f"Encontrados {len(available_files)} arquivo(s) para o estado {state}" if available_files else f"Nenhum arquivo encontrado para o estado {state}"
-        }
-        
+        # Delega para a lógica em cli.py
+        result = get_state_status_logic(state, folder)
+        return result
     except Exception as e:
-        return {
-            "state": state,
-            "has_files": False,
-            "error": str(e),
-            "message": f"Erro ao verificar arquivos do estado {state}"
-        }
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get(
@@ -906,28 +618,226 @@ async def download_state_file(
     Faz download de um arquivo específico de um estado.
     """
     try:
+        # Delega para a lógica em cli.py
+        file_path = download_state_file_logic(state, polygon_type, folder)
+        
+        # Retorna o arquivo como resposta
         filename = f"{state}_{polygon_type}.zip"
-        file_path = os.path.join(folder, filename)
-        
-        if not os.path.exists(file_path):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Arquivo {filename} não encontrado para o estado {state}"
-            )
-        
         return FileResponse(
             path=file_path,
             filename=filename,
             media_type="application/zip"
         )
         
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao baixar arquivo: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    "/sync_to_database",
+    summary="Sincronizar shapefile com banco de dados",
+    description="""
+    Sincroniza um shapefile com o banco de dados PostgreSQL/PostGIS.
+    
+    Este endpoint permite sincronizar dados de um estado específico ou de um CAR específico
+    com o banco de dados PostGIS configurado. Os dados são armazenados com geometria espacial
+    e propriedades em formato JSON.
+    
+    **⚠️ Atenção:** Este endpoint requer que o banco de dados PostgreSQL/PostGIS esteja configurado
+    e que a extensão PostGIS esteja habilitada.
+    
+    **Exemplo de uso:**
+    ```bash
+    # Sincronizar dados de um estado
+    curl -X POST "http://localhost:8000/sync_to_database" \\
+         -F "state=SP" \\
+         -F "polygon_type=AREA_PROPERTY" \\
+         -F "sync_type=state"
+    
+    # Sincronizar dados de um CAR específico
+    curl -X POST "http://localhost:8000/sync_to_database" \\
+         -F "car_code=SP12345678901234567890" \\
+         -F "state=SP" \\
+         -F "polygon_type=AREA_PROPERTY" \\
+         -F "sync_type=car"
+    ```
+    
+    **Retorno:**
+    - JSON com informações sobre a sincronização realizada
+    """,
+    response_description="Resultado da sincronização com o banco de dados",
+    tags=["Sincronização com Banco de Dados"]
+)
+async def sync_to_database_endpoint(
+    sync_type: str = Form(
+        ...,
+        description="Tipo de sincronização: 'state' para estado completo ou 'car' para CAR específico",
+        example="state",
+        regex="^(state|car)$"
+    ),
+    state: str = Form(
+        ...,
+        description="Sigla do estado brasileiro (2 letras maiúsculas)",
+        example="SP",
+        min_length=2,
+        max_length=2,
+        regex="^[A-Z]{2}$"
+    ),
+    polygon_type: str = Form(
+        "AREA_PROPERTY",
+        description="Tipo de polígono a ser sincronizado (padrão: AREA_PROPERTY)",
+        example="AREA_PROPERTY",
+        regex="^(AREA_PROPERTY|APPS|NATIVE_VEGETATION|CONSOLIDATED_AREA|AREA_FALL|HYDROGRAPHY|RESTRICTED_USE|ADMINISTRATIVE_SERVICE|LEGAL_RESERVE)$"
+    ),
+    car_code: Optional[str] = Form(
+        None,
+        description="Código CAR específico (obrigatório quando sync_type=car)",
+        example="SP12345678901234567890",
+        min_length=10,
+        max_length=50
+    ),
+    folder: str = Form(
+        "temp",
+        description="Pasta onde buscar os arquivos shapefile",
+        example="temp"
+    ),
+):
+    """
+    Sincroniza shapefiles com o banco de dados PostgreSQL/PostGIS.
+    """
+    try:
+        # Delega para a lógica em cli.py
+        result = sync_to_database_logic(sync_type, state, polygon_type, car_code, folder)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    "/database_status",
+    summary="Status da conexão com banco de dados",
+    description="""
+    Verifica o status da conexão com o banco de dados PostgreSQL/PostGIS.
+    
+    Este endpoint testa a conectividade com o banco de dados e retorna informações
+    sobre a configuração atual.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X GET "http://localhost:8000/database_status"
+    ```
+    
+    **Retorno:**
+    - JSON com status da conexão e informações de configuração
+    """,
+    response_description="Status da conexão com o banco de dados",
+    tags=["Sincronização com Banco de Dados"]
+)
+async def database_status_endpoint():
+    """
+    Verifica o status da conexão com o banco de dados.
+    """
+    try:
+        # Delega para a lógica em cli.py
+        result = database_status_logic()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    "/brasil_config",
+    summary="Configurações do Brasil",
+    description="""
+    Retorna as configurações padrão para a seção Brasil.
+    
+    Este endpoint fornece os valores iniciais para os campos MapBiomas e IBGE
+    baseados nas variáveis de ambiente configuradas.
+    
+    **Exemplo de uso:**
+    ```bash
+    curl -X GET "http://localhost:8000/brasil_config"
+    ```
+    
+    **Retorno:**
+    - JSON com configurações do Brasil
+    """,
+    response_description="Configurações do Brasil",
+    tags=["Configurações"]
+)
+async def brasil_config_endpoint():
+    """
+    Retorna as configurações do Brasil.
+    """
+    try:
+        # Delega para a lógica em cli.py
+        result = brasil_config_logic()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    "/car_data",
+    summary="Buscar dados do CAR no banco de dados",
+    description="""
+    Busca dados do CAR armazenados no banco de dados PostgreSQL/PostGIS.
+    
+    Este endpoint permite consultar os dados do CAR que foram sincronizados com o banco de dados,
+    com filtros por código CAR, estado e tipo de polígono.
+    
+    **Exemplo de uso:**
+    ```bash
+    # Buscar todos os dados de um estado
+    curl -X GET "http://localhost:8000/car_data?state=SP&limit=10"
+    
+    # Buscar dados de um CAR específico
+    curl -X GET "http://localhost:8000/car_data?car_code=SP12345678901234567890"
+    
+    # Buscar dados por tipo de polígono
+    curl -X GET "http://localhost:8000/car_data?polygon_type=APPS&limit=5"
+    ```
+    
+    **Retorno:**
+    - JSON com os dados do CAR encontrados
+    """,
+    response_description="Dados do CAR armazenados no banco de dados",
+    tags=["Sincronização com Banco de Dados"]
+)
+async def car_data_endpoint(
+    car_code: Optional[str] = Query(
+        None,
+        description="Código CAR específico para busca",
+        example="SP12345678901234567890"
+    ),
+    state: Optional[str] = Query(
+        None,
+        description="Sigla do estado para filtrar resultados",
+        example="SP",
+        regex="^[A-Z]{2}$"
+    ),
+    polygon_type: Optional[str] = Query(
+        None,
+        description="Tipo de polígono para filtrar resultados",
+        example="AREA_PROPERTY"
+    ),
+    limit: int = Query(
+        100,
+        description="Limite de resultados retornados",
+        example=100,
+        ge=1,
+        le=1000
+    )
+):
+    """
+    Busca dados do CAR no banco de dados.
+    """
+    try:
+        # Delega para a lógica em cli.py
+        result = car_data_logic(car_code, state, polygon_type, limit)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get(
@@ -955,7 +865,10 @@ async def root():
             "states": "/states - Lista de estados disponíveis",
             "polygons": "/polygons - Lista de polígonos disponíveis",
             "state": "/state - Buscar estado de um imóvel pelo CAR",
-            "property": "/property - Buscar propriedade pelo CAR"
+            "property": "/property - Buscar propriedade pelo CAR",
+            "sync_to_database": "/sync_to_database - Sincronizar shapefile com banco de dados",
+            "database_status": "/database_status - Status da conexão com banco de dados",
+            "car_data": "/car_data - Buscar dados do CAR no banco de dados"
         },
         "documentation": "/docs",
         "repository": "https://github.com/Malnati/download-car",
@@ -1019,124 +932,8 @@ async def delete_state_endpoint(
     Exclui todos os arquivos relacionados a um estado específico.
     """
     try:
-        deleted_files = []
-        deleted_dirs = []
-        errors = []
-        
-        # 1. Excluir arquivos de download do estado
-        state_files_patterns = [
-            f"{state}_AREA_IMOVEL.zip",
-            f"{state}_APPS.zip",
-            f"{state}_NATIVE_VEGETATION.zip",
-            f"{state}_CONSOLIDATED_AREA.zip",
-            f"{state}_AREA_FALL.zip",
-            f"{state}_HYDROGRAPHY.zip",
-            f"{state}_RESTRICTED_USE.zip",
-            f"{state}_ADMINISTRATIVE_SERVICE.zip",
-            f"{state}_LEGAL_RESERVE.zip"
-        ]
-        
-        for pattern in state_files_patterns:
-            file_path = os.path.join(folder, pattern)
-            if os.path.exists(file_path):
-                try:
-                    os.remove(file_path)
-                    deleted_files.append(file_path)
-                except Exception as e:
-                    errors.append(f"Erro ao excluir {file_path}: {str(e)}")
-        
-        # 2. Excluir arquivos de propriedades do estado (se solicitado)
-        if include_properties:
-            # Buscar em pastas comuns onde propriedades podem estar
-            property_folders = [
-                "PROPERTY",
-                "properties",
-                "temp",
-                folder
-            ]
-            
-            for prop_folder in property_folders:
-                if os.path.exists(prop_folder):
-                    try:
-                        # Buscar arquivos de propriedade que contenham o estado no nome
-                        for root, dirs, files in os.walk(prop_folder):
-                            for file in files:
-                                if file.startswith("property_") and state in file:
-                                    file_path = os.path.join(root, file)
-                                    try:
-                                        os.remove(file_path)
-                                        deleted_files.append(file_path)
-                                    except Exception as e:
-                                        errors.append(f"Erro ao excluir propriedade {file_path}: {str(e)}")
-                    except Exception as e:
-                        errors.append(f"Erro ao buscar propriedades em {prop_folder}: {str(e)}")
-        
-        # 3. Excluir diretórios temporários vazios relacionados ao estado
-        temp_dirs_to_check = [
-            os.path.join(folder, state),
-            os.path.join("temp", state),
-            os.path.join("PROPERTY", state)
-        ]
-        
-        for temp_dir in temp_dirs_to_check:
-            if os.path.exists(temp_dir) and os.path.isdir(temp_dir):
-                try:
-                    # Verificar se o diretório está vazio
-                    if not os.listdir(temp_dir):
-                        os.rmdir(temp_dir)
-                        deleted_dirs.append(temp_dir)
-                except Exception as e:
-                    errors.append(f"Erro ao excluir diretório {temp_dir}: {str(e)}")
-        
-        # 4. Verificar se há arquivos do estado em ZIPs nacionais
-        national_zip_patterns = [
-            "brazil_AREA_IMOVEL.zip",
-            "brazil_APPS.zip",
-            "brazil_NATIVE_VEGETATION.zip",
-            "brazil_CONSOLIDATED_AREA.zip",
-            "brazil_AREA_FALL.zip",
-            "brazil_HYDROGRAPHY.zip",
-            "brazil_RESTRICTED_USE.zip",
-            "brazil_ADMINISTRATIVE_SERVICE.zip",
-            "brazil_LEGAL_RESERVE.zip"
-        ]
-        
-        national_files_containing_state = []
-        for pattern in national_zip_patterns:
-            zip_path = os.path.join(folder, pattern)
-            if os.path.exists(zip_path):
-                try:
-                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                        state_files_in_zip = [f for f in zip_ref.namelist() if f.startswith(f"{state}_")]
-                        if state_files_in_zip:
-                            national_files_containing_state.append({
-                                "zip_file": zip_path,
-                                "state_files": state_files_in_zip
-                            })
-                except Exception as e:
-                    errors.append(f"Erro ao verificar ZIP nacional {zip_path}: {str(e)}")
-        
-        return {
-            "success": True,
-            "state": state,
-            "message": f"Exclusão de arquivos do estado {state} concluída",
-            "deleted_files": deleted_files,
-            "deleted_directories": deleted_dirs,
-            "total_files_deleted": len(deleted_files),
-            "total_dirs_deleted": len(deleted_dirs),
-            "include_properties": include_properties,
-            "national_files_containing_state": national_files_containing_state,
-            "warnings": [
-                "Arquivos em ZIPs nacionais não foram excluídos automaticamente",
-                "Para excluir completamente, recrie os ZIPs nacionais sem o estado"
-            ] if national_files_containing_state else [],
-            "errors": errors if errors else None
-        }
-        
+        # Delega para a lógica em cli.py
+        result = delete_state_logic(state, folder, include_properties)
+        return result
     except Exception as e:
-        return {
-            "success": False,
-            "state": state,
-            "error": str(e),
-            "message": f"Erro ao excluir arquivos do estado {state}"
-        }, 500
+        raise HTTPException(status_code=500, detail=str(e))

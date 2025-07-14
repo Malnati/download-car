@@ -1,0 +1,7 @@
+---
+description: Manter todos os arquivos utilitários em dev/
+globs:
+alwaysApply: true
+---
+
+Helpers, utilities, verifiers, and development-only test scripts should always be added and updated only in dev/. This does not apply to unit and integration tests located in download_car/tests.

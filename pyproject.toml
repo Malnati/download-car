@@ -1,12 +1,13 @@
 # pyproject.toml
 [project]
 name = "download-car"
-version = "1.0.0"
+version = "1.0.2"
 authors = [{ name = "Ricardo Malnati", email = "ricardomalnati@gmail.com" }]
 description = "download-car - Tool designed for students, researchers, data scientists or anyone who would like to have access to download-car files."
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
 license = { file = "LICENSE" }
+keywords = ["pyproject", "api", "cli", "html", "nginx", "python", "tesseract", "sicar", "mapbiomas", "docker", "docker-compose", "black", "tests", "cursor"]
 dependencies = [
     "httpx>=0.28.1",
     "urllib3>=2.3.0",
@@ -20,12 +21,18 @@ dependencies = [
     "fiona>=1.9.0",
     "fastapi",
     "uvicorn",
-    "python-multipart"
+    "python-multipart",
+    "requests>=2.31.0",
+    "pysocks>=1.7.1",
+    "sqlalchemy",
+    "geoalchemy2",
+    "psycopg2-binary"
 ]
 
 [project.optional-dependencies]
 paddle = ["paddlepaddle>=3.0.0", "paddleocr>=2.10.0"]
 dev = ["coverage", "interrogate", "black", "coveralls"]
+full = ["paddlepaddle>=3.0.0", "paddleocr>=2.10.0", "coverage", "interrogate", "black", "coveralls"]
 
 [project.urls]
 "Homepage" = "https://github.com/Malnati/download-car"

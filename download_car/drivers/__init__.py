@@ -6,5 +6,6 @@ from download_car.drivers.tesseract import Tesseract
 
 try:
     from download_car.drivers.paddle import Paddle
+    PaddleOCR = Paddle  # Alias para compatibilidade
 except ImportError:
-    pass
+    PaddleOCR = None

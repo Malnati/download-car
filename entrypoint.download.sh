@@ -12,7 +12,7 @@ TIMEOUT=${TIMEOUT:-30}
 MAX_RETRIES=${MAX_RETRIES:-5}
 mkdir -p "$FOLDER"
 
-python download_state.py \
+python cli.py \
   --state "$STATE" \
   --polygon "$POLYGON" \
   --folder "$FOLDER" \

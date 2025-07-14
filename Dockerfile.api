@@ -4,7 +4,22 @@ FROM ${BASE_IMAGE}
 
 WORKDIR /download-car
 
-COPY app.py /download-car/
+# Copiar requirements.txt para garantir que todas as dependências estejam instaladas
+COPY requirements.txt /download-car/
+
+# Instalar dependências específicas da API se necessário
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Garantir que Tor está instalado
+RUN apt-get update && apt-get install -y --no-install-recommends tor && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copiar script do Tor
+COPY dev/start-tor.sh /usr/local/bin/start-tor.sh
+RUN chmod +x /usr/local/bin/start-tor.sh
+
+COPY api.py /download-car/
+COPY database.py /download-car/
 COPY download_car/ /download-car/download_car/
 COPY entrypoint.api.sh /download-car/
 

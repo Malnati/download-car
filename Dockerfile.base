@@ -3,20 +3,38 @@ FROM python:3.11-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar dependências do sistema (apenas o necessário, sem git/pyenv)
+# Instalar dependências do sistema (apenas o essencial para todas as imagens)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
         curl \
         ca-certificates \
-        libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
-        libffi-dev liblzma-dev libncursesw5-dev xz-utils tk-dev libgdbm-dev \
-        uuid-dev \
-        tesseract-ocr python3-opencv \
+        tesseract-ocr \
+        python3-opencv \
+        tor \
     && rm -rf /var/lib/apt/lists/*
+
+# Configurar Tor
+RUN mkdir -p /var/lib/tor && \
+    chown -R debian-tor:debian-tor /var/lib/tor && \
+    chmod 700 /var/lib/tor
+
+# Configuração básica do Tor
+RUN echo "SocksPort 9050" >> /etc/tor/torrc && \
+    echo "DataDirectory /var/lib/tor" >> /etc/tor/torrc && \
+    echo "Log notice file /var/log/tor/notices.log" >> /etc/tor/torrc
 
 RUN pip install --upgrade pip
 
-# Instalar dependências core do download-car
-RUN pip install httpx urllib3 pytesseract opencv-python numpy tqdm matplotlib beautifulsoup4
+# Instalar dependências Python core (apenas as essenciais para todas as imagens)
+RUN pip install --no-cache-dir \
+        httpx>=0.28.1 \
+        urllib3>=2.3.0 \
+        pytesseract>=0.3.13 \
+        opencv-python>=4.11.0.86 \
+        numpy>=2.0.2 \
+        tqdm>=4.67.1 \
+        matplotlib>=3.10.0 \
+        beautifulsoup4>=4.13.4 \
+        requests>=2.31.0 \
+        pysocks>=1.7.1
 
 WORKDIR /download-car

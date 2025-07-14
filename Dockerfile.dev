@@ -1,10 +1,25 @@
 # Dockerfile.dev
 FROM download-car-base:latest
 
-# Instalar ferramentas de debug e desenvolvimento
+# Instalar ferramentas de debug, desenvolvimento e monitoramento
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        curl wget ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+        # Ferramentas de rede e debug
+        wget \
+        net-tools iputils-ping telnet \
+        htop vim nano \
+        # Ferramentas de desenvolvimento
+        git \
+        # Ferramentas de monitoramento
+        procps \
+        # Ferramentas de investigação
+        strace ltrace \
+        # Dependências para geopandas e postgresql
+        libgdal-dev \
+        libproj-dev \
+        libgeos-dev \
+        libspatialindex-dev \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Instalar Poetry
 RUN pip install poetry
@@ -21,9 +36,15 @@ COPY LICENSE ./
 
 # Copiar o restante do projeto ANTES da instalação das dependências
 COPY . .
+# Renomear app.py para api.py se existir
+RUN if [ -f app.py ]; then mv app.py api.py; fi
 
 # Instalar todas as dependências (incluindo dev)
 RUN poetry install --extras dev
 
 # Instalar PaddleOCR (opcional, caso queira manter dependências opcionais)
 RUN poetry run pip install paddlepaddle paddleocr
+
+# Script para iniciar Tor junto com a aplicação
+COPY dev/start-tor.sh /usr/local/bin/start-tor.sh
+RUN chmod +x /usr/local/bin/start-tor.sh

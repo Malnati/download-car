@@ -5,6 +5,11 @@ IMAGE          ?= download-car
 API_IMAGE      ?= download-car-api
 API_DOCKERFILE ?= Dockerfile.api
 
+# Copy .config.env to .env
+.PHONY: env
+env:
+	@cp -fv .config.env .env
+
 # Build base image
 build-base:
 	@echo "🛠️  Building base image..."
@@ -60,36 +65,75 @@ build-download-pro:
 		-t download-car-download:pro \
 		-f Dockerfile.download-car .
 
+# Build nginx image
+build-nginx:
+	@echo "🛠️  Building nginx image..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker build -t download-car-nginx:latest -f Dockerfile.nginx .
+
 # Default builds (production)
 build-api: build-api-pro
 build-download: build-download-pro
 
+# Verificar versão do Poetry e gerar requirements.txt
+check-poetry:
+	@echo "🔍 Verificando versão do Poetry..."
+	@if ! poetry --version > /dev/null 2>&1; then \
+		echo "❌ Poetry não está instalado!"; \
+		echo ""; \
+		echo "📦 Para instalar o Poetry:"; \
+		if [ "$$(uname -s)" = "Darwin" ]; then \
+			echo "   macOS: brew install poetry"; \
+		elif command -v apt-get > /dev/null 2>&1; then \
+			echo "   Ubuntu/Debian: curl -sSL https://install.python-poetry.org | python3 -"; \
+		elif command -v yum > /dev/null 2>&1; then \
+			echo "   CentOS/RHEL: curl -sSL https://install.python-poetry.org | python3 -"; \
+		else \
+			echo "   Linux: curl -sSL https://install.python-poetry.org | python3 -"; \
+		fi; \
+		echo ""; \
+		echo "   Ou visite: https://python-poetry.org/docs/#installation"; \
+		exit 1; \
+	fi
+	@if ! poetry export --help > /dev/null 2>&1; then \
+		echo "❌ Poetry não suporta o comando 'export'!"; \
+		echo ""; \
+		echo "📦 Para instalar o plugin de exportação:"; \
+		echo "   poetry self add poetry-plugin-export"; \
+		echo ""; \
+		echo "   Veja mais em: https://github.com/python-poetry/poetry-plugin-export"; \
+		exit 1; \
+	fi
+	@echo "✅ Poetry e plugin de exportação disponíveis: $$(poetry --version)"
+
 # Gerar requirements.txt para produção
-requirements.txt: pyproject.toml
+requirements.txt: pyproject.toml check-poetry
+	@echo "📦 Gerando requirements.txt..."
 	@if [ -f poetry.lock ]; then \
 		poetry export --only main --format=requirements.txt > requirements.txt; \
+		echo "✅ requirements.txt gerado com sucesso"; \
 	else \
-		echo "poetry.lock não encontrado, usando requirements.txt existente"; \
+		echo "⚠️  poetry.lock não encontrado, usando requirements.txt existente"; \
 	fi
 
 # Build all images
-build: requirements.txt build-base build-pro build-download build-api
+build: env requirements.txt build-base build-pro build-download build-api build-nginx
 
 # Build development images
-build-dev: build-base build-dev build-download-dev build-api-dev
+build-dev: env build-base build-dev build-download-dev build-api-dev build-nginx
 
 # Build production images
-build-pro: requirements.txt build-base build-pro build-download-pro build-api-pro
+build-pro: env requirements.txt build-base build-pro build-download-pro build-api-pro build-nginx
 
-api-up:
+api-up: env
 	@echo "🚀  Executando container API $(API_IMAGE):latest..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up api -d
 
-clean:
+clean: env
 	@echo "🗑️  Removendo imagens, volumes e containers órfãos..."
-	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down --rmi all --volumes --remove-orphans
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down --rmi all --volumes --remove-orphans || true
 
-clean-volumes:
+
+clean-volumes: env
 	@echo "🗑️  Removendo volumes Docker, incluindo arquivos montados..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down --volumes --remove-orphans
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker volume prune -f
@@ -111,13 +155,70 @@ clean-image:
 	@echo "🗑️  Removendo imagem $(IMAGE):latest..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker rmi $(IMAGE):latest
 
-down:
+down: env
 	@echo "🛑  Parando e removendo containers..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down
 
-download:
-	@echo "🛠️  Executando download_state.sh com parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
-	./download_state.sh --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries)
+install:
+	poetry install
+
+# Comandos de instalação de dependências
+install-paddle:
+	@echo "🔧 Instalando dependências PaddleOCR..."
+	poetry install --extras paddle
+
+install-full:
+	@echo "🔧 Instalando todas as dependências..."
+	poetry install --extras full
+
+install-dev:
+	@echo "🔧 Instalando dependências de desenvolvimento..."
+	poetry install --extras dev
+
+# Comandos de download com verificação automática
+download: check-dependencies install
+	@echo "🛠️  Executando cli.py com fallback simples: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --simple-fallback
+
+download-tesseract: install
+	@echo "🛠️  Executando cli.py com Tesseract: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --driver tesseract
+
+download-paddle: install-paddle
+	@echo "🛠️  Executando cli.py com PaddleOCR: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --driver paddle
+
+download-no-vpn: check-dependencies install
+	@echo "🛠️  Executando cli.py SEM VPN: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --driver tesseract
+
+# Comandos para VPN e fallback automático
+download-with-vpn: install
+	@echo "🔒  Executando download com VPN (Tor)..."
+	@echo "🛠️  Parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --use-vpn
+
+download-with-fallback: install
+	@echo "🔄  Executando download com fallback automático (Tesseract → PaddleOCR → VPN)..."
+	@echo "🛠️  Parâmetros: state=$(state), polygon=$(polygon), folder=$(folder), debug=$(debug), timeout=$(timeout), max_retries=$(max_retries)"
+	poetry run python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --auto-fallback
+
+# Comandos Docker com VPN
+download-docker-vpn:
+	@echo "🔒  Executando download com VPN no Docker..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker run -it --rm \
+		-v $(PWD):/download-car \
+		download-car-download:dev \
+		/usr/local/bin/start-tor.sh \
+		python cli.py --state $(state) --polygon $(polygon) --folder $(folder) --debug $(debug) --timeout $(timeout) --max_retries $(max_retries) --use-vpn
+
+# Verificação automática de dependências
+check-dependencies:
+	@echo " Verificando dependências..."
+	@if ! poetry run python -c "from download_car.drivers import PaddleOCR; print('PaddleOCR disponível')" 2>/dev/null; then \
+		echo "⚠️  PaddleOCR não encontrado. Instalando automaticamente..."; \
+		$(MAKE) install-paddle; \
+	fi
 
 # Comandos para as novas funcionalidades
 search-car:
@@ -135,7 +236,7 @@ delete-state:
 		-F "folder=$(folder)" \
 		-F "include_properties=$(include_properties)"
 
-download-up:
+download-up: env
 	@echo "🚀  Iniciando serviço download-car..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up download-car -d
 
@@ -146,21 +247,21 @@ git-update:
 publish:
 	@echo "📦  Publicando pacote Python..."
 	@echo "🔄  Incrementando versão (patch)..."
-	python scripts/bump_version.py patch
+	python dev/bump_version.py patch
 	@echo "🏗️  Construindo pacote..."
 	rm -rf dist/* && python -m build && python -m twine upload dist/*
 
 publish-minor:
 	@echo "📦  Publicando pacote Python (minor version)..."
 	@echo "🔄  Incrementando versão (minor)..."
-	python scripts/bump_version.py minor
+	python dev/bump_version.py minor
 	@echo "🏗️  Construindo pacote..."
 	rm -rf dist/* && python -m build && python -m twine upload dist/*
 
 publish-major:
 	@echo "📦  Publicando pacote Python (major version)..."
 	@echo "🔄  Incrementando versão (major)..."
-	python scripts/bump_version.py major
+	python dev/bump_version.py major
 	@echo "🏗️  Construindo pacote..."
 	rm -rf dist/* && python -m build && python -m twine upload dist/*
 
@@ -168,11 +269,11 @@ integration-test:
 	@echo "🧪  Executando testes de integração..."
 	python -m unittest download_car/tests/integration/*.py
 
-logs:
+logs: env
 	@echo "📜  Exibindo logs do serviço $(service)..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose logs -f $(service)
 
-ps:
+ps: env
 	@echo "📋  Listando containers e serviços..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose ps
 
@@ -201,7 +302,48 @@ unit-test:
 	@echo "🧪  Executando testes unitários..."
 	python -m unittest download_car/tests/unit/*.py download_car/tests/unit/drivers/*.py
 
-up:
+# Testar drivers OCR (versão corrigida)
+test-ocr:
+	@echo "🧪  Testando drivers OCR..."
+	poetry run python -c 'from download_car.drivers import Tesseract; print("Tesseract disponível:", Tesseract is not None)'
+
+# Comandos de banco de dados
+init-db:
+	@echo "🗄️  Inicializando banco de dados PostgreSQL/PostGIS..."
+	python init_database.py
+
+db-status:
+	@echo "🔍  Verificando status da conexão com banco de dados..."
+	curl -X GET "http://localhost:8000/database_status" | jq .
+
+sync-state:
+	@echo "🔄  Sincronizando dados do estado $(state) com banco de dados..."
+	curl -X POST "http://localhost:8000/sync_to_database" \
+		-F "sync_type=state" \
+		-F "state=$(state)" \
+		-F "polygon_type=$(polygon)" \
+		-F "folder=temp" \
+		-F "create_tables=true" | jq .
+
+sync-car:
+	@echo "🔄  Sincronizando dados do CAR $(car) com banco de dados..."
+	curl -X POST "http://localhost:8000/sync_to_database" \
+		-F "sync_type=car" \
+		-F "car_code=$(car)" \
+		-F "state=$(state)" \
+		-F "polygon_type=$(polygon)" \
+		-F "folder=temp" \
+		-F "create_tables=true" | jq .
+
+query-car:
+	@echo "🔍  Consultando dados do CAR $(car) no banco de dados..."
+	curl -X GET "http://localhost:8000/car_data?car_code=$(car)" | jq .
+
+query-state:
+	@echo "🔍  Consultando dados do estado $(state) no banco de dados..."
+	curl -X GET "http://localhost:8000/car_data?state=$(state)&limit=$(limit)" | jq .
+
+up: env
 	@echo "🔼  Iniciando todos os serviços..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up -d
 
@@ -258,3 +400,18 @@ help:
 	@echo "  publish         - Publica pacote Python no PyPI (incrementa patch)"
 	@echo "  publish-minor   - Publica pacote Python no PyPI (incrementa minor)"
 	@echo "  publish-major   - Publica pacote Python no PyPI (incrementa major)"
+	@echo ""
+	@echo "🗄️  Comandos de banco de dados:"
+	@echo "  init-db         - Inicializa banco de dados PostgreSQL/PostGIS"
+	@echo "  db-status       - Verifica status da conexão com banco de dados"
+	@echo "  sync-state state=X polygon=Y - Sincroniza dados de um estado com o banco"
+	@echo "  sync-car car=X state=Y polygon=Z - Sincroniza dados de um CAR específico"
+	@echo "  query-car car=X - Consulta dados de um CAR no banco"
+	@echo "  query-state state=X limit=Y - Consulta dados de um estado no banco"
+
+# Limpar arquivos de download
+clean-downloads:
+	@echo "🗑️  Limpando arquivos de download..."
+	sudo rm -f data/*.zip || true
+	sudo rm -f temp/*.zip || true
+	@echo "✅ Arquivos de download removidos"

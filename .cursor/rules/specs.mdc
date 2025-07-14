@@ -1,0 +1,7 @@
+---
+description: Manter a documentação em apenas 1 arquivo README.md.
+globs:
+alwaysApply: true
+---
+
+Documentation should always be added and updated only in the README.md.

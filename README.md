@@ -57,6 +57,7 @@ O projeto utiliza uma arquitetura Docker modular e otimizada:
   - [⏱️ Timeouts por Estado](#️-timeouts-por-estado)
   - [🔧 Variáveis de Configuração do Sistema](#-variáveis-de-configuração-do-sistema)
   - [📷 Variáveis de Configuração OCR](#-variáveis-de-configuração-ocr)
+  - [🗄️ Banco de Dados PostgreSQL/PostGIS](#️-banco-de-dados-postgresqlpostgis)
   - [📝 Como Usar as Variáveis de Ambiente](#-como-usar-as-variáveis-de-ambiente)
 - [🚀 Como usar](#-como-usar)
   - [1️⃣ Execução via Python (direto)](#1️⃣-execução-via-python-direto)
@@ -85,7 +86,74 @@ O projeto utiliza uma arquitetura Docker modular e otimizada:
 pip install download-car
 ```
 
-Prerequisite:
+## 📋 Pré-requisitos
+
+### 🐍 Python Poetry
+
+Este projeto utiliza o **Poetry** para gerenciamento de dependências. É necessário ter o Poetry instalado e atualizado para gerar automaticamente o arquivo `requirements.txt` durante o build.
+
+#### 🔍 Verificação da Versão
+
+O projeto requer **Poetry 1.2.0 ou superior** para suportar o comando `poetry export`. Caso o comando não esteja disponível, instale o plugin oficial de exportação.
+
+```bash
+poetry --version
+poetry export --help
+```
+
+#### 📦 Instalação do Poetry
+
+**macOS:**
+```bash
+brew install poetry
+```
+
+**Ubuntu/Debian:**
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+**CentOS/RHEL:**
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+**Outros sistemas Linux:**
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+#### 🔄 Atualização do Poetry
+
+**macOS:**
+```bash
+brew upgrade poetry
+```
+
+**Linux (todas as distribuições):**
+```bash
+poetry self update
+```
+
+#### 📦 Instalação do plugin de exportação
+Se o comando `poetry export` não estiver disponível, instale o plugin oficial:
+```bash
+poetry self add poetry-plugin-export
+```
+Veja mais em: https://github.com/python-poetry/poetry-plugin-export
+
+#### ⚠️ Solução de Problemas
+
+Se você encontrar o erro `The requested command export does not exist`, significa que sua versão do Poetry não suporta o comando `export`. Neste caso:
+
+1. Atualize o Poetry usando os comandos acima
+2. Instale o plugin de exportação
+3. Verifique a versão: `poetry --version` e `poetry export --help`
+4. Execute novamente o comando que falhou
+
+#### 🌐 Documentação Oficial
+
+Para mais informações sobre instalação e uso do Poetry, visite: [https://python-poetry.org/docs/#installation](https://python-poetry.org/docs/#installation)
 
 ---
 
@@ -279,6 +347,239 @@ O projeto utiliza diversas variáveis de ambiente para configurar diferentes asp
 | `PADDLE_OCR_USE_GPU` | boolean | `"false"` | Habilita uso de GPU para PaddleOCR | `PADDLE_OCR_USE_GPU=true` |
 | `PADDLE_OCR_SHOW_LOG` | boolean | `"false"` | Exibe logs do PaddleOCR | `PADDLE_OCR_SHOW_LOG=true` |
 
+## 🗄️ Banco de Dados PostgreSQL/PostGIS
+
+O projeto suporta sincronização de shapefiles com um banco de dados PostgreSQL/PostGIS, permitindo armazenamento persistente, consultas espaciais otimizadas e análises geoespaciais avançadas.
+
+### 🏗️ Estrutura do Banco de Dados
+
+#### Tabela Principal: `car_data`
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | SERIAL | Chave primária auto-incrementada |
+| `car_code` | VARCHAR(100) | Código único do CAR |
+| `state` | VARCHAR(2) | Sigla do estado (ex: SP, MG, BA) |
+| `polygon_type` | VARCHAR(50) | Tipo de polígono (ex: AREA_PROPERTY, APPS) |
+| `geometry` | GEOMETRY(MULTIPOLYGON, 4326) | Geometria espacial em WGS84 |
+| `properties` | JSONB | Propriedades do shapefile em formato JSON |
+| `created_at` | TIMESTAMP | Data/hora de criação do registro |
+| `updated_at` | TIMESTAMP | Data/hora da última atualização |
+
+#### Índices Criados
+
+- `idx_car_data_car_code` - Índice no código do CAR
+- `idx_car_data_state` - Índice no estado
+- `idx_car_data_polygon_type` - Índice no tipo de polígono
+- `idx_car_data_geometry` - Índice espacial GIST na geometria
+
+### 🗄️ Variáveis do Banco de Dados PostgreSQL/PostGIS
+
+| Variável | Tipo | Padrão | Descrição | Exemplo |
+|----------|------|--------|-----------|---------|
+| `DB_HOST` | string | `"localhost"` | Host do banco de dados PostgreSQL/PostGIS | `DB_HOST=postgres` |
+| `DB_PORT` | string | `"5432"` | Porta do banco de dados PostgreSQL/PostGIS | `DB_PORT=5432` |
+| `DB_NAME` | string | `"download_car"` | Nome do banco de dados | `DB_NAME=car_data` |
+| `DB_USER` | string | `"postgres"` | Usuário do banco de dados | `DB_USER=car_user` |
+| `DB_PASSWORD` | string | `"postgres"` | Senha do banco de dados | `DB_PASSWORD=secure_password` |
+| `DB_SCHEMA` | string | `"public"` | Schema do banco de dados | `DB_SCHEMA=car_schema` |
+| `DB_POOL_SIZE` | integer | `"5"` | Pool de conexões | `DB_POOL_SIZE=10` |
+| `DB_TIMEOUT` | integer | `"30"` | Timeout de conexão em segundos | `DB_TIMEOUT=60` |
+
+### ⚙️ Configuração e Inicialização
+
+#### 1. Inicialização do Banco
+
+```bash
+# Inicializar banco de dados
+make init-db
+
+# Ou executar diretamente
+python init_database.py
+```
+
+#### 2. Verificar Status
+
+```bash
+# Verificar status da conexão
+make db-status
+
+# Ou via curl
+curl -X GET "http://localhost:8000/database_status"
+```
+
+### 📊 Consultas SQL Úteis
+
+#### Consultas Básicas
+
+```sql
+-- Contar total de registros por estado
+SELECT state, COUNT(*) as total
+FROM car_data
+GROUP BY state
+ORDER BY total DESC;
+
+-- Contar por tipo de polígono
+SELECT polygon_type, COUNT(*) as total
+FROM car_data
+GROUP BY polygon_type
+ORDER BY total DESC;
+
+-- Buscar CAR específico
+SELECT car_code, state, polygon_type, 
+       ST_AsText(geometry) as geometry,
+       properties
+FROM car_data
+WHERE car_code = 'SP12345678901234567890';
+```
+
+#### Consultas Espaciais
+
+```sql
+-- Calcular área total por estado
+SELECT state, 
+       SUM(ST_Area(geometry::geography)) / 10000 as area_hectares
+FROM car_data
+GROUP BY state
+ORDER BY area_hectares DESC;
+
+-- Buscar propriedades dentro de uma área
+SELECT car_code, state, polygon_type
+FROM car_data
+WHERE ST_Intersects(
+    geometry,
+    ST_GeomFromText('POLYGON((...))', 4326)
+);
+
+-- Calcular centroide das propriedades
+SELECT car_code, 
+       ST_AsText(ST_Centroid(geometry)) as centroid
+FROM car_data
+WHERE state = 'SP';
+```
+
+#### Consultas Avançadas
+
+```sql
+-- Propriedades com maior área
+SELECT car_code, state, polygon_type,
+       ST_Area(geometry::geography) / 10000 as area_hectares
+FROM car_data
+ORDER BY area_hectares DESC
+LIMIT 10;
+
+-- Estatísticas por município (se disponível nas propriedades)
+SELECT properties->>'municipio' as municipio,
+       COUNT(*) as total_propriedades,
+       AVG(ST_Area(geometry::geography) / 10000) as area_media_hectares
+FROM car_data
+WHERE properties->>'municipio' IS NOT NULL
+GROUP BY properties->>'municipio'
+ORDER BY total_propriedades DESC;
+```
+
+### 🔧 Manutenção
+
+#### Backup do Banco
+
+```bash
+# Backup completo
+pg_dump -h localhost -U postgres -d download_car > backup_$(date +%Y%m%d).sql
+
+# Backup apenas dados (sem estrutura)
+pg_dump -h localhost -U postgres -d download_car --data-only > data_backup_$(date +%Y%m%d).sql
+```
+
+#### Restaurar Backup
+
+```bash
+# Restaurar backup completo
+psql -h localhost -U postgres -d download_car < backup_20231201.sql
+
+# Restaurar apenas dados
+psql -h localhost -U postgres -d download_car < data_backup_20231201.sql
+```
+
+#### Limpeza de Dados
+
+```sql
+-- Remover registros duplicados
+DELETE FROM car_data
+WHERE id NOT IN (
+    SELECT MIN(id)
+    FROM car_data
+    GROUP BY car_code
+);
+
+-- Remover registros antigos
+DELETE FROM car_data
+WHERE created_at < NOW() - INTERVAL '1 year';
+```
+
+### 🐳 Docker Compose
+
+O projeto inclui configuração Docker Compose com PostgreSQL/PostGIS:
+
+```yaml
+services:
+  postgis:
+    image: postgis/postgis:15-3.3
+    environment:
+      - POSTGRES_DB=${DB_NAME:-download_car}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-download_car}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+### 🔍 Troubleshooting
+
+#### Problemas Comuns
+
+1. **Erro de conexão**
+   - Verifique se o PostgreSQL está rodando
+   - Confirme as variáveis de ambiente
+   - Teste a conexão: `make db-status`
+
+2. **Erro de PostGIS**
+   - Verifique se a extensão PostGIS está instalada
+   - Execute: `CREATE EXTENSION IF NOT EXISTS postgis;`
+
+3. **Erro de permissões**
+   - Verifique se o usuário tem permissões no banco
+   - Execute: `GRANT ALL PRIVILEGES ON DATABASE download_car TO postgres;`
+
+4. **Erro de memória**
+   - Aumente o pool de conexões: `DB_POOL_SIZE=10`
+   - Aumente o timeout: `DB_TIMEOUT=60`
+
+#### Logs
+
+```bash
+# Ver logs do PostgreSQL
+docker compose logs postgis
+
+# Ver logs da API
+docker compose logs download-car-api
+
+# Ver logs específicos
+docker compose logs -f download-car-api | grep -i database
+```
+
+### 📚 Recursos Adicionais
+
+- [Documentação PostgreSQL](https://www.postgresql.org/docs/)
+- [Documentação PostGIS](https://postgis.net/documentation/)
+- [GeoAlchemy2](https://geoalchemy-2.readthedocs.io/)
+- [SQLAlchemy](https://docs.sqlalchemy.org/)
+
 ## 📝 Como Usar as Variáveis de Ambiente
 
 ### 1. Arquivo .env (Recomendado)
@@ -343,6 +644,16 @@ TESSERACT_CONFIG=--oem 3 --psm 8 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRST
 PADDLE_OCR_LANG=en
 PADDLE_OCR_USE_GPU=false
 PADDLE_OCR_SHOW_LOG=false
+
+# Configurações do Banco de Dados PostgreSQL/PostGIS
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=download_car
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_SCHEMA=public
+DB_POOL_SIZE=5
+DB_TIMEOUT=30
 
 ### 2. Linha de Comando
 
@@ -490,12 +801,12 @@ car.download_country(polygon=Polygon.AREA_PROPERTY, folder="dados/brasil")
 
 ## 2️⃣ Execução via Shell Script
 
-O repositório inclui o script `download_state.sh` que facilita a configuração do
-ambiente e a execução do exemplo `download_state.py`. Basta informar os
+O repositório inclui o script `cli.py` que facilita a configuração do
+ambiente e a execução do download. Basta informar os
 parâmetros desejados:
 
 ```bash
-./download_state.sh --state DF --polygon APPS --folder data/DF --tries 25 --debug True
+python cli.py --state DF --polygon APPS --folder data/DF --tries 25 --debug True
 ```
 
 O script irá garantir que a versão correta do Python esteja disponível via
@@ -651,6 +962,11 @@ A API FastAPI está disponível em `http://localhost:8000` e oferece os seguinte
 - `GET /download_state_file/{state}/{polygon_type}` &ndash; faz download de um arquivo específico de estado.
 - `DELETE /delete_state` &ndash; exclui todos os arquivos relacionados a um estado específico.
 
+### Endpoints de Sincronização com Banco de Dados
+- `POST /sync_to_database` &ndash; sincroniza shapefiles com o banco de dados PostgreSQL/PostGIS.
+- `GET /database_status` &ndash; verifica o status da conexão com o banco de dados.
+- `GET /car_data` &ndash; busca dados do CAR armazenados no banco de dados.
+
 ### Campos esperados (multipart/form)
 
 #### POST /download_state
@@ -694,6 +1010,24 @@ A API FastAPI está disponível em `http://localhost:8000` e oferece os seguinte
 #### GET /property?car={CAR}
 - `car` (obrigatório): Número do CAR da propriedade
   - Exemplo: `GET /property?car=SP12345678901234567890`
+
+#### POST /sync_to_database
+- `sync_type` (obrigatório): Tipo de sincronização ("state" ou "car")
+- `state` (obrigatório): Sigla do estado brasileiro (2 letras maiúsculas)
+- `polygon_type` (opcional): Tipo de polígono (padrão: "AREA_PROPERTY")
+- `car_code` (opcional): Código CAR específico (obrigatório quando sync_type=car)
+- `folder` (opcional): Pasta onde buscar os arquivos shapefile (padrão: "temp")
+- `create_tables` (opcional): Se deve criar tabelas automaticamente (padrão: true)
+
+#### GET /database_status
+- Sem parâmetros obrigatórios
+- Retorna status da conexão e configuração do banco de dados
+
+#### GET /car_data
+- `car_code` (opcional): Código CAR específico para busca
+- `state` (opcional): Sigla do estado para filtrar resultados
+- `polygon_type` (opcional): Tipo de polígono para filtrar resultados
+- `limit` (opcional): Limite de resultados retornados (padrão: 100, máximo: 1000)
 
 ### Exemplo via curl
 
@@ -741,6 +1075,30 @@ curl -X DELETE "http://localhost:8000/delete_state" \
      -F "state=SP" \
      -F "folder=temp" \
      -F "include_properties=true"
+
+# Sincronizar dados de um estado com banco de dados
+curl -X POST "http://localhost:8000/sync_to_database" \
+     -F "sync_type=state" \
+     -F "state=SP" \
+     -F "polygon_type=AREA_PROPERTY" \
+     -F "folder=temp" \
+     -F "create_tables=true"
+
+# Sincronizar dados de um CAR específico
+curl -X POST "http://localhost:8000/sync_to_database" \
+     -F "sync_type=car" \
+     -F "car_code=SP12345678901234567890" \
+     -F "state=SP" \
+     -F "polygon_type=AREA_PROPERTY"
+
+# Verificar status do banco de dados
+curl -X GET "http://localhost:8000/database_status"
+
+# Buscar dados do CAR no banco de dados
+curl -X GET "http://localhost:8000/car_data?state=SP&limit=10"
+
+# Buscar dados de um CAR específico
+curl -X GET "http://localhost:8000/car_data?car_code=SP12345678901234567890"
 ```
 
 ### Rodando localmente com FastAPI
@@ -760,6 +1118,9 @@ Rotas disponíveis:
   parâmetros opcionais) e retorna um arquivo ZIP com o shapefile do estado.
 - `POST /download_country` &ndash; recebe apenas `polygon` e retorna um ZIP
   contendo os arquivos de todos os estados.
+- `POST /sync_to_database` &ndash; sincroniza shapefiles com o banco de dados PostgreSQL/PostGIS.
+- `GET /database_status` &ndash; verifica o status da conexão com o banco de dados.
+- `GET /car_data` &ndash; busca dados do CAR armazenados no banco de dados.
 
 ## 5️⃣ Importação como módulo Python
 
@@ -885,6 +1246,14 @@ O projeto inclui um Makefile abrangente com comandos para facilitar o desenvolvi
 - `make download-property car=X` - Baixa propriedade do CAR via API
 - `make delete-state state=X folder=Y include_properties=Z` - Exclui arquivos de um estado
 
+### 🗄️ Comandos de Banco de Dados
+- `make init-db` - Inicializa o banco de dados PostgreSQL/PostGIS
+- `make db-status` - Verifica o status da conexão com o banco de dados
+- `make sync-state state=X polygon=Y` - Sincroniza dados de um estado com o banco
+- `make sync-car car=X state=Y polygon=Z` - Sincroniza dados de um CAR específico
+- `make query-car car=X` - Consulta dados de um CAR no banco
+- `make query-state state=X limit=Y` - Consulta dados de um estado no banco
+
 ### 🔄 Comandos de Manutenção
 - `make git-update` - Atualiza repositório Git
 
@@ -920,6 +1289,24 @@ make download-property car=SP12345678901234567890
 
 # Excluir arquivos de um estado
 make delete-state state=SP folder=temp include_properties=true
+
+# Inicializar banco de dados
+make init-db
+
+# Verificar status do banco
+make db-status
+
+# Sincronizar estado com banco de dados
+make sync-state state=SP polygon=AREA_PROPERTY
+
+# Sincronizar CAR específico
+make sync-car car=SP12345678901234567890 state=SP polygon=AREA_PROPERTY
+
+# Consultar dados de um CAR
+make query-car car=SP12345678901234567890
+
+# Consultar dados de um estado
+make query-state state=SP limit=10
 
 # Ver logs da API
 make logs service=download-car-api
@@ -1117,6 +1504,41 @@ make build-download-dev    # ou make build-download-pro
 
 ## 📁 Estrutura do Projeto
 
+## 🔧 Correções Recentes
+
+### Correção do Problema do download_state.py
+Durante a refatoração, o arquivo `download_state.py` foi renomeado para `cli.py`. A função `download_state_logic` foi atualizada para usar o novo nome do arquivo e corrigir o diretório de trabalho.
+
+**Correções implementadas:**
+- ✅ Nome do arquivo atualizado de `download_state.py` para `cli.py`
+- ✅ Diretório de trabalho corrigido para `/download-car`
+- ✅ Mensagens de erro atualizadas
+- ✅ Tratamento de exceções melhorado para importações que falham
+
+### Correção do Problema do Nginx (index.html não encontrado)
+O problema não era que o `index.html` não estava sendo encontrado, mas sim que a configuração do nginx não estava fazendo proxy corretamente para todos os endpoints da API.
+
+**Correções implementadas:**
+- ✅ Configuração do proxy nginx atualizada para incluir todos os endpoints da API
+- ✅ Remoção de configuração duplicada que causava conflitos
+- ✅ Frontend agora pode fazer requisições para a API sem problemas
+
+### Correção do Erro de Sintaxe JavaScript
+Corrigido erro de sintaxe no objeto `STATE_TIMEOUTS` no arquivo `index.html` e melhorado o sistema de logs.
+
+**Correções implementadas:**
+- ✅ Erro de sintaxe no objeto `STATE_TIMEOUTS` corrigido
+- ✅ Script `generate-config.nginx.js` melhorado para gerar código JavaScript válido
+- ✅ Sistema de logs aprimorado para exibir todas as mensagens no console
+
+### Atualização do Makefile
+Adicionado alvo `env` para garantir que o arquivo `.config.env` seja sempre copiado para `.env` antes de qualquer operação.
+
+**Correções implementadas:**
+- ✅ Novo alvo `env` que copia `.config.env` para `.env`
+- ✅ Todos os alvos principais de build e Docker Compose agora dependem de `env`
+- ✅ Cópia silenciosa e automática antes de qualquer operação
+
 ```
 download-car/
 ├── download_car/                 # Módulo principal
@@ -1136,9 +1558,9 @@ download-car/
 │   └── integration/              # Testes de integração
 ├── assets/                       # Recursos do frontend
 │   └── flags/                    # Bandeiras dos estados
-├── app.py                        # API FastAPI
-├── download_state.py             # Script de download
-├── download_state.sh             # Script shell
+├── api.py                        # API FastAPI
+├── cli.py                        # Script de download
+├── cli.sh             # Script shell
 ├── api.sh                        # Script da API
 ├── verify_features.sh            # Script de teste da API
 ├── verify_property.py            # Script de verificação

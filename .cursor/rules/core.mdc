@@ -1,0 +1,11 @@
+---
+description: Garantir que o core seja implementado em cli.py
+globs:
+  - api.py
+  - cli.py
+alwaysApply: false
+---
+
+- Implement all core logic in `cli.py` only.
+- Keep `api.py` limited to exposing endpoints that delegate to `cli.py`.
+- Avoid placing any business logic directly in `api.py`.
