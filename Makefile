@@ -479,3 +479,34 @@ help:
 	@echo "  sync-car car=X state=Y polygon=Z - Insere dados de um CAR específico no banco PostgreSQL/PostGIS"
 	@echo "  query-car car=X - Consulta dados de um CAR no banco PostgreSQL/PostGIS"
 	@echo "  query-state state=X limit=Y - Consulta dados de um estado no banco PostgreSQL/PostGIS"
+
+# Update API
+update-api: env
+	@echo "🔄  Atualizando serviço API..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose stop api
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose rm -f api
+	$(MAKE) build-base
+	$(MAKE) build-pro
+	$(MAKE) build-api
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up api -d
+	@echo "✅  Serviço API atualizado com sucesso!"
+
+# Update download-car
+update-download: env
+	@echo "🔄  Atualizando serviço download-car..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose stop download-car
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose rm -f download-car
+	$(MAKE) build-base
+	$(MAKE) build-pro
+	$(MAKE) build-download
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up download-car -d
+	@echo "✅  Serviço download-car atualizado com sucesso!"
+
+# Update nginx
+update-nginx: env
+	@echo "🔄  Atualizando serviço nginx..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose stop nginx
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose rm -f nginx
+	$(MAKE) build-nginx
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up nginx -d
+	@echo "✅  Serviço nginx atualizado com sucesso!"
