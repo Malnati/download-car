@@ -147,5 +147,47 @@ if [ ! -f "Makefile" ]; then
     exit 1
 fi
 
+# Verificar e corrigir permissões do diretório data/
+check_and_fix_permissions() {
+    log "Verificando permissões do diretório data/..."
+    
+    # Criar diretório data/ se não existir
+    if [ ! -d "data" ]; then
+        log "Criando diretório data/..."
+        mkdir -p data
+    fi
+    
+    # Verificar se o diretório data/ tem permissão de escrita
+    if [ ! -w "data" ]; then
+        log_warning "Diretório data/ não tem permissão de escrita. Tentando corrigir..."
+        
+        # Tentar corrigir permissões
+        if chmod 755 data 2>/dev/null; then
+            log_success "Permissões do diretório data/ corrigidas com sucesso!"
+        else
+            log_error "Não foi possível corrigir permissões do diretório data/."
+            log_error "Execute: sudo chmod 755 data"
+            exit 1
+        fi
+    else
+        log_success "Diretório data/ tem permissões corretas."
+    fi
+    
+    # Verificar se há arquivos com permissões incorretas
+    if [ -d "data" ] && [ "$(find data -name "*.zip" -not -writable 2>/dev/null | wc -l)" -gt 0 ]; then
+        log_warning "Encontrados arquivos .zip sem permissão de escrita em data/."
+        log "Tentando corrigir permissões dos arquivos..."
+        
+        if find data -name "*.zip" -exec chmod 644 {} \; 2>/dev/null; then
+            log_success "Permissões dos arquivos .zip corrigidas!"
+        else
+            log_warning "Alguns arquivos podem precisar de correção manual de permissões."
+        fi
+    fi
+}
+
+# Executar verificação de permissões
+check_and_fix_permissions
+
 # Executar função principal
 main "$@" 

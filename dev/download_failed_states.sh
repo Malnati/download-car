@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Script para download de estados específicos ou todos os estados
-# Uso: ./dev/download_states.sh [estado1 estado2 ...]
-# Se nenhum estado for especificado, baixa todos os estados
+# Script para download apenas dos estados que falharam anteriormente
+# Utiliza os novos timeouts específicos definidos em .config.env
 
 # Cores para output
 RED='\033[0;31m'
@@ -28,24 +27,6 @@ log_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-# Função para mostrar ajuda
-show_help() {
-    echo "Uso: $0 [estado1 estado2 ...]"
-    echo ""
-    echo "Argumentos:"
-    echo "  estado1, estado2, ...  Estados específicos para download (ex: SP MG RJ)"
-    echo "  --help, -h             Mostra esta ajuda"
-    echo ""
-    echo "Exemplos:"
-    echo "  $0                     # Baixa todos os estados"
-    echo "  $0 SP MG RJ            # Baixa apenas SP, MG e RJ"
-    echo "  $0 AC AL AM            # Baixa apenas AC, AL e AM"
-    echo ""
-    echo "Estados disponíveis:"
-    echo "  AC, AL, AM, AP, BA, CE, DF, ES, GO, MA, MG, MS, MT,"
-    echo "  PA, PB, PE, PI, PR, RJ, RN, RO, RR, RS, SC, SE, SP, TO"
-}
-
 # Carregar variáveis do .config.env
 if [ -f ".config.env" ]; then
     log "Carregando configurações do .config.env..."
@@ -67,23 +48,10 @@ else
     exit 1
 fi
 
-# Lista de todos os estados brasileiros válidos
-ALL_STATES=(
-    "AC" "AL" "AM" "AP" "BA" "CE" "DF" "ES" "GO" "MA"
-    "MG" "MS" "MT" "PA" "PB" "PE" "PI" "PR" "RJ" "RN"
-    "RO" "RR" "RS" "SC" "SE" "SP" "TO"
+# Lista dos estados que falharam na execução anterior
+FAILED_STATES=(
+    "AC" "AM" "AP" "CE" "ES" "MA" "MS" "PB"
 )
-
-# Função para validar estado
-is_valid_state() {
-    local state=$1
-    for valid_state in "${ALL_STATES[@]}"; do
-        if [ "$state" = "$valid_state" ]; then
-            return 0
-        fi
-    done
-    return 1
-}
 
 # Função para obter timeout específico do estado
 get_state_timeout() {
@@ -100,12 +68,32 @@ get_state_timeout() {
     fi
 }
 
+# Função para verificar se o arquivo já existe
+file_exists() {
+    local state=$1
+    local file="data/${state}_AREA_IMOVEL.zip"
+    
+    if [ -f "$file" ]; then
+        local size=$(stat -c%s "$file" 2>/dev/null || echo 0)
+        if [ "$size" -gt 1000 ]; then  # Arquivo maior que 1KB
+            return 0  # Arquivo existe e tem tamanho válido
+        fi
+    fi
+    return 1  # Arquivo não existe ou é muito pequeno
+}
+
 # Função para executar download de um estado
 download_state() {
     local state=$1
     local timeout=$(get_state_timeout $state)
     
     log "Iniciando download do estado: $state (timeout: ${timeout}s)"
+    
+    # Verificar se o arquivo já existe
+    if file_exists "$state"; then
+        log_warning "Arquivo para estado $state já existe. Pulando..."
+        return 0
+    fi
     
     # Executar o comando make com timeout específico
     if timeout ${timeout} make download state=$state polygon=AREA_PROPERTY folder=data debug=true timeout=180 max_retries=1; then
@@ -119,43 +107,31 @@ download_state() {
 
 # Função principal
 main() {
-    local states_to_download=()
-    
-    # Processar argumentos
-    if [ $# -eq 0 ]; then
-        # Se nenhum argumento, usar todos os estados
-        states_to_download=("${ALL_STATES[@]}")
-        log "Nenhum estado especificado. Baixando todos os estados..."
-    else
-        # Validar estados especificados
-        for state in "$@"; do
-            if [ "$state" = "--help" ] || [ "$state" = "-h" ]; then
-                show_help
-                exit 0
-            elif is_valid_state "$state"; then
-                states_to_download+=("$state")
-            else
-                log_error "Estado inválido: $state"
-                log "Estados válidos: ${ALL_STATES[*]}"
-                exit 1
-            fi
-        done
-    fi
-    
-    log "Estados para download: ${states_to_download[*]}"
-    log "Total de estados: ${#states_to_download[@]}"
+    log "Iniciando download dos estados que falharam anteriormente..."
+    log "Estados com novos timeouts: ${FAILED_STATES[*]}"
+    log "Total de estados: ${#FAILED_STATES[@]}"
     
     local success_count=0
     local error_count=0
+    local skipped_count=0
     local start_time=$(date +%s)
     
     # Array para armazenar estados com erro
     local failed_states=()
+    local skipped_states=()
     
-    for state in "${states_to_download[@]}"; do
+    for state in "${FAILED_STATES[@]}"; do
         log "=========================================="
         log "Processando estado: $state"
         log "=========================================="
+        
+        # Verificar se o arquivo já existe
+        if file_exists "$state"; then
+            log_warning "Arquivo para estado $state já existe. Pulando..."
+            ((skipped_count++))
+            skipped_states+=("$state")
+            continue
+        fi
         
         if download_state "$state"; then
             ((success_count++))
@@ -175,21 +151,26 @@ main() {
     local seconds=$((duration % 60))
     
     log "=========================================="
-    log "RESUMO FINAL"
+    log "RESUMO FINAL - ESTADOS QUE FALHARAM"
     log "=========================================="
     log "Tempo total de execução: ${minutes}m ${seconds}s"
     log "Estados processados com sucesso: $success_count"
+    log "Estados pulados (já existem): $skipped_count"
     log "Estados com erro: $error_count"
     
+    if [ ${#skipped_states[@]} -gt 0 ]; then
+        log_warning "Estados pulados: ${skipped_states[*]}"
+    fi
+    
     if [ ${#failed_states[@]} -gt 0 ]; then
-        log_warning "Estados que falharam: ${failed_states[*]}"
+        log_error "Estados que ainda falharam: ${failed_states[*]}"
     fi
     
     if [ $error_count -eq 0 ]; then
         log_success "Todos os estados foram processados com sucesso!"
         exit 0
     else
-        log_warning "Alguns estados falharam, mas o processo foi concluído."
+        log_warning "Alguns estados ainda falharam. Considere aumentar ainda mais os timeouts."
         exit 1
     fi
 }
@@ -224,18 +205,6 @@ check_and_fix_permissions() {
         fi
     else
         log_success "Diretório data/ tem permissões corretas."
-    fi
-    
-    # Verificar se há arquivos com permissões incorretas
-    if [ -d "data" ] && [ "$(find data -name "*.zip" -not -writable 2>/dev/null | wc -l)" -gt 0 ]; then
-        log_warning "Encontrados arquivos .zip sem permissão de escrita em data/."
-        log "Tentando corrigir permissões dos arquivos..."
-        
-        if find data -name "*.zip" -exec chmod 644 {} \; 2>/dev/null; then
-            log_success "Permissões dos arquivos .zip corrigidas!"
-        else
-            log_warning "Alguns arquivos podem precisar de correção manual de permissões."
-        fi
     fi
 }
 
