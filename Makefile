@@ -116,16 +116,12 @@ delete-state:
 		-F "include_properties=$(include_properties)"
 
 # Comandos de banco de dados
-init-db:
-	@echo "🗄️  Inicializando banco de dados PostgreSQL/PostGIS..."
-	python init_database.py
-
 db-status:
-	@echo "🔍  Verificando status da conexão com banco de dados..."
+	@echo "🔍  Verificando status da conexão com banco de dados PostgreSQL/PostGIS..."
 	curl -X GET "http://localhost:8000/database_status" | jq .
 
 sync-state:
-	@echo "🔄  Sincronizando dados do estado $(state) com banco de dados..."
+	@echo "🔄  Inserindo dados do estado $(state) no banco de dados PostgreSQL/PostGIS..."
 	curl -X POST "http://localhost:8000/sync_to_database" \
 		-F "sync_type=state" \
 		-F "state=$(state)" \
@@ -134,7 +130,7 @@ sync-state:
 		-F "create_tables=true" | jq .
 
 sync-car:
-	@echo "🔄  Sincronizando dados do CAR $(car) com banco de dados..."
+	@echo "🔄  Inserindo dados do CAR $(car) no banco de dados PostgreSQL/PostGIS..."
 	curl -X POST "http://localhost:8000/sync_to_database" \
 		-F "sync_type=car" \
 		-F "car_code=$(car)" \
@@ -144,11 +140,11 @@ sync-car:
 		-F "create_tables=true" | jq .
 
 query-car:
-	@echo "🔍  Consultando dados do CAR $(car) no banco de dados..."
+	@echo "🔍  Consultando dados do CAR $(car) no banco de dados PostgreSQL/PostGIS..."
 	curl -X GET "http://localhost:8000/car_data?car_code=$(car)" | jq .
 
 query-state:
-	@echo "🔍  Consultando dados do estado $(state) no banco de dados..."
+	@echo "🔍  Consultando dados do estado $(state) no banco de dados PostgreSQL/PostGIS..."
 	curl -X GET "http://localhost:8000/car_data?state=$(state)&limit=$(limit)" | jq .
 
 # Comandos de controle de serviços
@@ -471,9 +467,8 @@ help:
 	@echo "  publish-major   - Publica pacote Python no PyPI (incrementa major)"
 	@echo ""
 	@echo "🗄️  Comandos de banco de dados:"
-	@echo "  init-db         - Inicializa banco de dados PostgreSQL/PostGIS"
-	@echo "  db-status       - Verifica status da conexão com banco de dados"
-	@echo "  sync-state state=X polygon=Y - Sincroniza dados de um estado com o banco"
-	@echo "  sync-car car=X state=Y polygon=Z - Sincroniza dados de um CAR específico"
-	@echo "  query-car car=X - Consulta dados de um CAR no banco"
-	@echo "  query-state state=X limit=Y - Consulta dados de um estado no banco"
+	@echo "  db-status       - Verifica status da conexão com banco de dados PostgreSQL/PostGIS"
+	@echo "  sync-state state=X polygon=Y - Insere dados de um estado no banco PostgreSQL/PostGIS"
+	@echo "  sync-car car=X state=Y polygon=Z - Insere dados de um CAR específico no banco PostgreSQL/PostGIS"
+	@echo "  query-car car=X - Consulta dados de um CAR no banco PostgreSQL/PostGIS"
+	@echo "  query-state state=X limit=Y - Consulta dados de um estado no banco PostgreSQL/PostGIS"
