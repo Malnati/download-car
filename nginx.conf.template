@@ -59,29 +59,29 @@ server {
         }
     }
 
-    # Proxy para endpoints de status e download
-    location ~ ^/(state_status|download_state|download_country|download-property|delete_state) {
+    # Proxy para todos os endpoints da API (sem prefixo /api/)
+    location ~ ^/(states|polygons|state_status|database_status|brasil_config|car_data|get_states|get_polygons|download_state|download_country|download-property|sync_to_database|delete_state|reclassificar_brasil|aplicar_ibge|download_mapbiomas) {
         proxy_pass http://download-car-api:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         
-        # Configurações de timeout para downloads longos
+        # Configurações de timeout para evitar 504
         proxy_connect_timeout 60s;
-        proxy_send_timeout 1800s;
-        proxy_read_timeout 1800s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
         proxy_buffering off;
         
-        # Headers CORS específicos para downloads
+        # Headers CORS específicos para API
         add_header Access-Control-Allow-Origin "${CORS_ALLOW_ORIGINS}" always;
-        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, DELETE" always;
+        add_header Access-Control-Allow-Methods "${CORS_ALLOW_METHODS}" always;
         add_header Access-Control-Allow-Headers "*" always;
         
         # Tratar requisições OPTIONS (preflight)
         if ($request_method = 'OPTIONS') {
             add_header Access-Control-Allow-Origin "${CORS_ALLOW_ORIGINS}";
-            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, DELETE";
+            add_header Access-Control-Allow-Methods "${CORS_ALLOW_METHODS}";
             add_header Access-Control-Allow-Headers "*";
             add_header Access-Control-Max-Age 1728000;
             add_header Content-Type "text/plain; charset=utf-8";
@@ -89,4 +89,6 @@ server {
             return 204;
         }
     }
+
+
 }
