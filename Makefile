@@ -60,6 +60,11 @@ build-download-pro:
 		-t download-car-download:pro \
 		-f Dockerfile.download-car .
 
+# Build nginx image
+build-nginx:
+	@echo "🛠️  Building nginx image..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker build -t download-car-nginx:latest -f Dockerfile.nginx .
+
 # Default builds (production)
 build-api: build-api-pro
 build-download: build-download-pro
@@ -106,13 +111,13 @@ requirements.txt: pyproject.toml check-poetry
 	fi
 
 # Build all images
-build: requirements.txt build-base build-pro build-download build-api
+build: requirements.txt build-base build-pro build-download build-api build-nginx
 
 # Build development images
-build-dev: build-base build-dev build-download-dev build-api-dev
+build-dev: build-base build-dev build-download-dev build-api-dev build-nginx
 
 # Build production images
-build-pro: requirements.txt build-base build-pro build-download-pro build-api-pro
+build-pro: requirements.txt build-base build-pro build-download-pro build-api-pro build-nginx
 
 api-up:
 	@echo "🚀  Executando container API $(API_IMAGE):latest..."
