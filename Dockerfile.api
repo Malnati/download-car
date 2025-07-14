@@ -14,6 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN apt-get update && apt-get install -y --no-install-recommends tor && \
     rm -rf /var/lib/apt/lists/*
 
+# Copiar script do Tor
+COPY dev/start-tor.sh /usr/local/bin/start-tor.sh
+RUN chmod +x /usr/local/bin/start-tor.sh
+
 COPY api.py /download-car/
 COPY database.py /download-car/
 COPY download_car/ /download-car/download_car/
