@@ -307,6 +307,23 @@ test-ocr:
 	@echo "🧪  Testando drivers OCR..."
 	poetry run python -c 'from download_car.drivers import Tesseract; print("Tesseract disponível:", Tesseract is not None)'
 
+# Comandos de restart de serviços
+restart: env
+	@echo "🔄  Reiniciando todos os serviços..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose restart
+
+restart-api: env
+	@echo "🔄  Reiniciando serviço API..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose restart api
+
+restart-download: env
+	@echo "🔄  Reiniciando serviço download-car..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose restart download-car
+
+restart-nginx: env
+	@echo "🔄  Reiniciando serviço nginx..."
+	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose restart nginx
+
 # Comandos de banco de dados
 init-db:
 	@echo "🗄️  Inicializando banco de dados PostgreSQL/PostGIS..."
@@ -375,6 +392,10 @@ help:
 	@echo ""
 	@echo "🛑  Comandos de controle:"
 	@echo "  down            - Para e remove containers"
+	@echo "  restart         - Reinicia todos os serviços"
+	@echo "  restart-api     - Reinicia apenas o serviço API"
+	@echo "  restart-download - Reinicia apenas o serviço download-car"
+	@echo "  restart-nginx   - Reinicia apenas o serviço nginx"
 	@echo "  ps              - Lista containers e serviços"
 	@echo "  logs service=X  - Exibe logs do serviço especificado"
 	@echo ""
