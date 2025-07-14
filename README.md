@@ -1382,6 +1382,15 @@ O projeto inclui um Makefile abrangente com comandos para facilitar o desenvolvi
 # Build completo para desenvolvimento
 make build-dev
 
+# Atualizar apenas o serviço nginx (após editar index.html)
+make update-nginx
+
+# Atualizar apenas o serviço de download
+make update-download
+
+# Atualizar apenas a API
+make update-api
+
 # Iniciar todos os serviços
 make up
 
@@ -1719,6 +1728,13 @@ Adicionado alvo `env` para garantir que o arquivo `.config.env` seja sempre copi
 - ✅ Novo alvo `env` que copia `.config.env` para `.env`
 - ✅ Todos os alvos principais de build e Docker Compose agora dependem de `env`
 - ✅ Cópia silenciosa e automática antes de qualquer operação
+
+#### Update de Serviços (atualização incremental)
+- `make update-api` – Atualiza apenas o serviço API (down, build-base, build-pro, build-api, up)
+- `make update-download` – Atualiza apenas o serviço download-car (down, build-base, build-pro, build-download, up)
+- `make update-nginx` – Atualiza apenas o serviço nginx (down, build-nginx, up)
+
+### 🗑️ Comandos de Limpeza
 
 ```
 download-car/
