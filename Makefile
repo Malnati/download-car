@@ -47,6 +47,13 @@ build-pro:
 build-api: build-api-pro
 build-download: build-download-pro
 
+# Build nginx
+build-nginx:
+	@echo "🌐  Buildando imagem nginx..."
+	DOCKER_BUILDKIT=1 DOCKER_CONFIG=$(DOCKER_CONFIG) docker build \
+		-t download-car-nginx:latest \
+		-f Dockerfile.nginx .
+
 # Build development images
 build-dev: env build-base build-dev build-download-dev build-api-dev build-nginx
 
