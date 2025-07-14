@@ -32,14 +32,14 @@ def get_env_config():
 # Restaurado de app.py (commit d13d049)
 def download_state_logic(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
     """
-    Executa o download_state.py como subprocess e retorna o caminho do arquivo baixado.
+    Executa o cli.py como subprocess e retorna o caminho do arquivo baixado.
     """
     # Garante que a pasta existe
     os.makedirs(folder, exist_ok=True)
     
     # Constrói o comando
     cmd = [
-        sys.executable, "download_state.py",
+        sys.executable, "cli.py",
         "--state", state,
         "--polygon", polygon,
         "--folder", folder,
@@ -50,10 +50,10 @@ def download_state_logic(state: str, polygon: str, folder: str, tries: int, debu
     ]
     
     # Executa o comando
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd="/download-car")
     
     # Constrói o caminho esperado do arquivo
-    # O download_state.py cria arquivos com o nome {state}_AREA_IMOVEL.zip
+    # O cli.py cria arquivos com o nome {state}_AREA_IMOVEL.zip
     # independentemente do polígono passado (AREA_PROPERTY é mapeado para AREA_IMOVEL)
     expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
     
@@ -67,7 +67,7 @@ def download_state_logic(state: str, polygon: str, folder: str, tries: int, debu
         if "UrlNotOkException" in error_msg:
             raise Exception(f"Falha no download devido a problemas de captcha. Tente novamente em alguns minutos. Detalhes: {error_msg}")
         else:
-            raise Exception(f"Erro ao executar download_state.py: {error_msg}")
+            raise Exception(f"Erro ao executar cli.py: {error_msg}")
     
     # Se chegou aqui, o processo não falhou mas o arquivo não foi criado
     raise Exception(f"Download concluído mas arquivo não foi criado: {expected_file}")
@@ -677,15 +677,18 @@ def execute_download_sequence(state: str, polygon: str, folder: str, tries: int,
     # ETAPA 4: Ativar VPN para problemas de acesso
     try:
         print("🔍 Etapa 4: Ativando VPN para contornar bloqueio de acesso...")
-        from dev.vpn_manager import setup_vpn_fallback, execute_with_vpn_fallback
-        
-        def download_with_vpn():
-            return execute_with_driver_fallback(state, polygon, folder, tries, debug, timeout, max_retries, "tesseract")
-        
-        result = execute_with_vpn_fallback(download_with_vpn)
-        if result:
-            print("✅ Download concluído com VPN!")
-            return result
+        try:
+            from dev.vpn_manager import setup_vpn_fallback, execute_with_vpn_fallback
+            
+            def download_with_vpn():
+                return execute_with_driver_fallback(state, polygon, folder, tries, debug, timeout, max_retries, "tesseract")
+            
+            result = execute_with_vpn_fallback(download_with_vpn)
+            if result:
+                print("✅ Download concluído com VPN!")
+                return result
+        except ImportError:
+            print("⚠️  VPN manager não disponível, pulando Etapa 4...")
     except Exception as e:
         print(f"⚠️  Etapa 4 falhou: {e}")
     
@@ -743,18 +746,26 @@ def main():
     # Executar com VPN se solicitado
     if args.use_vpn:
         print("🔒 Modo VPN ativado")
-        from dev.vpn_manager import setup_vpn_fallback, execute_with_vpn_fallback
-        
-        def download_with_vpn():
-            return execute_with_driver_fallback(state, polygon, folder, tries, debug, timeout, max_retries, args.driver)
-        
-        result = execute_with_vpn_fallback(download_with_vpn)
-        return result
+        try:
+            from dev.vpn_manager import setup_vpn_fallback, execute_with_vpn_fallback
+            
+            def download_with_vpn():
+                return execute_with_driver_fallback(state, polygon, folder, tries, debug, timeout, max_retries, args.driver)
+            
+            result = execute_with_vpn_fallback(download_with_vpn)
+            return result
+        except ImportError:
+            print("⚠️  VPN manager não disponível, usando execução normal...")
     
     # Execução normal com sequência automática (padrão)
     if args.auto_fallback or not any([args.use_vpn, args.simple_fallback]):
         print("🚀 Executando sequência automática de fallback...")
-        execute_download_sequence(state, polygon, folder, tries, debug, timeout, max_retries)
+        try:
+            execute_download_sequence(state, polygon, folder, tries, debug, timeout, max_retries)
+        except Exception as e:
+            print(f"⚠️  Sequência automática falhou: {e}")
+            print("🔄 Tentando execução simples...")
+            execute_with_driver_fallback(state, polygon, folder, tries, debug, timeout, max_retries, args.driver)
     else:
         # Execução normal com driver específico
         print(f"🤖 Usando driver: {args.driver}")

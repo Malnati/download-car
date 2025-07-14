@@ -2204,7 +2204,18 @@
 
         // Mostrar notificação
         function showNotification(message, type = 'info') {
-            console.log('showNotification chamada:', message, type);
+            // Log detalhado no console com timestamp
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+            
+            // Usar console.error para erros, console.warn para warnings, console.log para outros
+            if (type === 'error') {
+                console.error(logMessage);
+            } else if (type === 'warning' || type === 'alert') {
+                console.warn(logMessage);
+            } else {
+                console.log(logMessage);
+            }
             
             const toastContainer = document.querySelector('.toast-container');
             if (!toastContainer) {
