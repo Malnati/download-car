@@ -53,6 +53,7 @@ O projeto utiliza uma arquitetura Docker modular e otimizada:
   - [📋 Variáveis de Download](#-variáveis-de-download)
   - [🌐 Variáveis da API](#-variáveis-da-api)
   - [🏠 Variáveis de Propriedades](#-variáveis-de-propriedades)
+  - [🇧🇷 Variáveis do Brasil (Reclassificação e IBGE)](#-variáveis-do-brasil-reclassificação-e-ibge)
   - [🌍 Variáveis do Frontend (Nginx)](#-variáveis-do-frontend-nginx)
   - [⏱️ Timeouts por Estado](#️-timeouts-por-estado)
   - [🔧 Variáveis de Configuração do Sistema](#-variáveis-de-configuração-do-sistema)
@@ -281,6 +282,13 @@ O projeto utiliza diversas variáveis de ambiente para configurar diferentes asp
 | `PROPERTY_TIMEOUT` | integer | `30` | Timeout em segundos para downloads de propriedades | `PROPERTY_TIMEOUT=60` |
 | `PROPERTY_MAX_RETRIES` | integer | `5` | Número máximo de tentativas para cada propriedade | `PROPERTY_MAX_RETRIES=10` |
 
+## 🇧🇷 Variáveis do Brasil (Reclassificação e IBGE)
+
+| Variável | Tipo | Padrão | Descrição | Exemplo |
+|----------|------|--------|-----------|---------|
+| `MAPBIOMAS_URL` | string | `"https://storage.googleapis.com/mapbiomas-public/initiative/collection-7/brasil/coverage/mapbiomas-brasil-coverage-2022.tif"` | Link padrão do MapBiomas para download | `MAPBIOMAS_URL=https://storage.googleapis.com/mapbiomas-public/initiative/collection-7/brasil/coverage/mapbiomas-brasil-coverage-2022.tif` |
+| `IBGE_URL` | string | `"https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2022/Brasil/BR/BR_Municipios_2022.zip"` | URL padrão para dados do IBGE | `IBGE_URL=https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2022/Brasil/BR/BR_Municipios_2022.zip` |
+
 ## 🌍 Variáveis do Frontend (Nginx)
 
 | Variável | Tipo | Padrão | Descrição | Exemplo |
@@ -388,20 +396,20 @@ O projeto suporta sincronização de shapefiles com um banco de dados PostgreSQL
 
 ### ⚙️ Configuração e Inicialização
 
-#### 1. Inicialização do Banco
+#### 1. Configuração do Banco de Dados
 
 ```bash
-# Inicializar banco de dados
-make init-db
+# O banco PostgreSQL/PostGIS é externo e deve ser configurado separadamente
+# Este projeto apenas se conecta para inserir dados extraídos de shapefiles
 
-# Ou executar diretamente
-python init_database.py
+# Verificar status da conexão
+make db-status
 ```
 
-#### 2. Verificar Status
+#### 2. Verificar Status da Conexão
 
 ```bash
-# Verificar status da conexão
+# Verificar status da conexão com banco PostgreSQL/PostGIS
 make db-status
 
 # Ou via curl
@@ -518,43 +526,88 @@ WHERE created_at < NOW() - INTERVAL '1 year';
 
 ### 🐳 Docker Compose
 
-O projeto inclui configuração Docker Compose com PostgreSQL/PostGIS:
+O projeto inclui configuração Docker Compose. **Nota**: O banco PostgreSQL/PostGIS é externo e deve ser configurado separadamente, conforme as regras do projeto.
 
 ```yaml
 services:
-  postgis:
-    image: postgis/postgis:15-3.3
-    environment:
-      - POSTGRES_DB=${DB_NAME:-download_car}
-      - POSTGRES_USER=${DB_USER:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
-    ports:
-      - "${DB_PORT:-5432}:5432"
+  # Serviços principais do download-car
+  download-car:
+    build:
+      context: .
+      dockerfile: Dockerfile.download-car
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-download-car-pro:latest}
+    container_name: download-car-download
     volumes:
-      - postgis_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-download_car}"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - .:/download-car
+      - ./data:/download-car/data
+    environment:
+      - PYTHONPATH=/download-car
+      - TOR_ENABLED=true
+    ports:
+      - "8000:8000"
+    command: ["/usr/local/bin/start-tor.sh", "python", "cli.py"]
+    networks:
+      - download-car-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-download-car-pro:latest}
+    container_name: download-car-api
+    volumes:
+      - .:/download-car
+      - ./data:/download-car/data
+    environment:
+      - PYTHONPATH=/download-car
+      - TOR_ENABLED=true
+    ports:
+      - "8787:8000"
+    command: ["/usr/local/bin/start-tor.sh", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+    networks:
+      - download-car-network
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: download-car-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/conf.d/default.conf.template:ro
+      - ./index.html:/usr/share/nginx/html/index.html:rw
+      - ./assets:/usr/share/nginx/html/assets:ro
+    entrypoint: ["/entrypoint.sh"]
+    depends_on:
+      - api
+    networks:
+      - download-car-network
+
+networks:
+  download-car-network:
+    driver: bridge
 ```
 
 ### 🔍 Troubleshooting
 
 #### Problemas Comuns
 
-1. **Erro de conexão**
-   - Verifique se o PostgreSQL está rodando
-   - Confirme as variáveis de ambiente
+1. **Erro de conexão com banco de dados**
+   - Verifique se o PostgreSQL/PostGIS externo está rodando
+   - Confirme as variáveis de ambiente no `.config.env`
    - Teste a conexão: `make db-status`
 
-2. **Erro de PostGIS**
-   - Verifique se a extensão PostGIS está instalada
-   - Execute: `CREATE EXTENSION IF NOT EXISTS postgis;`
+2. **Erro de configuração do banco**
+   - Verifique se as variáveis DB_* estão configuradas corretamente
+   - Confirme se o banco externo está acessível
+   - Teste a conectividade: `curl -X GET "http://localhost:8000/database_status"`
 
 3. **Erro de permissões**
-   - Verifique se o usuário tem permissões no banco
-   - Execute: `GRANT ALL PRIVILEGES ON DATABASE download_car TO postgres;`
+   - Verifique se o usuário tem permissões no banco externo
+   - Confirme se o schema está acessível
 
 4. **Erro de memória**
    - Aumente o pool de conexões: `DB_POOL_SIZE=10`
@@ -563,11 +616,14 @@ services:
 #### Logs
 
 ```bash
-# Ver logs do PostgreSQL
-docker compose logs postgis
-
 # Ver logs da API
 docker compose logs download-car-api
+
+# Ver logs do serviço de download
+docker compose logs download-car-download
+
+# Ver logs do nginx
+docker compose logs nginx
 
 # Ver logs específicos
 docker compose logs -f download-car-api | grep -i database
@@ -937,7 +993,43 @@ volumes:
 - **Logs**: `docker compose logs -f [serviço]`
 - **Shell**: `make shell-api` ou `make shell`
 
-## 4️⃣ Execução via API
+## 4️⃣ Execução via API e Interface Web
+
+### 🌐 Interface Web (Frontend)
+
+O projeto inclui uma interface web moderna disponível em `http://localhost:8787` (via Nginx) que oferece:
+
+- **Dashboard interativo** com todos os estados brasileiros
+- **Configuração dinâmica** de timeouts e parâmetros por estado
+- **Download direto** de shapefiles por estado e tipo de polígono
+- **Busca de propriedades** por código CAR
+- **Sincronização com banco de dados** PostgreSQL/PostGIS
+- **Monitoramento em tempo real** do status dos downloads
+- **Interface responsiva** com design moderno
+
+#### 🎯 Funcionalidades da Interface
+
+- **Configurações do Sistema**: Timeouts, retry, configurações de banco
+- **Downloads por Estado**: Interface visual para todos os 27 estados
+- **Busca de Propriedades**: Campo para buscar propriedades específicas por CAR
+- **Sincronização**: Botões para sincronizar dados com banco PostgreSQL/PostGIS
+- **Logs e Status**: Visualização em tempo real do progresso
+- **Tooltips Informativos**: Ajuda contextual em todos os elementos
+
+#### 🚀 Acesso à Interface
+
+```bash
+# Iniciar todos os serviços (incluindo frontend)
+make up
+
+# Acessar interface web
+# http://localhost:8787
+
+# Ou iniciar apenas o frontend
+make nginx-up
+```
+
+### 🔌 API FastAPI
 
 A API FastAPI está disponível em `http://localhost:8000` e oferece os seguintes endpoints:
 
@@ -963,9 +1055,14 @@ A API FastAPI está disponível em `http://localhost:8000` e oferece os seguinte
 - `DELETE /delete_state` &ndash; exclui todos os arquivos relacionados a um estado específico.
 
 ### Endpoints de Sincronização com Banco de Dados
-- `POST /sync_to_database` &ndash; sincroniza shapefiles com o banco de dados PostgreSQL/PostGIS.
-- `GET /database_status` &ndash; verifica o status da conexão com o banco de dados.
-- `GET /car_data` &ndash; busca dados do CAR armazenados no banco de dados.
+- `POST /sync_to_database` &ndash; insere shapefiles no banco de dados PostgreSQL/PostGIS.
+- `GET /database_status` &ndash; verifica o status da conexão com o banco de dados PostgreSQL/PostGIS.
+- `GET /car_data` &ndash; busca dados do CAR armazenados no banco de dados PostgreSQL/PostGIS.
+
+### Endpoints de Processamento do Brasil
+- `POST /reclassificar_brasil` &ndash; reclassifica dados do Brasil usando arquivo CSV.
+- `POST /aplicar_ibge` &ndash; aplica dados do IBGE usando arquivo ZIP com shapefile.
+- `POST /download_mapbiomas` &ndash; baixa dados do MapBiomas usando URL fornecida.
 
 ### Campos esperados (multipart/form)
 
@@ -1198,6 +1295,7 @@ O projeto inclui um Makefile abrangente com comandos para facilitar o desenvolvi
 - `make up` - Inicia todos os serviços (API, download, nginx)
 - `make api-up` - Inicia apenas o serviço API
 - `make download-up` - Inicia apenas o serviço download-car
+- `make nginx-up` - Inicia apenas o serviço nginx
 
 ### 🛠️ Comandos de Build
 
@@ -1226,8 +1324,21 @@ O projeto inclui um Makefile abrangente com comandos para facilitar o desenvolvi
 
 ### 🛑 Comandos de Controle
 - `make down` - Para e remove containers
+- `make down-api` - Para e remove apenas o container API
+- `make down-download` - Para e remove apenas o container download-car
+- `make down-nginx` - Para e remove apenas o container nginx
+- `make restart` - Reinicia todos os serviços
+- `make restart-api` - Reinicia apenas o serviço API
+- `make restart-download` - Reinicia apenas o serviço download-car
+- `make restart-nginx` - Reinicia apenas o serviço nginx
 - `make ps` - Lista containers e serviços
+- `make ps-api` - Lista status do serviço API
+- `make ps-download` - Lista status do serviço download-car
+- `make ps-nginx` - Lista status do serviço nginx
 - `make logs service=X` - Exibe logs do serviço especificado
+- `make logs-api` - Exibe logs do serviço API
+- `make logs-download` - Exibe logs do serviço download-car
+- `make logs-nginx` - Exibe logs do serviço nginx
 
 ### 🔗 Comandos de Acesso
 - `make shell` - Entra no container principal
@@ -1247,12 +1358,11 @@ O projeto inclui um Makefile abrangente com comandos para facilitar o desenvolvi
 - `make delete-state state=X folder=Y include_properties=Z` - Exclui arquivos de um estado
 
 ### 🗄️ Comandos de Banco de Dados
-- `make init-db` - Inicializa o banco de dados PostgreSQL/PostGIS
-- `make db-status` - Verifica o status da conexão com o banco de dados
-- `make sync-state state=X polygon=Y` - Sincroniza dados de um estado com o banco
-- `make sync-car car=X state=Y polygon=Z` - Sincroniza dados de um CAR específico
-- `make query-car car=X` - Consulta dados de um CAR no banco
-- `make query-state state=X limit=Y` - Consulta dados de um estado no banco
+- `make db-status` - Verifica o status da conexão com o banco de dados PostgreSQL/PostGIS
+- `make sync-state state=X polygon=Y` - Insere dados de um estado no banco PostgreSQL/PostGIS
+- `make sync-car car=X state=Y polygon=Z` - Insere dados de um CAR específico no banco PostgreSQL/PostGIS
+- `make query-car car=X` - Consulta dados de um CAR no banco PostgreSQL/PostGIS
+- `make query-state state=X limit=Y` - Consulta dados de um estado no banco PostgreSQL/PostGIS
 
 ### 🔄 Comandos de Manutenção
 - `make git-update` - Atualiza repositório Git
@@ -1272,8 +1382,14 @@ O projeto inclui um Makefile abrangente com comandos para facilitar o desenvolvi
 # Build completo para desenvolvimento
 make build-dev
 
+# Iniciar todos os serviços
+make up
+
 # Iniciar apenas a API
 make api-up
+
+# Iniciar apenas o frontend
+make nginx-up
 
 # Executar download específico (São Paulo - Área do Imóvel)
 make download state=SP polygon=AREA_PROPERTY folder=temp/SP debug=true timeout=60
@@ -1290,26 +1406,44 @@ make download-property car=SP12345678901234567890
 # Excluir arquivos de um estado
 make delete-state state=SP folder=temp include_properties=true
 
-# Inicializar banco de dados
-make init-db
-
-# Verificar status do banco
+# Verificar status do banco de dados PostgreSQL/PostGIS
 make db-status
 
-# Sincronizar estado com banco de dados
+# Inserir dados de estado no banco PostgreSQL/PostGIS
 make sync-state state=SP polygon=AREA_PROPERTY
 
-# Sincronizar CAR específico
+# Inserir dados de CAR específico no banco PostgreSQL/PostGIS
 make sync-car car=SP12345678901234567890 state=SP polygon=AREA_PROPERTY
 
-# Consultar dados de um CAR
+# Consultar dados de um CAR no banco PostgreSQL/PostGIS
 make query-car car=SP12345678901234567890
 
-# Consultar dados de um estado
+# Consultar dados de um estado no banco PostgreSQL/PostGIS
 make query-state state=SP limit=10
 
-# Ver logs da API
-make logs service=download-car-api
+# Controle de serviços
+make restart-api          # Reiniciar apenas a API
+make restart-download     # Reiniciar apenas o download
+make restart-nginx        # Reiniciar apenas o nginx
+make restart              # Reiniciar todos os serviços
+
+# Logs específicos
+make logs-api             # Logs da API
+make logs-download        # Logs do download
+make logs-nginx           # Logs do nginx
+make logs service=api     # Logs de serviço específico
+
+# Status dos serviços
+make ps-api               # Status da API
+make ps-download          # Status do download
+make ps-nginx             # Status do nginx
+make ps                   # Status de todos os serviços
+
+# Parar serviços específicos
+make down-api             # Parar apenas a API
+make down-download        # Parar apenas o download
+make down-nginx           # Parar apenas o nginx
+make down                 # Parar todos os serviços
 
 # Entrar no container da API
 make shell-api
@@ -1504,7 +1638,20 @@ make build-download-dev    # ou make build-download-pro
 
 ## 📁 Estrutura do Projeto
 
-## 🔧 Correções Recentes
+## 🔧 Correções e Melhorias Recentes
+
+### 🎨 Melhorias no Frontend (index.html)
+
+#### Interface Otimizada
+- **Timeout sem "min"**: Removido o literal "min" da exibição do timeout para interface mais limpa
+- **Links de download simplificados**: Reduzida a complexidade dos links de download, removendo informações redundantes
+- **Auto-hide de tooltips**: Todos os tooltips agora desaparecem automaticamente após 3 segundos
+- **Melhor responsividade**: Interface adaptada para diferentes tamanhos de tela
+
+#### Funcionalidades Aprimoradas
+- **Tooltips inteligentes**: Informações contextuais que aparecem e desaparecem automaticamente
+- **Downloads mais enxutos**: Visual simplificado mantendo toda a funcionalidade
+- **Melhor UX**: Interface mais intuitiva e menos poluída
 
 ### Correção do Problema do download_state.py
 Durante a refatoração, o arquivo `download_state.py` foi renomeado para `cli.py`. A função `download_state_logic` foi atualizada para usar o novo nome do arquivo e corrigir o diretório de trabalho.
@@ -1530,6 +1677,40 @@ Corrigido erro de sintaxe no objeto `STATE_TIMEOUTS` no arquivo `index.html` e m
 - ✅ Erro de sintaxe no objeto `STATE_TIMEOUTS` corrigido
 - ✅ Script `generate-config.nginx.js` melhorado para gerar código JavaScript válido
 - ✅ Sistema de logs aprimorado para exibir todas as mensagens no console
+
+### 🔧 Melhorias no Makefile
+
+#### Comandos de Controle Individual
+- **Restart individual**: Adicionados comandos para reiniciar cada serviço separadamente
+- **Down individual**: Comandos para parar cada serviço individualmente
+- **Logs específicos**: Comandos para visualizar logs de cada serviço
+- **Status individual**: Comandos para verificar status de cada serviço
+
+#### Comandos Disponíveis
+```bash
+# Controle individual de serviços
+make restart-api          # Reinicia apenas a API
+make restart-download     # Reinicia apenas o download
+make restart-nginx        # Reinicia apenas o nginx
+make restart              # Reinicia todos os serviços
+
+make down-api             # Para apenas a API
+make down-download        # Para apenas o download
+make down-nginx           # Para apenas o nginx
+
+make logs-api             # Logs da API
+make logs-download        # Logs do download
+make logs-nginx           # Logs do nginx
+
+make ps-api               # Status da API
+make ps-download          # Status do download
+make ps-nginx             # Status do nginx
+```
+
+#### Conformidade com Regras do Projeto
+- **Banco de dados**: Removido comando `init-db` conforme regras do projeto
+- **Descrições atualizadas**: Todos os comandos de banco especificam "PostgreSQL/PostGIS"
+- **Ordem alfabética**: Comandos reorganizados em ordem alfabética para melhor navegação
 
 ### Atualização do Makefile
 Adicionado alvo `env` para garantir que o arquivo `.config.env` seja sempre copiado para `.env` antes de qualquer operação.
