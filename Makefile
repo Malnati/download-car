@@ -5,6 +5,11 @@ IMAGE          ?= download-car
 API_IMAGE      ?= download-car-api
 API_DOCKERFILE ?= Dockerfile.api
 
+# Copy .config.env to .env
+.PHONY: env
+env:
+	@cp -fv .config.env .env
+
 # Build base image
 build-base:
 	@echo "🛠️  Building base image..."
@@ -111,24 +116,24 @@ requirements.txt: pyproject.toml check-poetry
 	fi
 
 # Build all images
-build: requirements.txt build-base build-pro build-download build-api build-nginx
+build: env requirements.txt build-base build-pro build-download build-api build-nginx
 
 # Build development images
-build-dev: build-base build-dev build-download-dev build-api-dev build-nginx
+build-dev: env build-base build-dev build-download-dev build-api-dev build-nginx
 
 # Build production images
-build-pro: requirements.txt build-base build-pro build-download-pro build-api-pro build-nginx
+build-pro: env requirements.txt build-base build-pro build-download-pro build-api-pro build-nginx
 
-api-up:
+api-up: env
 	@echo "🚀  Executando container API $(API_IMAGE):latest..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up api -d
 
-clean:
+clean: env
 	@echo "🗑️  Removendo imagens, volumes e containers órfãos..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down --rmi all --volumes --remove-orphans || true
 
 
-clean-volumes:
+clean-volumes: env
 	@echo "🗑️  Removendo volumes Docker, incluindo arquivos montados..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down --volumes --remove-orphans
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker volume prune -f
@@ -150,7 +155,7 @@ clean-image:
 	@echo "🗑️  Removendo imagem $(IMAGE):latest..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker rmi $(IMAGE):latest
 
-down:
+down: env
 	@echo "🛑  Parando e removendo containers..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose down
 
@@ -231,7 +236,7 @@ delete-state:
 		-F "folder=$(folder)" \
 		-F "include_properties=$(include_properties)"
 
-download-up:
+download-up: env
 	@echo "🚀  Iniciando serviço download-car..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up download-car -d
 
@@ -264,11 +269,11 @@ integration-test:
 	@echo "🧪  Executando testes de integração..."
 	python -m unittest download_car/tests/integration/*.py
 
-logs:
+logs: env
 	@echo "📜  Exibindo logs do serviço $(service)..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose logs -f $(service)
 
-ps:
+ps: env
 	@echo "📋  Listando containers e serviços..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose ps
 
@@ -338,7 +343,7 @@ query-state:
 	@echo "🔍  Consultando dados do estado $(state) no banco de dados..."
 	curl -X GET "http://localhost:8000/car_data?state=$(state)&limit=$(limit)" | jq .
 
-up:
+up: env
 	@echo "🔼  Iniciando todos os serviços..."
 	DOCKER_CONFIG=$(DOCKER_CONFIG) docker compose up -d
 
