@@ -1,7 +1,7 @@
 # docker-compose.yml
 version: '3.8'
 
-# Carregar variáveis de ambiente do arquivo .env (padrão do Docker Compose)
+# Carregar variáveis de ambiente do arquivo .config.env
 services:
   download-car:
     build:
@@ -9,7 +9,7 @@ services:
       dockerfile: Dockerfile.download-car
       args:
         BASE_IMAGE: ${BASE_IMAGE:-download-car-pro:latest}
-    container_name: download-car
+    container_name: download-car-download
     volumes:
       - .:/download-car
       - ./data:/download-car/data
@@ -19,8 +19,6 @@ services:
     ports:
       - "8000:8000"
     command: ["/usr/local/bin/start-tor.sh", "python", "cli.py"]
-    depends_on:
-      - postgres
     networks:
       - download-car-network
 
@@ -40,8 +38,6 @@ services:
     ports:
       - "8787:8000"
     command: ["/usr/local/bin/start-tor.sh", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
-    depends_on:
-      - postgres
     networks:
       - download-car-network
 
@@ -49,18 +45,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.nginx
+    container_name: download-car-nginx
     ports:
-      - "8787:80"
+      - "80:80"
     volumes:
       - ./nginx.conf.template:/etc/nginx/conf.d/default.conf.template:ro
       - ./index.html:/usr/share/nginx/html/index.html:rw
       - ./assets:/usr/share/nginx/html/assets:ro
     entrypoint: ["/entrypoint.sh"]
     depends_on:
-      - download-car-api
-      - download-car-download
+      - api
     environment:
-      # Todas as variáveis são carregadas automaticamente do arquivo .env
+      # Todas as variáveis são carregadas automaticamente do arquivo .config.env
       - API_ENDPOINT_URL
       - DEFAULT_POLYGON
       - DEFAULT_TIMEOUT
@@ -103,5 +99,11 @@ services:
       - CORS_ALLOW_CREDENTIALS
       - CORS_ALLOW_METHODS
       - CORS_ALLOW_HEADERS
+    networks:
+      - download-car-network
+
+networks:
+  download-car-network:
+    driver: bridge
 
 
