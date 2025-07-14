@@ -23,7 +23,10 @@ dependencies = [
     "uvicorn",
     "python-multipart",
     "requests>=2.31.0",
-    "pysocks>=1.7.1"
+    "pysocks>=1.7.1",
+    "sqlalchemy",
+    "geoalchemy2",
+    "psycopg2-binary"
 ]
 
 [project.optional-dependencies]

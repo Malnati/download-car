@@ -86,7 +86,74 @@ O projeto utiliza uma arquitetura Docker modular e otimizada:
 pip install download-car
 ```
 
-Prerequisite:
+## 📋 Pré-requisitos
+
+### 🐍 Python Poetry
+
+Este projeto utiliza o **Poetry** para gerenciamento de dependências. É necessário ter o Poetry instalado e atualizado para gerar automaticamente o arquivo `requirements.txt` durante o build.
+
+#### 🔍 Verificação da Versão
+
+O projeto requer **Poetry 1.2.0 ou superior** para suportar o comando `poetry export`. Caso o comando não esteja disponível, instale o plugin oficial de exportação.
+
+```bash
+poetry --version
+poetry export --help
+```
+
+#### 📦 Instalação do Poetry
+
+**macOS:**
+```bash
+brew install poetry
+```
+
+**Ubuntu/Debian:**
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+**CentOS/RHEL:**
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+**Outros sistemas Linux:**
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+#### 🔄 Atualização do Poetry
+
+**macOS:**
+```bash
+brew upgrade poetry
+```
+
+**Linux (todas as distribuições):**
+```bash
+poetry self update
+```
+
+#### 📦 Instalação do plugin de exportação
+Se o comando `poetry export` não estiver disponível, instale o plugin oficial:
+```bash
+poetry self add poetry-plugin-export
+```
+Veja mais em: https://github.com/python-poetry/poetry-plugin-export
+
+#### ⚠️ Solução de Problemas
+
+Se você encontrar o erro `The requested command export does not exist`, significa que sua versão do Poetry não suporta o comando `export`. Neste caso:
+
+1. Atualize o Poetry usando os comandos acima
+2. Instale o plugin de exportação
+3. Verifique a versão: `poetry --version` e `poetry export --help`
+4. Execute novamente o comando que falhou
+
+#### 🌐 Documentação Oficial
+
+Para mais informações sobre instalação e uso do Poetry, visite: [https://python-poetry.org/docs/#installation](https://python-poetry.org/docs/#installation)
 
 ---
 

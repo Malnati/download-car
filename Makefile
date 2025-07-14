@@ -64,12 +64,45 @@ build-download-pro:
 build-api: build-api-pro
 build-download: build-download-pro
 
+# Verificar versão do Poetry e gerar requirements.txt
+check-poetry:
+	@echo "🔍 Verificando versão do Poetry..."
+	@if ! poetry --version > /dev/null 2>&1; then \
+		echo "❌ Poetry não está instalado!"; \
+		echo ""; \
+		echo "📦 Para instalar o Poetry:"; \
+		if [ "$$(uname -s)" = "Darwin" ]; then \
+			echo "   macOS: brew install poetry"; \
+		elif command -v apt-get > /dev/null 2>&1; then \
+			echo "   Ubuntu/Debian: curl -sSL https://install.python-poetry.org | python3 -"; \
+		elif command -v yum > /dev/null 2>&1; then \
+			echo "   CentOS/RHEL: curl -sSL https://install.python-poetry.org | python3 -"; \
+		else \
+			echo "   Linux: curl -sSL https://install.python-poetry.org | python3 -"; \
+		fi; \
+		echo ""; \
+		echo "   Ou visite: https://python-poetry.org/docs/#installation"; \
+		exit 1; \
+	fi
+	@if ! poetry export --help > /dev/null 2>&1; then \
+		echo "❌ Poetry não suporta o comando 'export'!"; \
+		echo ""; \
+		echo "📦 Para instalar o plugin de exportação:"; \
+		echo "   poetry self add poetry-plugin-export"; \
+		echo ""; \
+		echo "   Veja mais em: https://github.com/python-poetry/poetry-plugin-export"; \
+		exit 1; \
+	fi
+	@echo "✅ Poetry e plugin de exportação disponíveis: $$(poetry --version)"
+
 # Gerar requirements.txt para produção
-requirements.txt: pyproject.toml
+requirements.txt: pyproject.toml check-poetry
+	@echo "📦 Gerando requirements.txt..."
 	@if [ -f poetry.lock ]; then \
 		poetry export --only main --format=requirements.txt > requirements.txt; \
+		echo "✅ requirements.txt gerado com sucesso"; \
 	else \
-		echo "poetry.lock não encontrado, usando requirements.txt existente"; \
+		echo "⚠️  poetry.lock não encontrado, usando requirements.txt existente"; \
 	fi
 
 # Build all images

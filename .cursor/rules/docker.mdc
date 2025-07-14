@@ -1,0 +1,16 @@
+---
+description: Garante que a hierarquia de imagens Docker seja respeitada e que as configurações utilizem variáveis de ambiente
+globs:
+  - "Dockerfile*"
+  - "docker-compose*"
+  - ".config.env"
+alwaysApply: true
+rules:
+  - The `Dockerfile.base` must include only dependencies that are common to all other Dockerfiles (dev and prod).
+  - The `Dockerfile.dev` must extend `Dockerfile.base` and include all tools required for debugging, monitoring, inspection, and analysis.
+  - The `Dockerfile.prod` must extend `Dockerfile.base` and include the minimal set of dependencies and tools required for production, prioritizing security and size.
+  - Avoid duplicating dependencies that already exist in `Dockerfile.base`.
+  - The production image must not contain debugging tools like `curl`, `git`, `htop`, `iputils`, etc.
+  - In `docker-compose.yml`, all configuration (paths, ports, credentials, commands, etc.) must be passed exclusively through environment variables.
+  - The `.config.env` file must be used as the dynamic source for these environment variables.
+  - All `Dockerfile*` must be configured to consume environment variables passed at build or runtime.
