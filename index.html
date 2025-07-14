@@ -1129,10 +1129,14 @@
             if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
                 const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                 tooltipTriggerList.map(function (tooltipTriggerEl) {
-                    return new bootstrap.Tooltip(tooltipTriggerEl, {
+                    const tip = new bootstrap.Tooltip(tooltipTriggerEl, {
                         trigger: 'hover',
                         delay: { show: 200, hide: 100 }
                     });
+                    tooltipTriggerEl.addEventListener('shown.bs.tooltip', () => {
+                        setTimeout(() => tip.hide(), 3000);
+                    });
+                    return tip;
                 });
                 
                 // Adicionar listener para ocultar tooltips ao mover o mouse
@@ -1151,20 +1155,12 @@
                 
                 // Adicionar listener para ocultar tooltips ao clicar em qualquer lugar
                 document.addEventListener('click', function(event) {
-                    // Verificar se o clique não foi em um elemento com tooltip
-                    const clickedElement = event.target;
-                    const hasTooltip = clickedElement.closest('[data-bs-toggle="tooltip"]');
-                    
-                    if (!hasTooltip) {
-                        hideAllTooltips();
-                    }
+                    hideAllTooltips();
                 });
                 
-                // Adicionar listener para ocultar tooltips ao pressionar Enter
+                // Adicionar listener para ocultar tooltips ao pressionar qualquer tecla
                 document.addEventListener('keydown', function(event) {
-                    if (event.key === 'Enter') {
-                        hideAllTooltips();
-                    }
+                    hideAllTooltips();
                 });
             }
         }
@@ -1773,19 +1769,14 @@
             }
             if ((history.status === 'ready' || history.status === 'success') && Array.isArray(history.downloadFiles) && history.downloadFiles.length > 0) {
                 const filesHtml = history.downloadFiles.map(f => {
-                    const polygonLabel = f.polygon_type.replace(/_/g, ' ');
-                    const sizeText = f.size_mb ? ` (${f.size_mb.toFixed(1)} MB)` : '';
-                    return `<a href="${f.download_url}" class="download-link" download 
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Baixar arquivo ${polygonLabel}${sizeText}">
-                                <i class="bi bi-download me-1"></i>${polygonLabel}${sizeText}
-                            </a>`;
+                    const label = f.polygon_type.replace(/_/g, ' ');
+                    return `<a href="${f.download_url}" class="download-link" download
+                                data-bs-toggle="tooltip" data-bs-title="${label} (${f.size_mb.toFixed(1)} MB)">
+                            <i class="bi bi-download me-1"></i>${label} (${f.size_mb.toFixed(1)} MB)
+                        </a>`;
                 }).join(' ');
                 
-                const totalInfo = history.totalSizeMB ? 
-                    `<div class="small text-muted mt-1">Total: ${history.totalFiles || history.downloadFiles.length} arquivo(s), ${history.totalSizeMB.toFixed(1)} MB</div>` : '';
-                
-                return `<div>${filesHtml}${totalInfo}</div>`;
+                return `<div>${filesHtml}</div>`;
             }
             // Se o status é 'success' mas não há downloadFiles, tentar buscar novamente
             if (history.status === 'success' && (!history.downloadFiles || history.downloadFiles.length === 0)) {
@@ -2339,7 +2330,7 @@
                 } else if (fieldType === 'timeout') {
                     newValue = parseInt(input.value) * 60000; // Converter para milissegundos
                     updateTimeout(estado, newValue);
-                    element.innerHTML = `${Math.floor(newValue / 60000)} min`;
+                    element.innerHTML = `${Math.floor(newValue / 60000)}`;
                 } else if (fieldType === 'retries') {
                     newValue = parseInt(input.value);
                     updateMaxRetries(estado, newValue);
