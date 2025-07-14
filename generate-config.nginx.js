@@ -84,15 +84,12 @@ function updateIndexHtml() {
     );
     
     // Substituir STATE_TIMEOUTS
-    const stateTimeoutsStr = JSON.stringify(config.STATE_TIMEOUTS, null, 12)
-        .replace(/"([^"]+)":/g, "'$1':")
-        .replace(/"/g, '')
-        .split('\n')
-        .map(line => '            ' + line)
-        .join('\n');
+    const stateTimeoutsEntries = Object.entries(config.STATE_TIMEOUTS)
+        .map(([state, timeout]) => `            '${state}': ${timeout}`)
+        .join(',\n');
     
     const stateTimeoutsRegex = /const STATE_TIMEOUTS = \{[\s\S]*?\};/;
-    content = content.replace(stateTimeoutsRegex, `const STATE_TIMEOUTS = {\n${stateTimeoutsStr}\n        };`);
+    content = content.replace(stateTimeoutsRegex, `const STATE_TIMEOUTS = {\n${stateTimeoutsEntries}\n        };`);
     
     // Escrever arquivo atualizado
     fs.writeFileSync(indexPath, content, 'utf8');
