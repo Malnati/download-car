@@ -29,6 +29,396 @@ def get_env_config():
     
     return config
 
+# Restaura lógica original de download_state_logic do commit d13d049
+def download_state_logic(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
+    """
+    Executa o download_state.py como subprocess e retorna o caminho do arquivo baixado.
+    """
+    # Garante que a pasta existe
+    os.makedirs(folder, exist_ok=True)
+    
+    # Constrói o comando
+    cmd = [
+        sys.executable, "download_state.py",
+        "--state", state,
+        "--polygon", polygon,
+        "--folder", folder,
+        "--tries", str(tries),
+        "--debug", str(debug).lower(),
+        "--timeout", str(timeout),
+        "--max_retries", str(max_retries)
+    ]
+    
+    # Executa o comando
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
+    
+    # Constrói o caminho esperado do arquivo
+    # O download_state.py cria arquivos com o nome {state}_AREA_IMOVEL.zip
+    # independentemente do polígono passado (AREA_PROPERTY é mapeado para AREA_IMOVEL)
+    expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
+    
+    # Verifica se o arquivo foi criado, mesmo que o processo tenha falhado
+    if os.path.exists(expected_file):
+        return expected_file
+    
+    # Se o arquivo não existe, verifica se houve erro
+    if result.returncode != 0:
+        error_msg = result.stderr.strip()
+        if "UrlNotOkException" in error_msg:
+            raise Exception(f"Falha no download devido a problemas de captcha. Tente novamente em alguns minutos. Detalhes: {error_msg}")
+        else:
+            raise Exception(f"Erro ao executar download_state.py: {error_msg}")
+    
+    # Se chegou aqui, o processo não falhou mas o arquivo não foi criado
+    raise Exception(f"Download concluído mas arquivo não foi criado: {expected_file}")
+
+# Restaura lógica original de download_country_logic do commit d13d049
+def download_country_logic(polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
+    """
+    Baixa shapefiles de dados do CAR para todos os estados do Brasil.
+    """
+    from download_car import State
+    
+    # Lista de todos os estados
+    states = [state.name for state in State]
+    
+    # Cria a pasta base
+    os.makedirs(folder, exist_ok=True)
+    
+    # Baixa dados para cada estado
+    downloaded_files = []
+    for state in states:
+        try:
+            file_path = download_state_logic(state, polygon, folder, tries, debug, timeout, max_retries)
+            downloaded_files.append(file_path)
+        except Exception as e:
+            if debug:
+                print(f"Erro ao baixar {state}: {e}")
+            continue
+    
+    if not downloaded_files:
+        raise Exception("Nenhum arquivo foi baixado com sucesso")
+    
+    # Cria um ZIP com todos os arquivos baixados
+    country_zip_path = os.path.join(folder, f"brazil_{polygon}.zip")
+    with zipfile.ZipFile(country_zip_path, "w", zipfile.ZIP_DEFLATED) as country_zip:
+        for file_path in downloaded_files:
+            country_zip.write(file_path, arcname=os.path.basename(file_path))
+    
+    return country_zip_path
+
+# Restaura lógica original de download_property_logic do commit d13d049
+def download_property_logic(car: str, state: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
+    """
+    Baixa dados de uma propriedade pelo número do CAR.
+    """
+    # 1. Caminho do ZIP do estado
+    polygon = "AREA_IMOVEL"  # Padrão usado no download
+    zip_path = os.path.join("temp", f"{state}_{polygon}.zip")
+    
+    if not os.path.exists(zip_path):
+        raise Exception(f"Arquivo do estado {state} não encontrado. Baixe primeiro via /download_state.")
+
+    # 2. Extrair o ZIP para um diretório temporário
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            zip_ref.extractall(tmpdir)
+
+        # 3. Encontrar o arquivo .shp extraído
+        shp_files = [f for f in os.listdir(tmpdir) if f.endswith(".shp")]
+        if not shp_files:
+            raise Exception("Shapefile não encontrado no ZIP do estado.")
+        shp_path = os.path.join(tmpdir, shp_files[0])
+
+        # 4. Ler o shapefile com geopandas
+        try:
+            import geopandas as gpd
+            gdf = gpd.read_file(shp_path)
+        except ImportError:
+            raise Exception("Geopandas não disponível. Instale com: pip install geopandas")
+
+        # 5. Procurar o CAR (tentar diferentes nomes de campo)
+        car_fields = ["CAR", "cod_imovel", "COD_IMOVEL", "car", "codigo_car"]
+        car_field = None
+        
+        for field in car_fields:
+            if field in gdf.columns:
+                car_field = field
+                break
+        
+        if car_field is None:
+            # Se não encontrar, mostrar as colunas disponíveis para debug
+            available_columns = list(gdf.columns)
+            raise Exception(f"Campo do CAR não encontrado. Colunas disponíveis: {available_columns}")
+
+        # 6. Buscar o CAR (case insensitive)
+        result_gdf = gdf[gdf[car_field].astype(str).str.upper() == car.upper()]
+        
+        if result_gdf.empty:
+            raise Exception(f"CAR {car} não encontrado no estado {state}.")
+
+        # 7. Salvar o resultado em um novo shapefile temporário
+        out_dir = tempfile.mkdtemp()
+        out_shp = os.path.join(out_dir, f"property_{car}.shp")
+        result_gdf.to_file(out_shp)
+
+        # 8. Empacotar o shapefile em um ZIP
+        zip_filename = os.path.join(out_dir, f"property_{car}.zip")
+        with zipfile.ZipFile(zip_filename, "w") as zipf:
+            for ext in [".shp", ".shx", ".dbf", ".prj", ".cpg"]:
+                f = out_shp.replace(".shp", ext)
+                if os.path.exists(f):
+                    zipf.write(f, arcname=os.path.basename(f))
+
+        return zip_filename
+
+# Restaura lógica original de buscar_estado_por_car_logic do commit d13d049
+def buscar_estado_por_car_logic(car: str, state: Optional[str], data_folder: str) -> Dict:
+    """
+    Busca o estado de um imóvel pelo número do CAR.
+    """
+    # Esta funcionalidade ainda não está implementada na classe DownloadCar
+    return {
+        "message": "Funcionalidade de busca por CAR ainda não implementada",
+        "car": car,
+        "state": state,
+        "data_folder": data_folder
+    }
+
+# Restaura lógica original de buscar_propriedade_por_car_logic do commit d13d049
+def buscar_propriedade_por_car_logic(car: str, state: Optional[str], data_folder: str) -> Dict:
+    """
+    Busca uma propriedade pelo número do CAR.
+    """
+    # Esta funcionalidade ainda não está implementada na classe DownloadCar
+    return {
+        "message": "Funcionalidade de busca por CAR ainda não implementada",
+        "car": car,
+        "state": state,
+        "data_folder": data_folder
+    }
+
+# Restaura lógica original de get_state_status_logic do commit d13d049
+def get_state_status_logic(state: str, folder: str) -> Dict:
+    """
+    Verifica se existe arquivo baixado para um estado específico.
+    """
+    # Lista de possíveis arquivos para o estado
+    state_files_patterns = [
+        f"{state}_AREA_IMOVEL.zip",
+        f"{state}_APPS.zip",
+        f"{state}_NATIVE_VEGETATION.zip",
+        f"{state}_CONSOLIDATED_AREA.zip",
+        f"{state}_AREA_FALL.zip",
+        f"{state}_HYDROGRAPHY.zip",
+        f"{state}_RESTRICTED_USE.zip",
+        f"{state}_ADMINISTRATIVE_SERVICE.zip",
+        f"{state}_LEGAL_RESERVE.zip"
+    ]
+    
+    available_files = []
+    total_size = 0
+    
+    for pattern in state_files_patterns:
+        file_path = os.path.join(folder, pattern)
+        if os.path.exists(file_path):
+            try:
+                file_size = os.path.getsize(file_path)
+                file_mtime = os.path.getmtime(file_path)
+                
+                # Extrair tipo de polígono do nome do arquivo
+                polygon_type = pattern.replace(f"{state}_", "").replace(".zip", "")
+                
+                available_files.append({
+                    "filename": pattern,
+                    "file_path": file_path,
+                    "size_bytes": file_size,
+                    "size_mb": round(file_size / (1024 * 1024), 2),
+                    "modified": datetime.fromtimestamp(file_mtime).isoformat(),
+                    "polygon_type": polygon_type,
+                    "download_url": f"/download_state_file/{state}/{polygon_type}"
+                })
+                
+                total_size += file_size
+            except Exception as e:
+                continue
+    
+    # Verificar se há arquivos do estado em ZIPs nacionais
+    national_files_containing_state = []
+    national_zip_patterns = [
+        "brazil_AREA_IMOVEL.zip",
+        "brazil_APPS.zip",
+        "brazil_NATIVE_VEGETATION.zip",
+        "brazil_CONSOLIDATED_AREA.zip",
+        "brazil_AREA_FALL.zip",
+        "brazil_HYDROGRAPHY.zip",
+        "brazil_RESTRICTED_USE.zip",
+        "brazil_ADMINISTRATIVE_SERVICE.zip",
+        "brazil_LEGAL_RESERVE.zip"
+    ]
+    
+    for pattern in national_zip_patterns:
+        zip_path = os.path.join(folder, pattern)
+        if os.path.exists(zip_path):
+            try:
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    state_files_in_zip = [f for f in zip_ref.namelist() if f.startswith(f"{state}_")]
+                    if state_files_in_zip:
+                        national_files_containing_state.append({
+                            "national_zip": pattern,
+                            "state_files": state_files_in_zip
+                        })
+            except Exception as e:
+                continue
+    
+    return {
+        "state": state,
+        "has_files": len(available_files) > 0,
+        "available_files": available_files,
+        "total_files": len(available_files),
+        "total_size_mb": round(total_size / (1024 * 1024), 2),
+        "national_files_containing_state": national_files_containing_state,
+        "folder": folder,
+        "message": f"Encontrados {len(available_files)} arquivo(s) para o estado {state}" if available_files else f"Nenhum arquivo encontrado para o estado {state}"
+    }
+
+# Restaura lógica original de download_state_file_logic do commit d13d049
+def download_state_file_logic(state: str, polygon_type: str, folder: str) -> str:
+    """
+    Faz download de um arquivo específico de um estado.
+    """
+    filename = f"{state}_{polygon_type}.zip"
+    file_path = os.path.join(folder, filename)
+    
+    if not os.path.exists(file_path):
+        raise Exception(f"Arquivo {filename} não encontrado para o estado {state}")
+    
+    return file_path
+
+# Restaura lógica original de sync_to_database_logic do commit d13d049
+def sync_to_database_logic(sync_type: str, state: str, polygon_type: str, car_code: Optional[str], folder: str) -> Dict:
+    """
+    Sincroniza shapefiles com o banco de dados PostgreSQL/PostGIS.
+    """
+    # Implementação básica - pode ser expandida
+    raise NotImplementedError("Sincronização com banco de dados ainda não implementado")
+
+# Restaura lógica original de database_status_logic do commit d13d049
+def database_status_logic() -> Dict:
+    """
+    Verifica o status da conexão com o banco de dados.
+    """
+    # Implementação básica - pode ser expandida
+    raise NotImplementedError("Verificação de status do banco de dados ainda não implementado")
+
+# Restaura lógica original de brasil_config_logic do commit d13d049
+def brasil_config_logic() -> Dict:
+    """
+    Retorna configurações do Brasil.
+    """
+    # Implementação básica - pode ser expandida
+    raise NotImplementedError("Configurações do Brasil ainda não implementado")
+
+# Restaura lógica original de car_data_logic do commit d13d049
+def car_data_logic(car_code: Optional[str], state: Optional[str], polygon_type: Optional[str], limit: int) -> Dict:
+    """
+    Busca dados do CAR no banco de dados.
+    """
+    # Implementação básica - pode ser expandida
+    raise NotImplementedError("Consulta de dados do CAR ainda não implementado")
+
+# Restaura lógica original de delete_state_logic do commit d13d049
+def delete_state_logic(state: str, folder: str, include_properties: bool) -> Dict:
+    """
+    Exclui todos os arquivos relacionados a um estado específico.
+    """
+    deleted_files = []
+    errors = []
+    
+    # Lista de possíveis arquivos para o estado
+    state_files_patterns = [
+        f"{state}_AREA_IMOVEL.zip",
+        f"{state}_APPS.zip",
+        f"{state}_NATIVE_VEGETATION.zip",
+        f"{state}_CONSOLIDATED_AREA.zip",
+        f"{state}_AREA_FALL.zip",
+        f"{state}_HYDROGRAPHY.zip",
+        f"{state}_RESTRICTED_USE.zip",
+        f"{state}_ADMINISTRATIVE_SERVICE.zip",
+        f"{state}_LEGAL_RESERVE.zip"
+    ]
+    
+    # Deletar arquivos do estado
+    for pattern in state_files_patterns:
+        file_path = os.path.join(folder, pattern)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                deleted_files.append(pattern)
+            except Exception as e:
+                errors.append(f"Erro ao deletar {pattern}: {str(e)}")
+    
+    # Deletar arquivos de propriedades se solicitado
+    if include_properties:
+        property_folder = os.path.join(folder, "PROPERTY")
+        if os.path.exists(property_folder):
+            try:
+                shutil.rmtree(property_folder)
+                deleted_files.append("PROPERTY/ (pasta completa)")
+            except Exception as e:
+                errors.append(f"Erro ao deletar pasta PROPERTY: {str(e)}")
+    
+    return {
+        "state": state,
+        "deleted_files": deleted_files,
+        "total_deleted": len(deleted_files),
+        "errors": errors,
+        "success": len(errors) == 0,
+        "message": f"Deletados {len(deleted_files)} arquivo(s) do estado {state}"
+    }
+
+# Restaura lógica original de get_states_logic do commit d13d049
+def get_states_logic() -> Dict:
+    """
+    Retorna a lista de estados brasileiros disponíveis.
+    """
+    from download_car import State
+    
+    states = []
+    for state in State:
+        states.append({
+            "code": state.name,
+            "name": state.value,
+            "description": f"Estado de {state.value}"
+        })
+    
+    return {
+        "states": states,
+        "total": len(states),
+        "message": f"Lista de {len(states)} estados brasileiros"
+    }
+
+# Restaura lógica original de get_polygons_logic do commit d13d049
+def get_polygons_logic() -> Dict:
+    """
+    Retorna a lista de polígonos disponíveis.
+    """
+    from download_car import Polygon
+    
+    polygons = []
+    for polygon in Polygon:
+        polygons.append({
+            "code": polygon.name,
+            "name": polygon.value,
+            "description": f"Polígono {polygon.value}"
+        })
+    
+    return {
+        "polygons": polygons,
+        "total": len(polygons),
+        "message": f"Lista de {len(polygons)} tipos de polígonos"
+    }
+
 def execute_with_driver_fallback(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int, driver_type: str = "tesseract"):
     """Executa download com driver OCR específico."""
     
@@ -160,181 +550,6 @@ def execute_download_sequence(state: str, polygon: str, folder: str, tries: int,
     
     # Se chegou aqui, todas as estratégias falharam
     raise Exception("❌ Todas as estratégias de download falharam. Tente novamente em algumas horas.")
-
-# Funções de lógica para a API
-def download_state_logic(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int):
-    """Lógica para download de estado - wrapper para execute_download_sequence."""
-    try:
-        result = execute_download_sequence(state, polygon, folder, tries, debug, timeout, max_retries)
-        # Retornar o caminho do arquivo gerado
-        expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
-        if os.path.exists(expected_file):
-            return expected_file
-        else:
-            raise Exception(f"Arquivo não encontrado: {expected_file}")
-    except Exception as e:
-        raise Exception(f"Erro no download do estado {state}: {str(e)}")
-
-def download_country_logic(polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int):
-    """Lógica para download de todo o país."""
-    states = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO']
-    
-    results = []
-    for state in states:
-        try:
-            state_folder = os.path.join(folder, state)
-            result = download_state_logic(state, polygon, state_folder, tries, debug, timeout, max_retries)
-            results.append(result)
-        except Exception as e:
-            print(f"Erro no estado {state}: {e}")
-    
-    # Criar arquivo ZIP com todos os resultados
-    zip_path = os.path.join(folder, f"brazil_{polygon}.zip")
-    with zipfile.ZipFile(zip_path, 'w') as zipf:
-        for result in results:
-            if os.path.exists(result):
-                zipf.write(result, os.path.basename(result))
-    
-    return zip_path
-
-def download_property_logic(car: str, state: Optional[str], folder: str, tries: int, debug: bool, timeout: int, max_retries: int):
-    """Lógica para download de propriedade específica."""
-    # Implementação básica - pode ser expandida
-    raise NotImplementedError("Download de propriedade específica ainda não implementado")
-
-def buscar_estado_por_car_logic(car: str, state: Optional[str], data_folder: str):
-    """Lógica para buscar estado por CAR."""
-    # Implementação básica - pode ser expandida
-    raise NotImplementedError("Busca de estado por CAR ainda não implementado")
-
-def buscar_propriedade_por_car_logic(car: str, state: Optional[str], data_folder: str):
-    """Lógica para buscar propriedade por CAR."""
-    # Implementação básica - pode ser expandida
-    raise NotImplementedError("Busca de propriedade por CAR ainda não implementado")
-
-def get_state_status_logic(state: str, folder: str):
-    """Lógica para verificar status de estado."""
-    # Verificar se existe arquivo para o estado
-    expected_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
-    if os.path.exists(expected_file):
-        return {
-            "state": state,
-            "status": "available",
-            "file": expected_file,
-            "size": os.path.getsize(expected_file)
-        }
-    else:
-        return {
-            "state": state,
-            "status": "not_available",
-            "file": None,
-            "size": 0
-        }
-
-def download_state_file_logic(state: str, polygon_type: str, folder: str):
-    """Lógica para download de arquivo de estado."""
-    file_path = os.path.join(folder, f"{state}_{polygon_type}.zip")
-    if os.path.exists(file_path):
-        return file_path
-    else:
-        raise FileNotFoundError(f"Arquivo não encontrado: {file_path}")
-
-def sync_to_database_logic(sync_type: str, state: str, polygon_type: str, car_code: Optional[str], folder: str):
-    """Lógica para sincronização com banco de dados."""
-    # Implementação básica - pode ser expandida
-    raise NotImplementedError("Sincronização com banco de dados ainda não implementado")
-
-def database_status_logic():
-    """Lógica para status do banco de dados."""
-    # Implementação básica - pode ser expandida
-    return {
-        "status": "not_configured",
-        "message": "Banco de dados não configurado"
-    }
-
-def brasil_config_logic():
-    """Lógica para configurações do Brasil."""
-    return {
-        "mapbiomas": os.getenv("MAPBIOMAS_URL", ""),
-        "ibge": os.getenv("IBGE_URL", "")
-    }
-
-def car_data_logic(car_code: Optional[str], state: Optional[str], polygon_type: Optional[str], limit: int):
-    """Lógica para dados do CAR."""
-    # Implementação básica - pode ser expandida
-    raise NotImplementedError("Consulta de dados do CAR ainda não implementado")
-
-def delete_state_logic(state: str, folder: str, include_properties: bool):
-    """Lógica para deletar estado."""
-    deleted_files = []
-    
-    # Deletar arquivo principal do estado
-    main_file = os.path.join(folder, f"{state}_AREA_IMOVEL.zip")
-    if os.path.exists(main_file):
-        os.remove(main_file)
-        deleted_files.append(main_file)
-    
-    # Deletar arquivos de propriedades se solicitado
-    if include_properties:
-        property_folder = os.path.join(folder, "PROPERTY")
-        if os.path.exists(property_folder):
-            for file in os.listdir(property_folder):
-                if file.startswith(f"{state}_"):
-                    file_path = os.path.join(property_folder, file)
-                    os.remove(file_path)
-                    deleted_files.append(file_path)
-    
-    return {
-        "state": state,
-        "deleted_files": deleted_files,
-        "count": len(deleted_files)
-    }
-
-def get_states_logic():
-    """Lógica para listar estados."""
-    return [
-        {"code": "AC", "name": "Acre"},
-        {"code": "AL", "name": "Alagoas"},
-        {"code": "AM", "name": "Amazonas"},
-        {"code": "AP", "name": "Amapá"},
-        {"code": "BA", "name": "Bahia"},
-        {"code": "CE", "name": "Ceará"},
-        {"code": "DF", "name": "Distrito Federal"},
-        {"code": "ES", "name": "Espírito Santo"},
-        {"code": "GO", "name": "Goiás"},
-        {"code": "MA", "name": "Maranhão"},
-        {"code": "MG", "name": "Minas Gerais"},
-        {"code": "MS", "name": "Mato Grosso do Sul"},
-        {"code": "MT", "name": "Mato Grosso"},
-        {"code": "PA", "name": "Pará"},
-        {"code": "PB", "name": "Paraíba"},
-        {"code": "PE", "name": "Pernambuco"},
-        {"code": "PI", "name": "Piauí"},
-        {"code": "PR", "name": "Paraná"},
-        {"code": "RJ", "name": "Rio de Janeiro"},
-        {"code": "RN", "name": "Rio Grande do Norte"},
-        {"code": "RO", "name": "Rondônia"},
-        {"code": "RR", "name": "Roraima"},
-        {"code": "RS", "name": "Rio Grande do Sul"},
-        {"code": "SC", "name": "Santa Catarina"},
-        {"code": "SE", "name": "Sergipe"},
-        {"code": "SP", "name": "São Paulo"},
-        {"code": "TO", "name": "Tocantins"}
-    ]
-
-def get_polygons_logic():
-    """Lógica para listar polígonos."""
-    return [
-        {"code": "AREA_PROPERTY", "name": "Perímetros dos imóveis", "description": "Property perimeters"},
-        {"code": "APPS", "name": "Área de Preservação Permanente", "description": "Permanent preservation area"},
-        {"code": "NATIVE_VEGETATION", "name": "Remanescente de Vegetação Nativa", "description": "Native Vegetation Remnants"},
-        {"code": "CONSOLIDATED_AREA", "name": "Área Consolidada", "description": "Consolidated Area"},
-        {"code": "AREA_FALL", "name": "Área de Pousio", "description": "Fallow Area"},
-        {"code": "HYDROGRAPHY", "name": "Hidrografia", "description": "Hydrography"},
-        {"code": "RESTRICTED_USE", "name": "Uso Restrito", "description": "Restricted Use"},
-        {"code": "ADMINISTRATIVE_SERVICE", "name": "Servidão Administrativa", "description": "Administrative Servitude"},
-        {"code": "LEGAL_RESERVE", "name": "Reserva Legal", "description": "Legal reserve"}
-    ]
 
 def main():
     """Main function."""
