@@ -1504,6 +1504,41 @@ make build-download-dev    # ou make build-download-pro
 
 ## 📁 Estrutura do Projeto
 
+## 🔧 Correções Recentes
+
+### Correção do Problema do download_state.py
+Durante a refatoração, o arquivo `download_state.py` foi renomeado para `cli.py`. A função `download_state_logic` foi atualizada para usar o novo nome do arquivo e corrigir o diretório de trabalho.
+
+**Correções implementadas:**
+- ✅ Nome do arquivo atualizado de `download_state.py` para `cli.py`
+- ✅ Diretório de trabalho corrigido para `/download-car`
+- ✅ Mensagens de erro atualizadas
+- ✅ Tratamento de exceções melhorado para importações que falham
+
+### Correção do Problema do Nginx (index.html não encontrado)
+O problema não era que o `index.html` não estava sendo encontrado, mas sim que a configuração do nginx não estava fazendo proxy corretamente para todos os endpoints da API.
+
+**Correções implementadas:**
+- ✅ Configuração do proxy nginx atualizada para incluir todos os endpoints da API
+- ✅ Remoção de configuração duplicada que causava conflitos
+- ✅ Frontend agora pode fazer requisições para a API sem problemas
+
+### Correção do Erro de Sintaxe JavaScript
+Corrigido erro de sintaxe no objeto `STATE_TIMEOUTS` no arquivo `index.html` e melhorado o sistema de logs.
+
+**Correções implementadas:**
+- ✅ Erro de sintaxe no objeto `STATE_TIMEOUTS` corrigido
+- ✅ Script `generate-config.nginx.js` melhorado para gerar código JavaScript válido
+- ✅ Sistema de logs aprimorado para exibir todas as mensagens no console
+
+### Atualização do Makefile
+Adicionado alvo `env` para garantir que o arquivo `.config.env` seja sempre copiado para `.env` antes de qualquer operação.
+
+**Correções implementadas:**
+- ✅ Novo alvo `env` que copia `.config.env` para `.env`
+- ✅ Todos os alvos principais de build e Docker Compose agora dependem de `env`
+- ✅ Cópia silenciosa e automática antes de qualquer operação
+
 ```
 download-car/
 ├── download_car/                 # Módulo principal
