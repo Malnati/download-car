@@ -29,7 +29,7 @@ def get_env_config():
     
     return config
 
-# Restaurado de app.py commit d13d049
+# Restaurado de app.py (commit d13d049)
 def download_state_logic(state: str, polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
     """
     Executa o download_state.py como subprocess e retorna o caminho do arquivo baixado.
@@ -72,7 +72,7 @@ def download_state_logic(state: str, polygon: str, folder: str, tries: int, debu
     # Se chegou aqui, o processo não falhou mas o arquivo não foi criado
     raise Exception(f"Download concluído mas arquivo não foi criado: {expected_file}")
 
-# Restaurado de app.py commit d13d049
+# Restaurado de app.py (commit d13d049)
 def download_country_logic(polygon: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
     """
     Baixa shapefiles de dados do CAR para todos os estados do Brasil.
@@ -107,7 +107,7 @@ def download_country_logic(polygon: str, folder: str, tries: int, debug: bool, t
     
     return country_zip_path
 
-# Restaurado de app.py commit d13d049
+# Restaurado de app.py (commit d13d049)
 def download_property_logic(car: str, state: str, folder: str, tries: int, debug: bool, timeout: int, max_retries: int) -> str:
     """
     Baixa dados de uma propriedade pelo número do CAR.
@@ -196,7 +196,7 @@ def buscar_estado_por_car_logic(car: str, state: Optional[str], data_folder: str
             "car_number": car
         }
 
-# Restaurado de app.py commit d13d049
+# Restaurado de app.py (commit d13d049)
 def buscar_propriedade_por_car_logic(car: str, state: Optional[str], data_folder: str) -> Dict:
     """
     Busca uma propriedade pelo número do CAR.
@@ -309,7 +309,7 @@ def get_state_status_logic(state: str, folder: str) -> Dict:
             "message": f"Erro ao verificar arquivos do estado {state}"
         }
 
-# Restaurado de app.py commit d13d049
+# Restaurado de app.py (commit d13d049)
 def download_state_file_logic(state: str, polygon_type: str, folder: str) -> str:
     """
     Faz download de um arquivo específico de um estado.
@@ -350,7 +350,7 @@ def database_status_logic() -> Dict:
         "status": "not_configured"
     }
 
-# Restaurado de app.py commit d13d049
+# Restaurado de app.py (commit d13d049)
 def brasil_config_logic() -> Dict:
     """
     Retorna configurações do Brasil.
@@ -362,7 +362,7 @@ def brasil_config_logic() -> Dict:
         "config": {}
     }
 
-# Restaurado de app.py commit d13d049
+# Restaurado de app.py (commit d13d049)
 def car_data_logic(car_code: Optional[str], state: Optional[str], polygon_type: Optional[str], limit: int) -> Dict:
     """
     Busca dados do CAR no banco de dados.
@@ -378,7 +378,7 @@ def car_data_logic(car_code: Optional[str], state: Optional[str], polygon_type: 
         "data": []
     }
 
-# Restaurado de app.py commit d13d049
+# Restaurado de app.py (commit d13d049)
 def delete_state_logic(state: str, folder: str, include_properties: bool) -> Dict:
     """
     Exclui todos os arquivos relacionados a um estado específico.
@@ -506,7 +506,7 @@ def delete_state_logic(state: str, folder: str, include_properties: bool) -> Dic
             "message": f"Erro ao excluir arquivos do estado {state}"
         }
 
-# Restaurado de app.py commit d13d049
+# Restaurado de app.py (commit d13d049)
 def get_states_logic() -> Dict:
     """
     Retorna a lista de estados brasileiros disponíveis.
@@ -527,7 +527,7 @@ def get_states_logic() -> Dict:
         "description": "Lista completa dos 27 estados brasileiros disponíveis para download"
     }
 
-# Restaurado de app.py commit d13d049
+# Restaurado de app.py (commit d13d049)
 def get_polygons_logic() -> Dict:
     """
     Retorna a lista de tipos de polígonos disponíveis.
