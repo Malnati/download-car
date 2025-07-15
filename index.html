@@ -878,15 +878,13 @@
                         </div>
                         <div class="col-md-12 d-flex align-items-end">
                             <div class="input-group w-100">
-                                <div class="form-floating flex-grow-1">
-                                    <input type="file" class="form-control" id="ibgeFile" accept=".zip"
-                                           data-bs-toggle="tooltip" data-bs-placement="top" 
-                                           data-bs-title="Selecione um arquivo ZIP contendo shapefile do IBGE">
-                                    <label for="ibgeFile">
-                                        <i class="bi bi-file-earmark-zip me-1"></i>
-                                        IBGE
-                                    </label>
-                                </div>
+                                <span class="input-group-text">
+                                    <i class="bi bi-file-earmark-zip me-1"></i>
+                                    IBGE
+                                </span>
+                                <input type="file" class="form-control" id="ibgeFile" accept=".zip"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        data-bs-title="Selecione um arquivo ZIP contendo shapefile do IBGE">
                                 <a href="#" class="btn btn-success input-group-text" onclick="aplicarIBGE(); return false;"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
                                    data-bs-title="Clique para aplicar os dados do IBGE">
