@@ -624,6 +624,11 @@
             border-color: var(--system-green);
             box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.15);
         }
+
+        /* Campo de código CAR com largura limitada */
+        .car-code-input {
+            width: 12ch;
+        }
     </style>
 </head>
 <body>
@@ -1887,12 +1892,13 @@
             // Para todos os outros casos, mostrar o campo com botão de lupa
             return `<div class="d-flex flex-column gap-1">
                         <div class="input-group input-group-sm">
-                            <input type="text" class="form-control" 
+                            <input type="text" class="form-control car-code-input" 
                                    placeholder="Código CAR" 
                                    value="${history.car || ''}" 
                                    onchange="updateCar('${estado}', this.value)"
                                    onkeypress="handleCarKeyPress(event, '${estado}')"
                                    id="car-input-${estado}"
+                                   style="width:12ch;"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
                                    data-bs-title="Digite o código CAR da propriedade do estado ${estado}. Ex: ${estado}-1234567-ABCDEF1234567890">
                             <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
