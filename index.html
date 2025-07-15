@@ -823,6 +823,17 @@
                     <i class="bi bi-database me-2"></i>
                     PostGIS
                     <i class="bi bi-chevron-down ms-auto" id="databaseToggleIcon"></i>
+                    <a href="#" class="icon-link text-success ms-auto" onclick="checkDatabaseStatus(); return false;"
+                       data-bs-toggle="tooltip" data-bs-placement="top"
+                       data-bs-title="Verificar status da conexão com o banco de dados">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        <span class="btn-text">Verificar</span>
+                        <span id="dbStatus" class="badge bg-secondary ms-2">Não verificado</span>
+                        <span class="loading" style="display:none;">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Verificando...
+                        </span>
+                    </a>
                 </div>
                 <div class="card-body api-config-section" id="databaseConfigSection">
                     <div class="row g-3">
@@ -896,16 +907,7 @@
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
                                    data-bs-title="Timeout de conexão em segundos">
                         </div>
-                        <div class="col-md-3 d-flex align-items-end ms-auto">
-                            <div class="d-flex align-items-center gap-2 w-100">
-                                <button type="button" class="btn btn-outline-success btn-sm" onclick="checkDatabaseStatus()"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Verificar status da conexão com o banco de dados">
-                                    <i class="bi bi-arrow-clockwise"></i>
-                                </button>
-                                <span id="dbStatus" class="badge bg-secondary">Não verificado</span>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -2329,12 +2331,14 @@
         async function checkDatabaseStatus() {
             const apiUrl = document.getElementById('apiUrl').value;
             const statusElement = document.getElementById('dbStatus');
-            const button = event.target;
-            const originalText = button.innerHTML;
+            const link = event.target;
+            const btnText = link.querySelector('.btn-text');
+            const loading = link.querySelector('.loading');
             
             // Atualizar botão
-            button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-            button.disabled = true;
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-flex';
+            link.style.pointerEvents = 'none';
             
             // Atualizar status inicial
             statusElement.className = 'badge bg-warning';
@@ -2365,8 +2369,11 @@
                 showNotification('Erro ao verificar status do banco de dados: ' + error.message, 'error');
             } finally {
                 // Restaurar botão
-                button.innerHTML = originalText;
-                button.disabled = false;
+                if (link && link.parentNode) {
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                    link.style.pointerEvents = 'auto';
+                }
             }
         }
 
