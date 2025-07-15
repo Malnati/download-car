@@ -794,7 +794,7 @@
                 <div class="card-header api-config-toggle" onclick="toggleMapBiomasConfig()" 
                      data-bs-toggle="tooltip" data-bs-placement="top" 
                      data-bs-title="Configurações do MapBiomas. Clique para expandir/recolher.">
-                    <i class="bi bi-globe me-2"></i>
+                    <i class="bi bi-geo-alt-fill me-2"></i>
                     Reclassificação do MapBiomas
                     <i class="bi bi-chevron-down ms-auto" id="mapbiomasToggleIcon"></i>
                 </div>
@@ -835,20 +835,28 @@
                             </div>
                         </div>
                         <div class="col-md-6 d-flex align-items-end">
-                            <button type="button" class="btn btn-success" onclick="reclassificarBrasil()"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Clique para reclassificar os dados do arquivo CSV">
+                            <a href="#" class="icon-link text-success" onclick="reclassificarBrasil(); return false;"
+                               data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="Clique para reclassificar os dados do arquivo CSV">
                                 <i class="bi bi-arrow-clockwise me-2"></i>
-                                Reclassificar
-                            </button>
+                                <span class="btn-text">Reclassificar</span>
+                                <span class="loading" style="display:none;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    Reclassificando...
+                                </span>
+                            </a>
                         </div>
                         <div class="col-md-6 d-flex align-items-end">
-                            <button type="button" class="btn btn-outline-primary" onclick="downloadMapBiomas()"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Clique para baixar dados do MapBiomas">
+                            <a href="#" class="icon-link text-primary" onclick="downloadMapBiomas(); return false;"
+                               data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="Clique para baixar dados do MapBiomas">
                                 <i class="bi bi-download me-2"></i>
-                                Download
-                            </button>
+                                <span class="btn-text">Download</span>
+                                <span class="loading" style="display:none;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    Baixando...
+                                </span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -893,12 +901,16 @@
                             </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
-                            <button type="button" class="btn btn-primary" onclick="aplicarIBGE()"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Clique para aplicar os dados do IBGE">
+                            <a href="#" class="icon-link text-success" onclick="aplicarIBGE(); return false;"
+                               data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="Clique para aplicar os dados do IBGE">
                                 <i class="bi bi-check-circle me-2"></i>
-                                Aplicar
-                            </button>
+                                <span class="btn-text">Aplicar</span>
+                                <span class="loading" style="display:none;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    Aplicando...
+                                </span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -2499,12 +2511,14 @@
                 return;
             }
             
-            // Encontrar o botão e mostrar spinner
-            const button = event.target;
-            const originalContent = button.innerHTML;
+            // Encontrar o link e mostrar spinner
+            const link = event.target;
+            const btnText = link.querySelector('.btn-text');
+            const loading = link.querySelector('.loading');
             
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></span>Reclassificando...';
-            button.disabled = true;
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-flex';
+            link.style.pointerEvents = 'none';
             
             try {
                 const apiUrl = document.getElementById('apiUrl').value;
@@ -2531,9 +2545,12 @@
                 console.error('Erro ao reclassificar dados do Brasil:', error);
                 showNotification(`Erro ao reclassificar dados: ${error.message}`, 'error');
             } finally {
-                // Restaurar botão
-                button.innerHTML = originalContent;
-                button.disabled = false;
+                // Restaurar link
+                if (link && link.parentNode) {
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                    link.style.pointerEvents = 'auto';
+                }
             }
         }
 
@@ -2561,12 +2578,14 @@
                 return;
             }
             
-            // Encontrar o botão e mostrar spinner
-            const button = event.target;
-            const originalContent = button.innerHTML;
+            // Encontrar o link e mostrar spinner
+            const link = event.target;
+            const btnText = link.querySelector('.btn-text');
+            const loading = link.querySelector('.loading');
             
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></span>Aplicando...';
-            button.disabled = true;
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-flex';
+            link.style.pointerEvents = 'none';
             
             try {
                 const apiUrl = document.getElementById('apiUrl').value;
@@ -2593,9 +2612,12 @@
                 console.error('Erro ao aplicar dados do IBGE:', error);
                 showNotification(`Erro ao aplicar dados do IBGE: ${error.message}`, 'error');
             } finally {
-                // Restaurar botão
-                button.innerHTML = originalContent;
-                button.disabled = false;
+                // Restaurar link
+                if (link && link.parentNode) {
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                    link.style.pointerEvents = 'auto';
+                }
             }
         }
 
@@ -2617,12 +2639,14 @@
                 return;
             }
             
-            // Encontrar o botão e mostrar spinner
-            const button = event.target;
-            const originalContent = button.innerHTML;
+            // Encontrar o link e mostrar spinner
+            const linkElement = event.target;
+            const btnText = linkElement.querySelector('.btn-text');
+            const loading = linkElement.querySelector('.loading');
             
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></span>Baixando...';
-            button.disabled = true;
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-flex';
+            linkElement.style.pointerEvents = 'none';
             
             try {
                 const apiUrl = document.getElementById('apiUrl').value;
@@ -2649,9 +2673,12 @@
                 console.error('Erro ao baixar dados do MapBiomas:', error);
                 showNotification(`Erro ao baixar dados do MapBiomas: ${error.message}`, 'error');
             } finally {
-                // Restaurar botão
-                button.innerHTML = originalContent;
-                button.disabled = false;
+                // Restaurar link
+                if (linkElement && linkElement.parentNode) {
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                    linkElement.style.pointerEvents = 'auto';
+                }
             }
         }
 
