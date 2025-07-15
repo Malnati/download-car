@@ -1379,7 +1379,7 @@
                                   onclick="makeEditable(this, 'timeout', '${estado.sigla}', ${Math.floor((history.timeout || STATE_TIMEOUTS[estado.sigla] || DEFAULT_TIMEOUT) / 60000)})"
                                   data-bs-toggle="tooltip" data-bs-placement="top" 
                                   data-bs-title="Clique para editar o timeout (em minutos)">
-                                ${Math.floor((history.timeout || STATE_TIMEOUTS[estado.sigla] || DEFAULT_TIMEOUT) / 60000)} min
+                                ${Math.floor((history.timeout || STATE_TIMEOUTS[estado.sigla] || DEFAULT_TIMEOUT) / 60000)}
                             </span>
                         </div>
                     </td>
@@ -1772,7 +1772,9 @@
                     const label = f.polygon_type.replace(/_/g, ' ');
                     return `<a href="${f.download_url}" class="download-link" download
                                 data-bs-toggle="tooltip" data-bs-title="${label} (${f.size_mb.toFixed(1)} MB)">
-                            <i class="bi bi-download me-1"></i>${label} (${f.size_mb.toFixed(1)} MB)
+                            <i class="bi bi-download me-1"></i>
+                            ${label}<br>
+                            (${f.size_mb.toFixed(1)} MB)
                         </a>`;
                 }).join(' ');
                 
@@ -1854,15 +1856,13 @@
                                    onkeypress="handleCarKeyPress(event, '${estado}')"
                                    id="car-input-${estado}"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                   data-bs-title="Digite o código CAR da propriedade que deseja buscar. Ex: MA-1234567-ABCDEF1234567890">
+                                   data-bs-title="Digite o código CAR da propriedade do estado ${estado}. Ex: ${estado}-1234567-ABCDEF1234567890">
                             <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
                                     data-bs-toggle="tooltip" data-bs-placement="top" 
                                     data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
                                 <i class="bi bi-search"></i>
                             </button>
                         </div>
-                        <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                              data-bs-title="Informe o código CAR da propriedade rural que deseja baixar">Informe CAR</span>
                     </div>`;
         }
 
