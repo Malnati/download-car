@@ -92,6 +92,12 @@
             font-size: 1.1rem;
             padding: 1.25rem 1.5rem;
             border: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            position: relative;
         }
 
         .card-body {
@@ -587,6 +593,75 @@
             text-decoration: none;
         }
 
+        /* Icon links dentro do card-header (fundo verde) */
+        .card-header .icon-link {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card-header .icon-link:hover {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            text-decoration: none;
+        }
+
+        .card-header .icon-link.text-primary {
+            color: white !important;
+        }
+
+        .card-header .icon-link.text-primary:hover {
+            color: white !important;
+        }
+
+        /* Garantir que os botões de sincronização sejam visíveis */
+        .card-header .icon-link {
+            position: relative;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        /* Ajustar layout do card-header para acomodar os botões */
+        .card-header.api-config-toggle {
+            min-height: 60px;
+        }
+
+        /* Garantir que os botões de sincronização sejam visíveis e bem posicionados */
+        .card-header .icon-link {
+            margin-left: auto;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 100;
+        }
+
+        /* Garantir que o conteúdo do card-header seja visível */
+        .card-header > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Debug: adicionar borda para visualizar os botões */
+        .card-header .icon-link {
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            font-weight: 600;
+            padding: 0.5rem 1rem !important;
+        }
+
+        /* Ajustar o layout do card-header para ter espaço suficiente */
+        .card-header {
+            padding-right: 1rem;
+        }
+
+        /* Garantir que o ícone de toggle não interfira com os botões */
+        .card-header .bi-chevron-down,
+        .card-header .bi-chevron-up {
+            margin-left: 0.5rem;
+        }
+
         .icon-link:active {
             transform: translateY(1px);
         }
@@ -847,6 +922,16 @@
                     <i class="bi bi-geo-alt-fill me-2"></i>
                     Reclassificação
                     <i class="bi bi-chevron-down ms-auto" id="mapbiomasToggleIcon"></i>
+                    <a href="#" class="icon-link text-primary ms-3" onclick="syncReclassificacao(); return false;"
+                       data-bs-toggle="tooltip" data-bs-placement="top" 
+                       data-bs-title="Sincronizar dados desta seção com o banco de dados">
+                        <i class="bi bi-database me-1"></i>
+                        <span class="btn-text">Sincronizar</span>
+                        <span class="loading" style="display:none;">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Sincronizando...
+                        </span>
+                    </a>
                 </div>
                 <div class="card-body api-config-section" id="mapbiomasConfigSection">
                     <div class="row g-3">
@@ -913,6 +998,16 @@
                     <i class="bi bi-building me-2"></i>
                     IBGE
                     <i class="bi bi-chevron-down ms-auto" id="ibgeToggleIcon"></i>
+                    <a href="#" class="icon-link text-primary ms-3" onclick="syncIBGE(); return false;"
+                       data-bs-toggle="tooltip" data-bs-placement="top" 
+                       data-bs-title="Sincronizar dados desta seção com o banco de dados">
+                        <i class="bi bi-database me-1"></i>
+                        <span class="btn-text">Sincronizar</span>
+                        <span class="loading" style="display:none;">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Sincronizando...
+                        </span>
+                    </a>
                 </div>
                 <div class="card-body api-config-section" id="ibgeConfigSection">
                     <div class="row g-3">
@@ -955,6 +1050,16 @@
                     <i class="bi bi-vector-pen me-2"></i>
                     Interseção
                     <i class="bi bi-chevron-down ms-auto" id="intercessaoToggleIcon"></i>
+                    <a href="#" class="icon-link text-primary ms-3" onclick="syncIntercessao(); return false;"
+                       data-bs-toggle="tooltip" data-bs-placement="top" 
+                       data-bs-title="Sincronizar dados desta seção com o banco de dados">
+                        <i class="bi bi-database me-1"></i>
+                        <span class="btn-text">Sincronizar</span>
+                        <span class="loading" style="display:none;">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Sincronizando...
+                        </span>
+                    </a>
                 </div>
                 <div class="card-body api-config-section" id="intercessaoConfigSection">
                     <div class="row g-3">
@@ -2982,6 +3087,129 @@
             } catch (error) {
                 console.error('Erro ao baixar resultado da interseção:', error);
                 showNotification(`Erro ao baixar resultado: ${error.message}`, 'error');
+            }
+        }
+
+        // Função para sincronizar dados da seção Reclassificação
+        async function syncReclassificacao() {
+            const link = event.target;
+            const btnText = link.querySelector('.btn-text');
+            const loading = link.querySelector('.loading');
+            
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-flex';
+            link.style.pointerEvents = 'none';
+
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const formData = new FormData();
+                formData.append('sync_type', 'reclassificacao');
+                formData.append('section', 'mapbiomas');
+                
+                const response = await fetch(`${apiUrl}/sync_section`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification('Dados da seção Reclassificação sincronizados com sucesso!', 'success');
+                    console.log('Sincronização da Reclassificação:', result);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || errorData.error || `Erro ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Erro ao sincronizar dados da Reclassificação:', error);
+                showNotification(`Erro ao sincronizar dados da Reclassificação: ${error.message}`, 'error');
+            } finally {
+                if (link && link.parentNode) {
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                    link.style.pointerEvents = 'auto';
+                }
+            }
+        }
+
+        // Função para sincronizar dados da seção IBGE
+        async function syncIBGE() {
+            const link = event.target;
+            const btnText = link.querySelector('.btn-text');
+            const loading = link.querySelector('.loading');
+            
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-flex';
+            link.style.pointerEvents = 'none';
+
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const formData = new FormData();
+                formData.append('sync_type', 'ibge');
+                formData.append('section', 'ibge');
+                
+                const response = await fetch(`${apiUrl}/sync_section`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification('Dados da seção IBGE sincronizados com sucesso!', 'success');
+                    console.log('Sincronização do IBGE:', result);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || errorData.error || `Erro ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Erro ao sincronizar dados do IBGE:', error);
+                showNotification(`Erro ao sincronizar dados do IBGE: ${error.message}`, 'error');
+            } finally {
+                if (link && link.parentNode) {
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                    link.style.pointerEvents = 'auto';
+                }
+            }
+        }
+
+        // Função para sincronizar dados da seção Interseção
+        async function syncIntercessao() {
+            const link = event.target;
+            const btnText = link.querySelector('.btn-text');
+            const loading = link.querySelector('.loading');
+            
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-flex';
+            link.style.pointerEvents = 'none';
+
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const formData = new FormData();
+                formData.append('sync_type', 'intercessao');
+                formData.append('section', 'intercessao');
+                
+                const response = await fetch(`${apiUrl}/sync_section`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification('Dados da seção Interseção sincronizados com sucesso!', 'success');
+                    console.log('Sincronização da Interseção:', result);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || errorData.error || `Erro ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Erro ao sincronizar dados da Interseção:', error);
+                showNotification(`Erro ao sincronizar dados da Interseção: ${error.message}`, 'error');
+            } finally {
+                if (link && link.parentNode) {
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                    link.style.pointerEvents = 'auto';
+                }
             }
         }
 
