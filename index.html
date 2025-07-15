@@ -811,56 +811,49 @@
                                 Reclassificação de códigos do shape baseado na tabela de reclassificação
                             </h6>
                         </div>
-                        <div class="col-md-6">
-                            <label for="csvFile" class="form-label">
-                        
-                                Tabela de reclassificação (CSV)
-                            </label>
-                            <input type="file" class="form-control" id="csvFile" accept=".csv"
+                                                <div class="col-md-6 d-flex align-items-end">
+                            <div class="input-group w-100">
+                                <div class="form-floating flex-grow-1">
+                                    <input type="file" class="form-control" id="csvFile" accept=".csv"
+                                           data-bs-toggle="tooltip" data-bs-placement="top" 
+                                           data-bs-title="Selecione um arquivo CSV para upload e reclassificação">
+                                    <label for="csvFile">Tabela de reclassificação (CSV)</label>
+                                </div>
+                                <a href="#" class="btn btn-success input-group-text" onclick="reclassificarBrasil(); return false;"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                   data-bs-title="Selecione um arquivo CSV para upload e reclassificação">
-                            <div class="form-text">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Selecione um arquivo CSV para processamento
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="mapbiomasLink" class="form-label">
-                                <i class="bi bi-link-45deg me-1"></i>
-                                MapBiomas (GeoTiff)
-                            </label>
-                            <input type="url" class="form-control" id="mapbiomasLink" 
-                                   placeholder="https://..."
-                                   data-bs-toggle="tooltip" data-bs-placement="top" 
-                                   data-bs-title="Informe o link do MapBiomas para download">
-                            <div class="form-text">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Informe o link do MapBiomas
+                                   data-bs-title="Clique para reclassificar os dados do arquivo CSV">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    <span class="btn-text">Reclassificar</span>
+                                    <span class="loading" style="display:none;">
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                        Reclassificando...
+                                    </span>
+                                </a>
                             </div>
                         </div>
                         <div class="col-md-6 d-flex align-items-end">
-                            <a href="#" class="icon-link text-success" onclick="reclassificarBrasil(); return false;"
-                               data-bs-toggle="tooltip" data-bs-placement="top" 
-                               data-bs-title="Clique para reclassificar os dados do arquivo CSV">
-                                <i class="bi bi-arrow-clockwise me-2"></i>
-                                <span class="btn-text">Reclassificar</span>
-                                <span class="loading" style="display:none;">
-                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                    Reclassificando...
-                                </span>
-                            </a>
-                        </div>
-                        <div class="col-md-6 d-flex align-items-end">
-                            <a href="#" class="icon-link text-primary" onclick="downloadMapBiomas(); return false;"
-                               data-bs-toggle="tooltip" data-bs-placement="top" 
-                               data-bs-title="Clique para baixar dados do MapBiomas">
-                                <i class="bi bi-download me-2"></i>
-                                <span class="btn-text">Download</span>
-                                <span class="loading" style="display:none;">
-                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                    Baixando...
-                                </span>
-                            </a>
+                            <div class="input-group w-100">
+                                <div class="form-floating flex-grow-1">
+                                    <input type="url" class="form-control" id="mapbiomasLink" 
+                                           placeholder="https://..."
+                                           data-bs-toggle="tooltip" data-bs-placement="top" 
+                                           data-bs-title="Informe o link do MapBiomas para download">
+                                    <label for="mapbiomasLink">
+                                        <i class="bi bi-link-45deg me-1"></i>
+                                        MapBiomas (GeoTiff)
+                                    </label>
+                                </div>
+                                <a href="#" class="btn btn-primary input-group-text" onclick="downloadMapBiomas(); return false;"
+                                   data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   data-bs-title="Clique para baixar dados do MapBiomas">
+                                    <i class="bi bi-download me-1"></i>
+                                    <span class="btn-text">Download</span>
+                                    <span class="loading" style="display:none;">
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                        Baixando...
+                                    </span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -883,30 +876,28 @@
                                 Preenchimento de códigos IBGE
                             </h6>
                         </div>
-                        <div class="col-md-8">
-                            <label for="ibgeFile" class="form-label">
-                                <i class="bi bi-file-earmark-zip me-1"></i>
-                                IBGE
-                            </label>
-                            <input type="file" class="form-control" id="ibgeFile" accept=".zip"
+                        <div class="col-md-12 d-flex align-items-end">
+                            <div class="input-group w-100">
+                                <div class="form-floating flex-grow-1">
+                                    <input type="file" class="form-control" id="ibgeFile" accept=".zip"
+                                           data-bs-toggle="tooltip" data-bs-placement="top" 
+                                           data-bs-title="Selecione um arquivo ZIP contendo shapefile do IBGE">
+                                    <label for="ibgeFile">
+                                        <i class="bi bi-file-earmark-zip me-1"></i>
+                                        IBGE
+                                    </label>
+                                </div>
+                                <a href="#" class="btn btn-success input-group-text" onclick="aplicarIBGE(); return false;"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                   data-bs-title="Selecione um arquivo ZIP contendo shapefile do IBGE">
-                            <div class="form-text">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Selecione um arquivo ZIP contendo shapefile do IBGE
+                                   data-bs-title="Clique para aplicar os dados do IBGE">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    <span class="btn-text">Aplicar</span>
+                                    <span class="loading" style="display:none;">
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                        Aplicando...
+                                    </span>
+                                </a>
                             </div>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <a href="#" class="icon-link text-success" onclick="aplicarIBGE(); return false;"
-                               data-bs-toggle="tooltip" data-bs-placement="top" 
-                               data-bs-title="Clique para aplicar os dados do IBGE">
-                                <i class="bi bi-check-circle me-2"></i>
-                                <span class="btn-text">Aplicar</span>
-                                <span class="loading" style="display:none;">
-                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                    Aplicando...
-                                </span>
-                            </a>
                         </div>
                     </div>
                 </div>
