@@ -811,14 +811,15 @@
                                 Reclassificação de códigos do shape baseado na tabela de reclassificação
                             </h6>
                         </div>
-                                                <div class="col-md-6 d-flex align-items-end">
+                        <div class="col-md-6 d-flex align-items-end">
                             <div class="input-group w-100">
-                                <div class="form-floating flex-grow-1">
-                                    <input type="file" class="form-control" id="csvFile" accept=".csv"
-                                           data-bs-toggle="tooltip" data-bs-placement="top" 
-                                           data-bs-title="Selecione um arquivo CSV para upload e reclassificação">
-                                    <label for="csvFile">Tabela de reclassificação (CSV)</label>
-                                </div>
+                                <span class="input-group-text">
+                                    <i class="bi bi-file-earmark-spreadsheet me-1"></i>
+                                    CSV
+                                </span>
+                                <input type="file" class="form-control" id="csvFile" accept=".csv"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        data-bs-title="Selecione um arquivo CSV para upload e reclassificação">
                                 <a href="#" class="btn btn-success input-group-text" onclick="reclassificarBrasil(); return false;"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
                                    data-bs-title="Clique para reclassificar os dados do arquivo CSV">
