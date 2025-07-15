@@ -1552,15 +1552,14 @@
             }
 
             // Encontrar o botão de busca e mostrar spinner
-            const searchButton = carInput ? carInput.closest('.input-group').querySelector('button') : null;
+            const searchButton = carInput ? carInput.closest('.input-group').querySelector('a[onclick*="searchProperty"]') : null;
             
             if (searchButton) {
-                const originalIcon = searchButton.querySelector('i');
-                if (originalIcon) {
-                    originalIcon.style.display = 'none';
-                }
-                searchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></span>';
-                searchButton.disabled = true;
+                const btnText = searchButton.querySelector('.btn-text');
+                const loading = searchButton.querySelector('.loading');
+                if (btnText) btnText.style.display = 'none';
+                if (loading) loading.style.display = 'inline-flex';
+                searchButton.style.pointerEvents = 'none';
             }
 
             try {
@@ -1597,9 +1596,12 @@
                 showNotification(`Erro ao buscar propriedade ${car}: ${error.message}`, 'error');
             } finally {
                 // Restaurar botão
-                if (searchButton) {
-                    searchButton.innerHTML = '<i class="bi bi-search"></i>';
-                    searchButton.disabled = false;
+                if (searchButton && searchButton.parentNode) {
+                    const btnText = searchButton.querySelector('.btn-text');
+                    const loading = searchButton.querySelector('.loading');
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                    searchButton.style.pointerEvents = 'auto';
                 }
             }
         }
@@ -1924,7 +1926,11 @@
             
             // Para todos os outros casos, mostrar o campo com botão de lupa
             return `<div class="d-flex flex-column gap-1">
-                        <div class="input-group input-group-sm">
+                        <div class="input-group w-100">
+                            <span class="input-group-text">
+                                <i class="bi bi-house me-1"></i>
+                                CAR
+                            </span>
                             <input type="text" class="form-control car-code-input" 
                                    placeholder="Código CAR" 
                                    value="${history.car || ''}" 
@@ -1934,11 +1940,16 @@
                                    style="width:12ch;"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
                                    data-bs-title="Digite o código CAR da propriedade do estado ${estado}. Ex: ${estado}-1234567-ABCDEF1234567890">
-                            <button class="btn btn-outline-secondary" type="button" onclick="searchProperty('${estado}')"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
-                                <i class="bi bi-search"></i>
-                            </button>
+                            <a href="#" class="btn btn-success input-group-text" onclick="searchProperty('${estado}'); return false;"
+                               data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
+                                <i class="bi bi-search me-1"></i>
+                                <span class="btn-text">Buscar</span>
+                                <span class="loading" style="display:none;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    Buscando...
+                                </span>
+                            </a>
                         </div>
                     </div>`;
         }
@@ -1951,77 +1962,91 @@
                     `CAR ${history.syncedCar}` : 
                     `Estado ${estado}`;
                 const lastSync = history.lastSync ? formatDateTime(history.lastSync) : '';
-                return `<span class="text-success small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="${syncInfo} sincronizado com sucesso${lastSync ? ` em ${lastSync}` : ''}">
-                            <i class="bi bi-check-circle-fill me-1"></i>
-                            Sincronizado
-                        </span>`;
+                return `<div class="d-flex justify-content-center align-items-center h-100">
+                            <span class="text-success small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="${syncInfo} sincronizado com sucesso${lastSync ? ` em ${lastSync}` : ''}">
+                                <i class="bi bi-check-circle-fill me-1"></i>
+                                Sincronizado
+                            </span>
+                        </div>`;
             }
             
             // Se o download foi bem-sucedido ou há arquivos prontos, mostrar botão "Sincronizar"
             if (history.status === 'success' || history.status === 'ready') {
-                return `<a class="icon-link text-primary" href="#" onclick="syncToDatabase('${estado}'); return false;" id="btn-sync-${estado}"
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Clique para sincronizar os dados de ${estado} com o banco de dados PostgreSQL/PostGIS">
-                            <i class="bi bi-database"></i>
-                            <span class="btn-text">Sincronizar</span>
-                            <span class="loading" style="display: none;">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
-                                Sincronizando...
-                            </span>
-                        </a>`;
+                return `<div class="d-flex justify-content-center align-items-center h-100">
+                            <a class="icon-link text-primary" href="#" onclick="syncToDatabase('${estado}'); return false;" id="btn-sync-${estado}"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Clique para sincronizar os dados de ${estado} com o banco de dados PostgreSQL/PostGIS">
+                                <i class="bi bi-database"></i>
+                                <span class="btn-text">Sincronizar</span>
+                                <span class="loading" style="display: none;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                                    Sincronizando...
+                                </span>
+                            </a>
+                        </div>`;
             }
             // Se está em andamento, mostrar botão "Sincronizar" desabilitado só com spinner
             if (history.status === 'pending') {
-                return `<a class="icon-link" href="#" id="btn-sync-${estado}" style="pointer-events: none; opacity: 0.7;"
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Download em andamento. Aguarde a conclusão para sincronizar.">
-                            <i class="bi bi-database"></i>
-                            <span class="loading" style="display: inline-flex; align-items: center;">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
-                            </span>
-                        </a>`;
+                return `<div class="d-flex justify-content-center align-items-center h-100">
+                            <a class="icon-link" href="#" id="btn-sync-${estado}" style="pointer-events: none; opacity: 0.7;"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Download em andamento. Aguarde a conclusão para sincronizar.">
+                                <i class="bi bi-database"></i>
+                                <span class="loading" style="display: inline-flex; align-items: center;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                                </span>
+                            </a>
+                        </div>`;
             }
             // Se não há status, erro ou nenhum download foi realizado, não mostrar botão
-            return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Nenhum download realizado ainda. Requisite um download primeiro.">-</span>`;
+            return `<div class="d-flex justify-content-center align-items-center h-100">
+                        <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Nenhum download realizado ainda. Requisite um download primeiro.">-</span>
+                    </div>`;
         }
 
         // Obter botão de ação (Limpar)
         function getActionButton(estado, history) {
             // Se o download foi bem-sucedido ou há arquivos prontos, mostrar botão "Limpar"
             if (history.status === 'success' || history.status === 'ready') {
-                return `<a class="icon-link text-danger" href="#" onclick="clearEstado('${estado}'); return false;" id="btn-clear-${estado}"
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Clique para limpar o download de ${estado}. Isso excluirá os arquivos do servidor e permitirá uma nova requisição.">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                            </svg>
-                            <span class="btn-text">Limpar</span>
-                            <span class="loading" style="display: none;">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
-                                Limpando...
-                            </span>
-                        </a>`;
+                return `<div class="d-flex justify-content-center align-items-center h-100">
+                            <a class="icon-link text-danger" href="#" onclick="clearEstado('${estado}'); return false;" id="btn-clear-${estado}"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Clique para limpar o download de ${estado}. Isso excluirá os arquivos do servidor e permitirá uma nova requisição.">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                </svg>
+                                <span class="btn-text">Limpar</span>
+                                <span class="loading" style="display: none;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                                    Limpando...
+                                </span>
+                            </a>
+                        </div>`;
             }
             // Se está em andamento, mostrar botão "Limpar" desabilitado só com spinner
             if (history.status === 'pending') {
-                return `<a class="icon-link" href="#" id="btn-clear-${estado}" style="pointer-events: none; opacity: 0.7;"
-                                data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Download em andamento. Aguarde a conclusão para limpar.">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                            </svg>
-                            <span class="loading" style="display: inline-flex; align-items: center;">
-                                <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
-                            </span>
-                        </a>`;
+                return `<div class="d-flex justify-content-center align-items-center h-100">
+                            <a class="icon-link" href="#" id="btn-clear-${estado}" style="pointer-events: none; opacity: 0.7;"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" 
+                                    data-bs-title="Download em andamento. Aguarde a conclusão para limpar.">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                </svg>
+                                <span class="loading" style="display: inline-flex; align-items: center;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"><span class="visually-hidden">Loading...</span></span>
+                                </span>
+                            </a>
+                        </div>`;
             }
             // Se não há status, erro ou nenhum download foi realizado, não mostrar botão
-            return `<span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
-                                data-bs-title="Nenhum download realizado ainda. Requisite um download primeiro.">-</span>`;
+            return `<div class="d-flex justify-content-center align-items-center h-100">
+                        <span class="text-muted small" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                data-bs-title="Nenhum download realizado ainda. Requisite um download primeiro.">-</span>
+                    </div>`;
         }
 
         // Obter ícone de status com Bootstrap Icons
