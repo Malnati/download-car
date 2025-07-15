@@ -630,9 +630,19 @@
             width: 12ch;
         }
 
+        .input-group {
+            /* Faz todos os elementos filhos preencherem a mesma altura */
+            display: flex;
+            align-items: stretch;
+        }
         .input-group > .btn,
         .input-group > .input-group-text {
-            align-self: center;
+            /* Estica os botões para igualar a altura do campo de upload */
+            align-self: stretch;
+            /* centraliza o conteúdo dentro do botão */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
