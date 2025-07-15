@@ -695,30 +695,46 @@
                                    data-bs-title="URL completa do endpoint da API. Ex: http://servidor:porta/">
                         </div>
                         <div class="col-md-6 d-flex align-items-end gap-2">
-                            <button type="button" class="btn btn-outline-primary" onclick="testConnection()"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Testar se a API está acessível e respondendo corretamente">
+                            <a href="#" class="icon-link text-primary" onclick="testConnection(); return false;"
+                               data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="Testar se a API está acessível e respondendo corretamente">
                                 <i class="bi bi-plug me-2"></i>
-                                Testar Conexão
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" onclick="testToasts()"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Testar as notificações toast do sistema">
+                                <span class="btn-text">Testar Conexão</span>
+                                <span class="loading" style="display:none;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    Testando...
+                                </span>
+                            </a>
+                            <a href="#" class="icon-link text-info" onclick="testToasts(); return false;"
+                               data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="Testar as notificações toast do sistema">
                                 <i class="bi bi-bell me-2"></i>
-                                Testar Toasts
-                            </button>
-                            <button type="button" class="btn btn-outline-danger" onclick="clearAllEstados()"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Limpar todos os downloads e arquivos do servidor">
+                                <span class="btn-text">Testar Toasts</span>
+                                <span class="loading" style="display:none;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    Testando...
+                                </span>
+                            </a>
+                            <a href="#" class="icon-link text-danger" onclick="clearAllEstados(); return false;"
+                               data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="Limpar todos os downloads e arquivos do servidor">
                                 <i class="bi bi-trash me-2"></i>
-                                Limpar Todos
-                            </button>
-                            <button type="button" class="btn btn-outline-info" onclick="checkAllEstadosStatus()"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" 
-                                    data-bs-title="Verificar status de todos os estados novamente">
+                                <span class="btn-text">Limpar Todos</span>
+                                <span class="loading" style="display:none;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    Limpando...
+                                </span>
+                            </a>
+                            <a href="#" class="icon-link text-primary" onclick="checkAllEstadosStatus(); return false;"
+                               data-bs-toggle="tooltip" data-bs-placement="top" 
+                               data-bs-title="Verificar status de todos os estados novamente">
                                 <i class="bi bi-arrow-clockwise me-2"></i>
-                                Verificar Status
-                            </button>
+                                <span class="btn-text">Verificar Status</span>
+                                <span class="loading" style="display:none;">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    Verificando...
+                                </span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -1375,8 +1391,45 @@
             showNotification('Erro de teste simulado para SP', 'error');
         }
 
+        // Testar conexão com a API
+        async function testConnection() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const link = event.target;
+            const btnText = link.querySelector('.btn-text');
+            const loading = link.querySelector('.loading');
+            
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-flex';
+            link.style.pointerEvents = 'none';
+
+            try {
+                const response = await fetch(`${apiUrl}/`);
+                if (response.ok) {
+                    showNotification('Conexão estabelecida com sucesso!', 'success');
+                } else {
+                    showNotification('Erro na conexão com a API', 'error');
+                }
+            } catch (error) {
+                showNotification('Erro ao conectar com a API: ' + error.message, 'error');
+            } finally {
+                if (link && link.parentNode) {
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                    link.style.pointerEvents = 'auto';
+                }
+            }
+        }
+
         // Função de teste para toasts
         function testToasts() {
+            const link = event.target;
+            const btnText = link.querySelector('.btn-text');
+            const loading = link.querySelector('.loading');
+            
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-flex';
+            link.style.pointerEvents = 'none';
+            
             console.log('Testando toasts...');
             showNotification('Teste de notificação de sucesso!', 'success');
             setTimeout(() => {
@@ -1385,6 +1438,15 @@
             setTimeout(() => {
                 showNotification('Teste de notificação de informação!', 'info');
             }, 2000);
+            
+            // Restaurar após um breve delay
+            setTimeout(() => {
+                if (link && link.parentNode) {
+                    if (btnText) btnText.style.display = 'inline-block';
+                    if (loading) loading.style.display = 'none';
+                    link.style.pointerEvents = 'auto';
+                }
+            }, 3000);
         }
 
         // Download do arquivo
@@ -1842,14 +1904,13 @@
             }
             
             if (confirm(`Tem certeza que deseja limpar TODOS os downloads (${estadosComDownload.length} estados)? Isso excluirá todos os arquivos do servidor.`)) {
-                const clearButton = document.querySelector('button[onclick="clearAllEstados()"]');
-                let originalContent = '';
+                const link = event.target;
+                const btnText = link.querySelector('.btn-text');
+                const loading = link.querySelector('.loading');
                 
-                if (clearButton) {
-                    originalContent = clearButton.innerHTML;
-                    clearButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></span>Limpando...';
-                    clearButton.disabled = true;
-                }
+                if (btnText) btnText.style.display = 'none';
+                if (loading) loading.style.display = 'inline-flex';
+                link.style.pointerEvents = 'none';
 
                 try {
                     const apiUrl = document.getElementById('apiUrl').value;
@@ -1903,10 +1964,11 @@
                     console.error('Erro geral na limpeza:', error);
                     showNotification(`Erro ao limpar todos os estados: ${error.message}`, 'error');
                 } finally {
-                    // Restaurar botão
-                    if (clearButton) {
-                        clearButton.innerHTML = originalContent;
-                        clearButton.disabled = false;
+                    // Restaurar link
+                    if (link && link.parentNode) {
+                        if (btnText) btnText.style.display = 'inline-block';
+                        if (loading) loading.style.display = 'none';
+                        link.style.pointerEvents = 'auto';
                     }
                 }
             }
@@ -2019,16 +2081,16 @@
                                    style="width:12ch;"
                                    data-bs-toggle="tooltip" data-bs-placement="top" 
                                    data-bs-title="Digite o código CAR da propriedade do estado ${estado}. Ex: ${estado}-1234567-ABCDEF1234567890">
-                            <a href="#" class="btn btn-success input-group-text" onclick="searchProperty('${estado}'); return false;"
-                               data-bs-toggle="tooltip" data-bs-placement="top" 
-                               data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
-                                <i class="bi bi-search me-1"></i>
-                                <span class="btn-text">Buscar</span>
-                                <span class="loading" style="display:none;">
-                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                    Buscando...
-                                </span>
-                            </a>
+                                <a href="#" class="btn btn-success input-group-text" onclick="searchProperty('${estado}'); return false;"
+                                   data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   data-bs-title="Clique para buscar a propriedade pelo código CAR informado">
+                                    <i class="bi bi-search me-1"></i>
+                                    <span class="btn-text">Buscar</span>
+                                    <span class="loading" style="display:none;">
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                        Buscando...
+                                    </span>
+                                </a>
                         </div>
                     </div>`;
         }
@@ -2165,30 +2227,6 @@
         // Carregar histórico
         function loadDownloadHistory() {
             console.log('Histórico carregado:', downloadHistory);
-        }
-
-        // Testar conexão com a API
-        async function testConnection() {
-            const apiUrl = document.getElementById('apiUrl').value;
-            const button = event.target;
-            const originalText = button.innerHTML;
-            
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Testando...';
-            button.disabled = true;
-
-            try {
-                const response = await fetch(`${apiUrl}/`);
-                if (response.ok) {
-                    showNotification('Conexão estabelecida com sucesso!', 'success');
-                } else {
-                    showNotification('Erro na conexão com a API', 'error');
-                }
-            } catch (error) {
-                showNotification('Erro ao conectar com a API: ' + error.message, 'error');
-            } finally {
-                button.innerHTML = originalText;
-                button.disabled = false;
-            }
         }
 
         // Verificar status do banco de dados
@@ -2598,6 +2636,15 @@
             let successCount = 0;
             let errorCount = 0;
             
+            // Encontrar o link e mostrar spinner
+            const link = event.target;
+            const btnText = link.querySelector('.btn-text');
+            const loading = link.querySelector('.loading');
+            
+            if (btnText) btnText.style.display = 'none';
+            if (loading) loading.style.display = 'inline-flex';
+            link.style.pointerEvents = 'none';
+            
             // Fazer requisições em paralelo para melhor performance
             const promises = estados.map(async (estado) => {
                 try {
@@ -2618,6 +2665,13 @@
                 showNotification(`Verificação de status concluída com ${errorCount} erro(s). Verifique o console para detalhes.`, 'warning');
             } else {
                 showNotification(`Status de todos os estados verificado com sucesso em ${totalTime}ms!`, 'success');
+            }
+            
+            // Restaurar link
+            if (link && link.parentNode) {
+                if (btnText) btnText.style.display = 'inline-block';
+                if (loading) loading.style.display = 'none';
+                link.style.pointerEvents = 'auto';
             }
         }
 
