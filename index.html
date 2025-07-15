@@ -669,13 +669,14 @@
         <div class="container">
             <!-- API -->
             <div class="card mb-4">
-                <div class="card-header" 
+                <div class="card-header api-config-toggle" onclick="toggleApiConfig()" 
                      data-bs-toggle="tooltip" data-bs-placement="top" 
-                     data-bs-title="Configurações da API do sistema">
+                     data-bs-title="Configurações da API do sistema. Clique para expandir/recolher.">
                     <i class="bi bi-link-45deg me-2"></i>
                     API
+                    <i class="bi bi-chevron-down ms-auto" id="apiToggleIcon"></i>
                 </div>
-                <div class="card-body">
+                <div class="card-body api-config-section" id="apiConfigSection">
                     <div class="row g-3">
                         <!-- Configurações da API -->
                         <div class="col-12">
@@ -725,13 +726,14 @@
 
             <!-- Banco de Dados -->
             <div class="card mb-4">
-                <div class="card-header" 
+                <div class="card-header api-config-toggle" onclick="toggleDatabaseConfig()" 
                      data-bs-toggle="tooltip" data-bs-placement="top" 
-                     data-bs-title="Configurações do banco de dados PostgreSQL/PostGIS">
+                     data-bs-title="Configurações do banco de dados PostgreSQL/PostGIS. Clique para expandir/recolher.">
                     <i class="bi bi-database me-2"></i>
                     Banco de Dados
+                    <i class="bi bi-chevron-down ms-auto" id="databaseToggleIcon"></i>
                 </div>
-                <div class="card-body">
+                <div class="card-body api-config-section" id="databaseConfigSection">
                     <div class="row g-3">
                         <!-- Configurações do Banco de Dados -->
                         <div class="col-12">
@@ -1229,7 +1231,7 @@
         // Alternar exibição da configuração da API
         function toggleApiConfig() {
             const configSection = document.getElementById('apiConfigSection');
-            const toggleIcon = document.getElementById('configToggleIcon');
+            const toggleIcon = document.getElementById('apiToggleIcon');
             
             if (configSection.classList.contains('show')) {
                 configSection.classList.remove('show');
@@ -1258,6 +1260,20 @@
         function toggleIBGEConfig() {
             const configSection = document.getElementById('ibgeConfigSection');
             const toggleIcon = document.getElementById('ibgeToggleIcon');
+            
+            if (configSection.classList.contains('show')) {
+                configSection.classList.remove('show');
+                toggleIcon.className = 'bi bi-chevron-down ms-auto';
+            } else {
+                configSection.classList.add('show');
+                toggleIcon.className = 'bi bi-chevron-up ms-auto';
+            }
+        }
+
+        // Alternar exibição da configuração do Banco de Dados
+        function toggleDatabaseConfig() {
+            const configSection = document.getElementById('databaseConfigSection');
+            const toggleIcon = document.getElementById('databaseToggleIcon');
             
             if (configSection.classList.contains('show')) {
                 configSection.classList.remove('show');
