@@ -933,13 +933,14 @@
 
             <!-- Intercessão -->
             <div class="card mb-4">
-                <div class="card-header" 
+                <div class="card-header api-config-toggle" onclick="toggleIntercessaoConfig()" 
                      data-bs-toggle="tooltip" data-bs-placement="top" 
                      data-bs-title="Intercessão de shapefiles. Clique para expandir/recolher.">
                     <i class="bi bi-vector-pen me-2"></i>
                     Intercessão
+                    <i class="bi bi-chevron-down ms-auto" id="intercessaoToggleIcon"></i>
                 </div>
-                <div class="card-body">
+                <div class="card-body api-config-section" id="intercessaoConfigSection">
                     <div class="row g-3">
                         <!-- Formulário de Intercessão -->
                         <div class="col-12">
@@ -1338,6 +1339,20 @@
         function toggleDatabaseConfig() {
             const configSection = document.getElementById('databaseConfigSection');
             const toggleIcon = document.getElementById('databaseToggleIcon');
+            
+            if (configSection.classList.contains('show')) {
+                configSection.classList.remove('show');
+                toggleIcon.className = 'bi bi-chevron-down ms-auto';
+            } else {
+                configSection.classList.add('show');
+                toggleIcon.className = 'bi bi-chevron-up ms-auto';
+            }
+        }
+
+        // Alternar exibição da configuração do Intercessão
+        function toggleIntercessaoConfig() {
+            const configSection = document.getElementById('intercessaoConfigSection');
+            const toggleIcon = document.getElementById('intercessaoToggleIcon');
             
             if (configSection.classList.contains('show')) {
                 configSection.classList.remove('show');
