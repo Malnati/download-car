@@ -791,14 +791,14 @@
 
             <!-- MapBiomas -->
             <div class="card mb-4">
-                <div class="card-header api-config-toggle" onclick="toggleBrasilConfig()" 
+                <div class="card-header api-config-toggle" onclick="toggleMapBiomasConfig()" 
                      data-bs-toggle="tooltip" data-bs-placement="top" 
                      data-bs-title="Configurações do MapBiomas. Clique para expandir/recolher.">
                     <i class="bi bi-globe me-2"></i>
                     Reclassificação do MapBiomas
-                    <i class="bi bi-chevron-down ms-auto" id="brasilToggleIcon"></i>
+                    <i class="bi bi-chevron-down ms-auto" id="mapbiomasToggleIcon"></i>
                 </div>
-                <div class="card-body api-config-section" id="brasilConfigSection">
+                <div class="card-body api-config-section" id="mapbiomasConfigSection">
                     <div class="row g-3">
                         <!-- Formulário de Reclassificação -->
                         <div class="col-12">
@@ -856,14 +856,14 @@
 
             <!-- IBGE -->
             <div class="card mb-4">
-                <div class="card-header"  
+                <div class="card-header api-config-toggle" onclick="toggleIBGEConfig()" 
                      data-bs-toggle="tooltip" data-bs-placement="top" 
                      data-bs-title="Configurações do IBGE. Clique para expandir/recolher.">
                     <i class="bi bi-globe me-2"></i>
                     IBGE
-                    <i class="bi bi-chevron-down ms-auto" id="brasilToggleIcon"></i>
+                    <i class="bi bi-chevron-down ms-auto" id="ibgeToggleIcon"></i>
                 </div>
-                <div class="card-body api-config-section" id="brasilConfigSection">
+                <div class="card-body api-config-section" id="ibgeConfigSection">
                     <div class="row g-3">
                         <!-- Formulário de Reclassificação -->
                         <div class="col-12">
@@ -1124,7 +1124,7 @@
             }
         }
 
-        // Carregar configurações do Brasil
+        // Carregar configurações do MapBiomas
         async function loadBrasilConfig() {
             try {
                 const apiUrl = document.getElementById('apiUrl').value;
@@ -1140,7 +1140,7 @@
                     }
                 }
             } catch (error) {
-                console.warn('Erro ao carregar configurações do Brasil:', error);
+                console.warn('Erro ao carregar configurações do MapBiomas:', error);
                 // Manter valores padrão se não conseguir carregar
             }
         }
@@ -1215,10 +1215,24 @@
             }
         }
 
-        // Alternar exibição da configuração do Brasil
-        function toggleBrasilConfig() {
-            const configSection = document.getElementById('brasilConfigSection');
-            const toggleIcon = document.getElementById('brasilToggleIcon');
+        // Alternar exibição da configuração do MapBiomas
+        function toggleMapBiomasConfig() {
+            const configSection = document.getElementById('mapbiomasConfigSection');
+            const toggleIcon = document.getElementById('mapbiomasToggleIcon');
+            
+            if (configSection.classList.contains('show')) {
+                configSection.classList.remove('show');
+                toggleIcon.className = 'bi bi-chevron-down ms-auto';
+            } else {
+                configSection.classList.add('show');
+                toggleIcon.className = 'bi bi-chevron-up ms-auto';
+            }
+        }
+
+        // Alternar exibição da configuração do IBGE
+        function toggleIBGEConfig() {
+            const configSection = document.getElementById('ibgeConfigSection');
+            const toggleIcon = document.getElementById('ibgeToggleIcon');
             
             if (configSection.classList.contains('show')) {
                 configSection.classList.remove('show');
